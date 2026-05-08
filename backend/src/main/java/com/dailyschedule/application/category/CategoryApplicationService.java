@@ -1,0 +1,53 @@
+package com.dailyschedule.application.category;
+
+import com.dailyschedule.domain.category.Category;
+import com.dailyschedule.domain.category.CategoryRepository;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+
+@Service
+public class CategoryApplicationService {
+
+    private final CategoryRepository categoryRepository;
+
+    public CategoryApplicationService(CategoryRepository categoryRepository) {
+        this.categoryRepository = categoryRepository;
+    }
+
+    public List<Category> listAll() {
+        return categoryRepository.findAll();
+    }
+
+    public Category getById(Long id) {
+        return categoryRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("分类不存在: " + id));
+    }
+
+    @Transactional
+    public Category create(Category category) {
+        if (!category.isValid()) {
+            throw new IllegalArgumentException("分类名称不能为空");
+        }
+        if (categoryRepository.existsByName(category.getName())) {
+            throw new IllegalArgumentException("分类名称已存在: " + category.getName());
+        }
+        return categoryRepository.save(category);
+    }
+
+    @Transactional
+    public Category update(Long id, Category data) {
+        Category existing = getById(id);
+        if (data.getName() != null) existing.setName(data.getName());
+        if (data.getColor() != null) existing.setColor(data.getColor());
+        if (data.getDescription() != null) existing.setDescription(data.getDescription());
+        return categoryRepository.save(existing);
+    }
+
+    @Transactional
+    public void delete(Long id) {
+        getById(id);
+        categoryRepository.delete(id);
+    }
+}
