@@ -31,7 +31,9 @@
       "Bash(curl -s -X POST http://localhost:8080/api/v1/tags -H \"Content-Type: application/json\" -d '{\"name\":\"urgent\",\"color\":\"#ff4d4f\"}')",
       "Bash(curl -s -X POST http://localhost:8080/api/v1/events -H \"Content-Type: application/json\" -d '{\"title\":\"Team Meeting\",\"startTime\":\"2026-05-09T10:00:00\",\"endTime\":\"2026-05-09T11:00:00\",\"categoryId\":1,\"tagIds\":[1]}')",
       "Bash(curl -s \"http://localhost:8080/api/v1/events?start=2026-05-09T00:00:00&end=2026-05-09T23:59:59\")",
-      "Bash(curl -s -X DELETE http://localhost:8080/api/v1/events/1)"
+      "Bash(curl -s -X DELETE http://localhost:8080/api/v1/events/1)",
+      "Bash(npm ls *)",
+      "Bash(npx openapi-ts *)"
     ]
   }
 }
