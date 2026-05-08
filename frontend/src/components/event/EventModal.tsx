@@ -1,5 +1,3 @@
-import { useCalendarStore } from '../../store/calendarStore'
-
 interface EventModalProps {
   eventId: number | null
   onClose: () => void

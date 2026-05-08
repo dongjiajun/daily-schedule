@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import dayjs from 'dayjs'
 import { listEvents, createEvent, updateEvent, deleteEvent } from '../api/sdk.gen'
-import type { EventCreateRequest, EventResponse } from '../api/types.gen'
+import type { EventCreateRequest } from '../api/types.gen'
 
 function getViewRange(date: dayjs.Dayjs, view: string) {
   switch (view) {
@@ -35,7 +35,6 @@ export function useEvents(date: dayjs.Dayjs, view: string, categoryId?: number |
     queryKey: ['events', start, end, categoryId],
     queryFn: async () => {
       const resp = await listEvents({
-        path: {},
         query: { start, end, categoryId: categoryId ?? undefined },
       })
       return resp.data?.data ?? []
@@ -49,7 +48,7 @@ export function useCreateEvent() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (data: EventCreateRequest) =>
-      createEvent({ path: {}, body: data }).then((r) => r.data),
+      createEvent({ body: data }).then((r: any) => r.data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['events'] }),
   })
 }
@@ -58,7 +57,7 @@ export function useUpdateEvent() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: EventCreateRequest }) =>
-      updateEvent({ path: { id }, body: data }).then((r) => r.data),
+      updateEvent({ path: { id }, body: data }).then((r: any) => r.data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['events'] }),
   })
 }

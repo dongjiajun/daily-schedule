@@ -6,7 +6,7 @@ export function useCategories() {
   return useQuery({
     queryKey: ['categories'],
     queryFn: async () => {
-      const resp = await listCategories({ path: {} })
+      const resp = await listCategories()
       return resp.data?.data ?? []
     },
     staleTime: 60_000,
@@ -17,7 +17,7 @@ export function useCreateCategory() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (data: CategoryCreateRequest) =>
-      createCategory({ path: {}, body: data }).then((r) => r.data),
+      createCategory({ body: data }).then((r: any) => r.data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['categories'] }),
   })
 }
@@ -26,7 +26,7 @@ export function useUpdateCategory() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: CategoryCreateRequest }) =>
-      updateCategory({ path: { id }, body: data }).then((r) => r.data),
+      updateCategory({ path: { id }, body: data }).then((r: any) => r.data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['categories'] }),
   })
 }
