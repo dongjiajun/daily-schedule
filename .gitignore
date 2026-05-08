@@ -1,0 +1,28 @@
+# === Sensitive (NEVER commit) ===
+.env
+application-dev.yml
+*-dev.yml
+!application-dev.example.yml
+**/credentials.*
+**/secrets.*
+
+# === Build artifacts ===
+backend/target/
+backend/.mvn/
+frontend/dist/
+frontend/node_modules/
+
+# === IDE ===
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+
+# === OS ===
+.DS_Store
+Thumbs.db
+
+# === Logs ===
+*.log
+logs/

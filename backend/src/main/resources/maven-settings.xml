@@ -1,0 +1,10 @@
+<settings>
+  <mirrors>
+    <mirror>
+      <id>tsinghua</id>
+      <name>Tsinghua Maven Mirror</name>
+      <url>https://mirrors.tuna.tsinghua.edu.cn/maven/</url>
+      <mirrorOf>central</mirrorOf>
+    </mirror>
+  </mirrors>
+</settings>

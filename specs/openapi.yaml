@@ -1,0 +1,417 @@
+openapi: 3.0.3
+info:
+  title: 日程管理系统 API
+  version: 1.0.0
+  description: v1 接口定义 — 前后端契约唯一真相源
+
+servers:
+  - url: /api/v1
+
+paths:
+  /events:
+    get:
+      operationId: listEvents
+      tags: [Event]
+      summary: 按时间范围查询日程
+      parameters:
+        - name: start
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: end
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: categoryId
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventListResponse'
+    post:
+      operationId: createEvent
+      tags: [Event]
+      summary: 创建日程
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventCreateRequest'
+      responses:
+        '201':
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventResponse'
+
+  /events/{id}:
+    get:
+      operationId: getEventById
+      tags: [Event]
+      summary: 查询单个日程
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventResponse'
+    put:
+      operationId: updateEvent
+      tags: [Event]
+      summary: 更新日程
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventUpdateRequest'
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventResponse'
+    delete:
+      operationId: deleteEvent
+      tags: [Event]
+      summary: 删除日程
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: 删除成功
+
+  /categories:
+    get:
+      operationId: listCategories
+      tags: [Category]
+      summary: 获取所有分类
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryListResponse'
+    post:
+      operationId: createCategory
+      tags: [Category]
+      summary: 创建分类
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryCreateRequest'
+      responses:
+        '201':
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryResponse'
+
+  /categories/{id}:
+    put:
+      operationId: updateCategory
+      tags: [Category]
+      summary: 更新分类
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryCreateRequest'
+      responses:
+        '200':
+          description: 更新成功
+    delete:
+      operationId: deleteCategory
+      tags: [Category]
+      summary: 删除分类
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: 删除成功
+
+  /tags:
+    get:
+      operationId: listTags
+      tags: [Tag]
+      summary: 获取所有标签
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TagListResponse'
+    post:
+      operationId: createTag
+      tags: [Tag]
+      summary: 创建标签
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TagCreateRequest'
+      responses:
+        '201':
+          description: 创建成功
+
+  /tags/{id}:
+    put:
+      operationId: updateTag
+      tags: [Tag]
+      summary: 更新标签
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TagCreateRequest'
+      responses:
+        '200':
+          description: 更新成功
+    delete:
+      operationId: deleteTag
+      tags: [Tag]
+      summary: 删除标签
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: 删除成功
+
+components:
+  schemas:
+    EventCreateRequest:
+      type: object
+      required: [title, startTime, endTime]
+      properties:
+        title:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+        allDay:
+          type: boolean
+          default: false
+        location:
+          type: string
+        color:
+          type: string
+        reminderMinutes:
+          type: integer
+        categoryId:
+          type: integer
+          format: int64
+        tagIds:
+          type: array
+          items:
+            type: integer
+            format: int64
+
+    EventUpdateRequest:
+      allOf:
+        - $ref: '#/components/schemas/EventCreateRequest'
+
+    EventResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        title:
+          type: string
+        description:
+          type: string
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+        allDay:
+          type: boolean
+        location:
+          type: string
+        color:
+          type: string
+        reminderMinutes:
+          type: integer
+        categoryId:
+          type: integer
+          format: int64
+        categoryName:
+          type: string
+        categoryColor:
+          type: string
+        tags:
+          type: array
+          items:
+            $ref: '#/components/schemas/TagResponse'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    EventListResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/EventResponse'
+
+    CategoryCreateRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          maxLength: 50
+        color:
+          type: string
+        description:
+          type: string
+
+    CategoryResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        color:
+          type: string
+        description:
+          type: string
+
+    CategoryListResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/CategoryResponse'
+
+    TagCreateRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          maxLength: 30
+        color:
+          type: string
+
+    TagResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        color:
+          type: string
+
+    TagListResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/TagResponse'
+
+    ApiResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+        data:
+          type: object

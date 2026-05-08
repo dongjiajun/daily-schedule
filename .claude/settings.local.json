@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm view *)",
+      "Bash(mvn --version)",
+      "Bash(gh auth *)",
+      "Bash(git --version)",
+      "Bash(git config *)",
+      "Read(//c/Users/86188/.ssh/**)",
+      "Bash(ssh *)",
+      "Bash(mysql *)",
+      "Bash(npm create *)",
+      "Bash(npm install *)",
+      "Bash(npx shadcn@latest *)",
+      "Bash(npm config *)",
+      "Bash(mvn *)",
+      "Bash(node -e \"import\\('typescript'\\).then\\(\\(\\)=>console.log\\('ts ok'\\)\\)\")",
+      "Bash(npx tsc *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)"
+    ]
+  }
+}
