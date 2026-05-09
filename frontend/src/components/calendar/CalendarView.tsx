@@ -29,8 +29,8 @@ export function CalendarView() {
       (events ?? []).map((e: EventResponse) => ({
         id: e.id!,
         title: e.title ?? '',
-        start: new Date(e.startTime!),
-        end: new Date(e.endTime!),
+        start: new Date(e.startTime! + '+08:00'),
+        end: new Date(e.endTime! + '+08:00'),
         allDay: e.allDay ?? false,
         resource: e,
       })),
@@ -45,8 +45,12 @@ export function CalendarView() {
   )
 
   const handleSelectSlot = useCallback(
-    () => {
-      openCreateModal()
+    ({ start, end }: { start: Date; end: Date }) => {
+      const fmt = (d: Date) => {
+        const pad = (n: number) => String(n).padStart(2, '0')
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+      }
+      openCreateModal(fmt(start), fmt(end))
     },
     [openCreateModal]
   )

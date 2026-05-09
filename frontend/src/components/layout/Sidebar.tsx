@@ -17,7 +17,7 @@ export function Sidebar() {
       </div>
 
       <button
-        onClick={openCreateModal}
+        onClick={() => openCreateModal()}
         className="mx-3 mt-4 flex items-center justify-center gap-2 rounded-xl bg-gray-900 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-gray-800 transition-colors"
       >
         <Plus className="w-4 h-4" />

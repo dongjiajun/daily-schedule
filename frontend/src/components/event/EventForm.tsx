@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import type { EventResponse, CategoryResponse } from '../../api/types.gen'
+import { useCalendarStore } from '../../store/calendarStore'
 
 export interface EventFormValues {
   title: string
@@ -22,13 +23,16 @@ interface EventFormProps {
 }
 
 export function EventForm({ initialValues, categories, onSubmit, loading }: EventFormProps) {
+  const defaultStart = useCalendarStore((s) => s.defaultStart)
+  const defaultEnd = useCalendarStore((s) => s.defaultEnd)
+
   const [title, setTitle] = useState(initialValues?.title ?? '')
   const [description, setDescription] = useState(initialValues?.description ?? '')
   const [startTime, setStartTime] = useState(
-    initialValues?.startTime?.slice(0, 16) ?? ''
+    initialValues?.startTime?.slice(0, 16) ?? defaultStart ?? ''
   )
   const [endTime, setEndTime] = useState(
-    initialValues?.endTime?.slice(0, 16) ?? ''
+    initialValues?.endTime?.slice(0, 16) ?? defaultEnd ?? ''
   )
   const [allDay, setAllDay] = useState(initialValues?.allDay ?? false)
   const [location, setLocation] = useState(initialValues?.location ?? '')
@@ -46,8 +50,8 @@ export function EventForm({ initialValues, categories, onSubmit, loading }: Even
     onSubmit({
       title: title.trim(),
       description: description || undefined,
-      startTime: new Date(startTime + ':00+08:00').toISOString(),
-      endTime: new Date(endTime + ':00+08:00').toISOString(),
+      startTime: startTime + ':00',
+      endTime: endTime + ':00',
       allDay,
       location: location || undefined,
       color,

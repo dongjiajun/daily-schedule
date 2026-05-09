@@ -42,7 +42,8 @@
       "Bash(curl -s http://localhost:8080/api/v1/events?start=2026-05-01T00:00:00\\\\&end=2026-05-31T23:59:59)",
       "Bash(curl -s -X POST http://localhost:8080/api/v1/events -H \"Content-Type: application/json\" -d '{\"title\":\"测试时间修复\",\"startTime\":\"2026-05-10T09:30:00\",\"endTime\":\"2026-05-10T10:30:00\",\"categoryId\":1}')",
       "Bash(curl -s -X POST http://localhost:8080/api/v1/events -H \"Content-Type: application/json; charset=UTF-8\" --data-raw '{\"title\":\"time test\",\"startTime\":\"2026-05-10T09:30:00\",\"endTime\":\"2026-05-10T10:30:00\",\"categoryId\":1}')",
-      "Bash(curl -s \"http://localhost:8080/api/v1/events?start=2026-05-10T00:00:00&end=2026-05-10T23:59:59\")"
+      "Bash(curl -s \"http://localhost:8080/api/v1/events?start=2026-05-10T00:00:00&end=2026-05-10T23:59:59\")",
+      "Bash(taskkill //F //IM node.exe)"
     ]
   }
 }
