@@ -46,8 +46,8 @@ export function EventForm({ initialValues, categories, onSubmit, loading }: Even
     onSubmit({
       title: title.trim(),
       description: description || undefined,
-      startTime: new Date(startTime).toISOString(),
-      endTime: new Date(endTime).toISOString(),
+      startTime: new Date(startTime + ':00+08:00').toISOString(),
+      endTime: new Date(endTime + ':00+08:00').toISOString(),
       allDay,
       location: location || undefined,
       color,
