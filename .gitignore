@@ -1,3 +1,6 @@
+# === Claude Code ===
+.claude/settings.local.json
+
 # === Sensitive (NEVER commit) ===
 .env
 application-dev.yml
