@@ -11,7 +11,16 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler({IllegalArgumentException.class, MissingServletRequestParameterException.class,
+    @ExceptionHandler(IllegalArgumentException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ModelApiResponse handleIllegalArgument(IllegalArgumentException ex) {
+        ModelApiResponse resp = new ModelApiResponse();
+        resp.setCode(400);
+        resp.setMessage(ex.getMessage());
+        return resp;
+    }
+
+    @ExceptionHandler({MissingServletRequestParameterException.class,
                        MethodArgumentTypeMismatchException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ModelApiResponse handleBadRequest(Exception ex) {

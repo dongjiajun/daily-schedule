@@ -34,7 +34,7 @@ public class ReminderScheduler {
 
             LocalDateTime remindAt = event.getStartTime().minusMinutes(event.getReminderMinutes());
 
-            if (remindAt.isAfter(now.minusMinutes(1)) && remindAt.isBefore(now.plusMinutes(1))) {
+            if (remindAt.isAfter(now.minusSeconds(30)) && remindAt.isBefore(now.plusSeconds(30))) {
                 log.info("发送提醒: {}", event.getTitle());
                 for (NotificationChannel channel : channels) {
                     try {

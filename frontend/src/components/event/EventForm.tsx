@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import type { EventResponse, CategoryResponse } from '../../api/types.gen'
+import type { EventResponse, CategoryResponse, TagResponse } from '../../api/types.gen'
 import { useCalendarStore } from '../../store/calendarStore'
 
 export interface EventFormValues {
@@ -18,11 +18,12 @@ export interface EventFormValues {
 interface EventFormProps {
   initialValues?: EventResponse
   categories: CategoryResponse[]
+  tags: TagResponse[]
   onSubmit: (values: EventFormValues) => void
   loading?: boolean
 }
 
-export function EventForm({ initialValues, categories, onSubmit, loading }: EventFormProps) {
+export function EventForm({ initialValues, categories, tags, onSubmit, loading }: EventFormProps) {
   const defaultStart = useCalendarStore((s) => s.defaultStart)
   const defaultEnd = useCalendarStore((s) => s.defaultEnd)
 
@@ -43,6 +44,9 @@ export function EventForm({ initialValues, categories, onSubmit, loading }: Even
   const [reminderMinutes, setReminderMinutes] = useState<number | undefined>(
     initialValues?.reminderMinutes ?? 15
   )
+  const [tagIds, setTagIds] = useState<number[]>(
+    initialValues?.tags?.map((t) => t.id!).filter(Boolean) ?? []
+  )
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
@@ -57,6 +61,7 @@ export function EventForm({ initialValues, categories, onSubmit, loading }: Even
       color,
       reminderMinutes,
       categoryId,
+      tagIds: tagIds.length > 0 ? tagIds : undefined,
     })
   }
 
@@ -196,6 +201,41 @@ export function EventForm({ initialValues, categories, onSubmit, loading }: Even
           </select>
         </div>
       </div>
+
+      {tags.length > 0 && (
+        <div>
+          <label className={labelClass}>标签</label>
+          <div className="flex flex-wrap gap-2 mt-1">
+            {tags.map((tag) => (
+              <label
+                key={tag.id}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs cursor-pointer transition-colors"
+                style={{
+                  backgroundColor: tagIds.includes(tag.id!) ? (tag.color ?? '#1890ff') + '20' : '#f3f4f6',
+                  borderColor: tag.color ?? '#1890ff',
+                  borderWidth: 1,
+                }}
+              >
+                <input
+                  type="checkbox"
+                  className="sr-only"
+                  checked={tagIds.includes(tag.id!)}
+                  onChange={() =>
+                    setTagIds((prev) =>
+                      prev.includes(tag.id!) ? prev.filter((id) => id !== tag.id) : [...prev, tag.id!]
+                    )
+                  }
+                />
+                <span
+                  className="w-2 h-2 rounded-full"
+                  style={{ backgroundColor: tag.color ?? '#1890ff' }}
+                />
+                {tag.name}
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="flex justify-end gap-2 pt-2">
         <button

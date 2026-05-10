@@ -3,6 +3,7 @@ import { X } from 'lucide-react'
 import { EventForm, type EventFormValues } from './EventForm'
 import { useCreateEvent, useUpdateEvent, useDeleteEvent, useEvents } from '../../hooks/useEvents'
 import { useCategories } from '../../hooks/useCategories'
+import { useTags } from '../../hooks/useTags'
 import { useCalendarStore } from '../../store/calendarStore'
 
 interface EventModalProps {
@@ -14,6 +15,7 @@ export function EventModal({ eventId, onClose }: EventModalProps) {
   const { currentDate, view } = useCalendarStore()
   const { data: events } = useEvents(currentDate, view)
   const { data: categories } = useCategories()
+  const { data: tags } = useTags()
   const createMutation = useCreateEvent()
   const updateMutation = useUpdateEvent()
   const deleteMutation = useDeleteEvent()
@@ -62,6 +64,7 @@ export function EventModal({ eventId, onClose }: EventModalProps) {
           <EventForm
             initialValues={existingEvent}
             categories={categories ?? []}
+            tags={tags ?? []}
             onSubmit={handleSubmit}
             loading={isLoading}
           />

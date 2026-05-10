@@ -12,12 +12,18 @@ public class BrowserNotificationService implements NotificationChannel {
 
     private static final Logger log = LoggerFactory.getLogger(BrowserNotificationService.class);
 
+    private final SseEmitterManager sseEmitterManager;
+
+    public BrowserNotificationService(SseEmitterManager sseEmitterManager) {
+        this.sseEmitterManager = sseEmitterManager;
+    }
+
     @Override
     public void send(Event event) {
-        log.info("浏览器通知: 日程「{}」即将在 {} 开始 (提前 {} 分钟)",
-            event.getTitle(), event.getStartTime(), event.getReminderMinutes());
-        // 实际浏览器推送通过 SSE/WebSocket 发送给前端
-        // v1 版本通过日志记录，v2 升级为实时推送
+        String payload = String.format("{\"id\":%d,\"title\":\"%s\",\"startTime\":\"%s\",\"reminderMinutes\":%d}",
+            event.getId(), event.getTitle(), event.getStartTime(), event.getReminderMinutes());
+        log.info("浏览器通知: 日程「{}」即将在 {} 开始", event.getTitle(), event.getStartTime());
+        sseEmitterManager.sendToAll(payload);
     }
 
     @Override
