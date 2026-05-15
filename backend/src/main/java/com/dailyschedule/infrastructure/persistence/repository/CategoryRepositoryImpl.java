@@ -58,6 +58,13 @@ public class CategoryRepositoryImpl implements CategoryRepository {
         return categoryMapper.selectCount(wrapper) > 0;
     }
 
+    @Override
+    public boolean existsByNameExcludingId(String name, Long excludeId) {
+        LambdaQueryWrapper<CategoryPO> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(CategoryPO::getName, name).ne(CategoryPO::getId, excludeId);
+        return categoryMapper.selectCount(wrapper) > 0;
+    }
+
     private Category toDomain(CategoryPO po) {
         Category c = new Category();
         c.setId(po.getId());

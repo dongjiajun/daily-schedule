@@ -1,5 +1,6 @@
 package com.dailyschedule.infrastructure.persistence.repository;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.dailyschedule.domain.tag.Tag;
 import com.dailyschedule.domain.tag.TagRepository;
 import com.dailyschedule.infrastructure.persistence.mapper.EventTagMapper;
@@ -59,6 +60,20 @@ public class TagRepositoryImpl implements TagRepository {
         if (tagIds.isEmpty()) return List.of();
         return tagMapper.selectBatchIds(tagIds).stream()
             .map(this::toDomain).collect(Collectors.toList());
+    }
+
+    @Override
+    public boolean existsByName(String name) {
+        LambdaQueryWrapper<TagPO> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(TagPO::getName, name);
+        return tagMapper.selectCount(wrapper) > 0;
+    }
+
+    @Override
+    public boolean existsByNameExcludingId(String name, Long excludeId) {
+        LambdaQueryWrapper<TagPO> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(TagPO::getName, name).ne(TagPO::getId, excludeId);
+        return tagMapper.selectCount(wrapper) > 0;
     }
 
     private Tag toDomain(TagPO po) {
