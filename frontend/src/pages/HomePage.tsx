@@ -10,12 +10,11 @@ export function HomePage() {
   return (
     <div className="h-full flex flex-col">
       <CalendarView />
-      {modalOpen && (
-        <EventModal
-          eventId={editingEventId}
-          onClose={closeModal}
-        />
-      )}
+      <EventModal
+        open={modalOpen}
+        eventId={editingEventId}
+        onClose={closeModal}
+      />
     </div>
   )
 }

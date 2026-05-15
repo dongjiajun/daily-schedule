@@ -1,6 +1,19 @@
 import { useState, type FormEvent } from 'react'
 import type { EventResponse, CategoryResponse, TagResponse } from '../../api/types.gen'
 import { useCalendarStore } from '../../store/calendarStore'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Switch } from '@/components/ui/switch'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { cn } from '@/lib/utils'
 
 export interface EventFormValues {
   title: string
@@ -22,6 +35,18 @@ interface EventFormProps {
   onSubmit: (values: EventFormValues) => void
   loading?: boolean
 }
+
+const NO_CATEGORY = '__none__'
+const NO_REMINDER = '__none__'
+
+const REMINDER_OPTIONS: Array<{ value: string; label: string }> = [
+  { value: NO_REMINDER, label: '不提醒' },
+  { value: '0', label: '事件开始时' },
+  { value: '15', label: '15 分钟前' },
+  { value: '30', label: '30 分钟前' },
+  { value: '60', label: '1 小时前' },
+  { value: '1440', label: '1 天前' },
+]
 
 export function EventForm({ initialValues, categories, tags, onSubmit, loading }: EventFormProps) {
   const defaultStart = useCalendarStore((s) => s.defaultStart)
@@ -65,17 +90,13 @@ export function EventForm({ initialValues, categories, tags, onSubmit, loading }
     })
   }
 
-  const inputClass =
-    'w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-shadow'
-  const labelClass = 'block text-sm font-medium text-gray-700 mb-1'
-
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label className={labelClass}>标题 *</label>
-        <input
+      <div className="space-y-1.5">
+        <Label htmlFor="event-title">标题 *</Label>
+        <Input
+          id="event-title"
           type="text"
-          className={inputClass}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="日程标题"
@@ -85,35 +106,33 @@ export function EventForm({ initialValues, categories, tags, onSubmit, loading }
         />
       </div>
 
-      <div className="flex items-center gap-2">
-        <input
-          type="checkbox"
-          id="allDay"
+      <div className="flex items-center gap-3">
+        <Switch
+          id="event-all-day"
           checked={allDay}
-          onChange={(e) => setAllDay(e.target.checked)}
-          className="rounded border-gray-300 text-gray-900 focus:ring-gray-900"
+          onCheckedChange={setAllDay}
         />
-        <label htmlFor="allDay" className="text-sm text-gray-600">
+        <Label htmlFor="event-all-day" className="text-gray-600 cursor-pointer">
           全天事件
-        </label>
+        </Label>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className={labelClass}>开始时间 *</label>
-          <input
+        <div className="space-y-1.5">
+          <Label htmlFor="event-start">开始时间 *</Label>
+          <Input
+            id="event-start"
             type={allDay ? 'date' : 'datetime-local'}
-            className={inputClass}
             value={startTime}
             onChange={(e) => setStartTime(e.target.value)}
             required
           />
         </div>
-        <div>
-          <label className={labelClass}>结束时间 *</label>
-          <input
+        <div className="space-y-1.5">
+          <Label htmlFor="event-end">结束时间 *</Label>
+          <Input
+            id="event-end"
             type={allDay ? 'date' : 'datetime-local'}
-            className={inputClass}
             value={endTime}
             onChange={(e) => setEndTime(e.target.value)}
             required
@@ -121,10 +140,10 @@ export function EventForm({ initialValues, categories, tags, onSubmit, loading }
         </div>
       </div>
 
-      <div>
-        <label className={labelClass}>描述</label>
-        <textarea
-          className={inputClass}
+      <div className="space-y-1.5">
+        <Label htmlFor="event-desc">描述</Label>
+        <Textarea
+          id="event-desc"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="日程描述（可选）"
@@ -133,35 +152,46 @@ export function EventForm({ initialValues, categories, tags, onSubmit, loading }
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className={labelClass}>分类</label>
-          <select
-            className={inputClass}
-            value={categoryId ?? ''}
-            onChange={(e) =>
-              setCategoryId(e.target.value ? Number(e.target.value) : undefined)
+        <div className="space-y-1.5">
+          <Label>分类</Label>
+          <Select
+            value={categoryId !== undefined ? String(categoryId) : NO_CATEGORY}
+            onValueChange={(v) =>
+              setCategoryId(v === NO_CATEGORY ? undefined : Number(v))
             }
           >
-            <option value="">无分类</option>
-            {categories.map((cat) => (
-              <option key={cat.id} value={cat.id}>
-                {cat.name}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger>
+              <SelectValue placeholder="无分类" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={NO_CATEGORY}>无分类</SelectItem>
+              {categories.map((cat) => (
+                <SelectItem key={cat.id} value={String(cat.id)}>
+                  <span className="flex items-center gap-2">
+                    <span
+                      className="w-2 h-2 rounded-full"
+                      style={{ backgroundColor: cat.color ?? '#1890ff' }}
+                    />
+                    {cat.name}
+                  </span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-        <div>
-          <label className={labelClass}>颜色</label>
+        <div className="space-y-1.5">
+          <Label htmlFor="event-color-text">颜色</Label>
           <div className="flex items-center gap-2">
             <input
               type="color"
-              className="w-8 h-8 rounded border border-gray-200 cursor-pointer"
+              className="w-9 h-9 rounded-lg border border-gray-200 cursor-pointer shrink-0"
               value={color}
               onChange={(e) => setColor(e.target.value)}
+              aria-label="选择颜色"
             />
-            <input
+            <Input
+              id="event-color-text"
               type="text"
-              className={`${inputClass} flex-1`}
               value={color}
               onChange={(e) => setColor(e.target.value)}
               placeholder="#1890ff"
@@ -171,80 +201,86 @@ export function EventForm({ initialValues, categories, tags, onSubmit, loading }
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className={labelClass}>地点</label>
-          <input
+        <div className="space-y-1.5">
+          <Label htmlFor="event-location">地点</Label>
+          <Input
+            id="event-location"
             type="text"
-            className={inputClass}
             value={location}
             onChange={(e) => setLocation(e.target.value)}
             placeholder="地点（可选）"
           />
         </div>
-        <div>
-          <label className={labelClass}>提前提醒</label>
-          <select
-            className={inputClass}
-            value={reminderMinutes ?? ''}
-            onChange={(e) =>
-              setReminderMinutes(
-                e.target.value ? Number(e.target.value) : undefined
-              )
+        <div className="space-y-1.5">
+          <Label>提前提醒</Label>
+          <Select
+            value={reminderMinutes !== undefined ? String(reminderMinutes) : NO_REMINDER}
+            onValueChange={(v) =>
+              setReminderMinutes(v === NO_REMINDER ? undefined : Number(v))
             }
           >
-            <option value="">不提醒</option>
-            <option value={0}>事件开始时</option>
-            <option value={15}>15 分钟前</option>
-            <option value={30}>30 分钟前</option>
-            <option value={60}>1 小时前</option>
-            <option value={1440}>1 天前</option>
-          </select>
+            <SelectTrigger>
+              <SelectValue placeholder="不提醒" />
+            </SelectTrigger>
+            <SelectContent>
+              {REMINDER_OPTIONS.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
       {tags.length > 0 && (
-        <div>
-          <label className={labelClass}>标签</label>
-          <div className="flex flex-wrap gap-2 mt-1">
-            {tags.map((tag) => (
-              <label
-                key={tag.id}
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs cursor-pointer transition-colors"
-                style={{
-                  backgroundColor: tagIds.includes(tag.id!) ? (tag.color ?? '#1890ff') + '20' : '#f3f4f6',
-                  borderColor: tag.color ?? '#1890ff',
-                  borderWidth: 1,
-                }}
-              >
-                <input
-                  type="checkbox"
-                  className="sr-only"
-                  checked={tagIds.includes(tag.id!)}
-                  onChange={() =>
+        <div className="space-y-1.5">
+          <Label>标签</Label>
+          <div className="flex flex-wrap gap-2">
+            {tags.map((tag) => {
+              const active = tagIds.includes(tag.id!)
+              return (
+                <button
+                  key={tag.id}
+                  type="button"
+                  onClick={() =>
                     setTagIds((prev) =>
-                      prev.includes(tag.id!) ? prev.filter((id) => id !== tag.id) : [...prev, tag.id!]
+                      prev.includes(tag.id!)
+                        ? prev.filter((id) => id !== tag.id)
+                        : [...prev, tag.id!]
                     )
                   }
-                />
-                <span
-                  className="w-2 h-2 rounded-full"
-                  style={{ backgroundColor: tag.color ?? '#1890ff' }}
-                />
-                {tag.name}
-              </label>
-            ))}
+                  className={cn(
+                    'flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs border transition-colors',
+                    'focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-400'
+                  )}
+                  style={{
+                    backgroundColor: active
+                      ? (tag.color ?? '#1890ff') + '20'
+                      : '#f3f4f6',
+                    borderColor: tag.color ?? '#1890ff',
+                  }}
+                >
+                  <span
+                    className="w-2 h-2 rounded-full"
+                    style={{ backgroundColor: tag.color ?? '#1890ff' }}
+                  />
+                  {tag.name}
+                </button>
+              )
+            })}
           </div>
         </div>
       )}
 
       <div className="flex justify-end gap-2 pt-2">
-        <button
+        <Button
           type="submit"
           disabled={loading || !title.trim()}
-          className="px-4 py-2 rounded-xl bg-gray-900 text-white text-sm font-medium hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="rounded-xl"
         >
           {loading ? '保存中...' : initialValues ? '更新日程' : '创建日程'}
-        </button>
+        </Button>
       </div>
     </form>
   )
