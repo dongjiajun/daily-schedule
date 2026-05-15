@@ -26,4 +26,6 @@
 - 开发库 daily_schedule_dev，测试库 daily_schedule_test
 - JDK 21
 
-## 当前版本: v1.0
+## 当前版本: v2.0
+
+API 契约变更必须同步更新 `specs/CHANGELOG.md` 与三处版本号（`specs/openapi.yaml`、`backend/pom.xml`、`frontend/package.json`）。

@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: 日程管理系统 API
-  version: 1.0.0
+  version: 2.0.0
   description: |
     v1 接口定义 — 前后端契约唯一真相源。
 
@@ -9,6 +9,8 @@ info:
     - 成功响应直接返回业务数据：单条返回对象，列表返回数组。
     - HTTP 状态码承载语义（200 / 201 / 204 / 400 / 404 / 500）。
     - 异常响应统一为 `ApiResponse`：`{ code, message }`。
+
+    变更历史见 `specs/CHANGELOG.md`。
 
 servers:
   - url: /api/v1

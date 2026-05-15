@@ -30,13 +30,21 @@ public class TagApplicationService {
         if (!tag.isValid()) {
             throw new IllegalArgumentException("标签名称不能为空");
         }
+        if (tagRepository.existsByName(tag.getName())) {
+            throw new IllegalArgumentException("标签名称已存在: " + tag.getName());
+        }
         return tagRepository.save(tag);
     }
 
     @Transactional
     public Tag update(Long id, Tag data) {
         Tag existing = getById(id);
-        if (data.getName() != null) existing.setName(data.getName());
+        if (data.getName() != null && !data.getName().equals(existing.getName())) {
+            if (tagRepository.existsByNameExcludingId(data.getName(), id)) {
+                throw new IllegalArgumentException("标签名称已存在: " + data.getName());
+            }
+            existing.setName(data.getName());
+        }
         if (data.getColor() != null) existing.setColor(data.getColor());
         return tagRepository.save(existing);
     }

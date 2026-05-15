@@ -1,7 +1,11 @@
 package com.dailyschedule.domain.event;
 
+import com.dailyschedule.domain.tag.Tag;
+
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 public class Event {
@@ -18,6 +22,12 @@ public class Event {
     private String categoryName;
     private String categoryColor;
     private Set<Long> tagIds = new HashSet<>();
+    /**
+     * 已加载的标签详情（读路径投影）。仅由 Repository 在查询时填充，
+     * 写路径（create/update）使用 {@link #tagIds}。
+     */
+    private List<Tag> tags = new ArrayList<>();
+    private LocalDateTime lastRemindedAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -80,6 +90,10 @@ public class Event {
     public void setCategoryColor(String categoryColor) { this.categoryColor = categoryColor; }
     public Set<Long> getTagIds() { return tagIds; }
     public void setTagIds(Set<Long> tagIds) { this.tagIds = tagIds; }
+    public List<Tag> getTags() { return tags; }
+    public void setTags(List<Tag> tags) { this.tags = tags; }
+    public LocalDateTime getLastRemindedAt() { return lastRemindedAt; }
+    public void setLastRemindedAt(LocalDateTime lastRemindedAt) { this.lastRemindedAt = lastRemindedAt; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }

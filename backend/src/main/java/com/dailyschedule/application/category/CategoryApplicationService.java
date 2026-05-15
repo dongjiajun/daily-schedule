@@ -39,7 +39,12 @@ public class CategoryApplicationService {
     @Transactional
     public Category update(Long id, Category data) {
         Category existing = getById(id);
-        if (data.getName() != null) existing.setName(data.getName());
+        if (data.getName() != null && !data.getName().equals(existing.getName())) {
+            if (categoryRepository.existsByNameExcludingId(data.getName(), id)) {
+                throw new IllegalArgumentException("分类名称已存在: " + data.getName());
+            }
+            existing.setName(data.getName());
+        }
         if (data.getColor() != null) existing.setColor(data.getColor());
         if (data.getDescription() != null) existing.setDescription(data.getDescription());
         return categoryRepository.save(existing);

@@ -2,16 +2,24 @@ package com.dailyschedule.infrastructure.persistence.repository;
 
 import com.dailyschedule.domain.event.Event;
 import com.dailyschedule.domain.event.EventRepository;
+import com.dailyschedule.domain.tag.Tag;
 import com.dailyschedule.infrastructure.persistence.mapper.EventMapper;
 import com.dailyschedule.infrastructure.persistence.mapper.EventTagMapper;
+import com.dailyschedule.infrastructure.persistence.mapper.EventTagMapper.EventTagJoinRow;
 import com.dailyschedule.infrastructure.persistence.po.EventPO;
 import com.dailyschedule.infrastructure.persistence.po.EventTagPO;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Repository
@@ -27,23 +35,19 @@ public class EventRepositoryImpl implements EventRepository {
 
     @Override
     public List<Event> findByRange(LocalDateTime start, LocalDateTime end) {
-        List<EventPO> pos = eventMapper.selectByRange(start, end);
-        return pos.stream().map(this::toDomain).collect(Collectors.toList());
+        return loadWithTags(eventMapper.selectByRange(start, end));
     }
 
     @Override
     public List<Event> findByRangeAndCategory(LocalDateTime start, LocalDateTime end, Long categoryId) {
-        List<EventPO> pos = eventMapper.selectByRangeAndCategory(start, end, categoryId);
-        return pos.stream().map(this::toDomain).collect(Collectors.toList());
+        return loadWithTags(eventMapper.selectByRangeAndCategory(start, end, categoryId));
     }
 
     @Override
     public Optional<Event> findById(Long id) {
         EventPO po = eventMapper.selectById(id);
         if (po == null) return Optional.empty();
-        Event event = toDomain(po);
-        event.setTagIds(eventTagMapper.selectTagIdsByEventId(id).stream().collect(Collectors.toSet()));
-        return Optional.of(event);
+        return Optional.of(loadWithTags(List.of(po)).get(0));
     }
 
     @Override
@@ -71,17 +75,51 @@ public class EventRepositoryImpl implements EventRepository {
 
     @Override
     public List<Event> findUpcoming(LocalDateTime now, LocalDateTime threshold) {
-        return eventMapper.selectUpcoming(now, threshold).stream()
-            .map(this::toDomain).collect(Collectors.toList());
+        return loadWithTags(eventMapper.selectUpcoming(now, threshold));
     }
 
-    private void saveTags(Long eventId, java.util.Set<Long> tagIds) {
+    @Override
+    public void markReminded(Long id, LocalDateTime remindedAt) {
+        eventMapper.updateLastRemindedAt(id, remindedAt);
+    }
+
+    private void saveTags(Long eventId, Set<Long> tagIds) {
         eventTagMapper.deleteByEventId(eventId);
         if (tagIds != null && !tagIds.isEmpty()) {
             for (Long tagId : tagIds) {
                 eventTagMapper.insert(new EventTagPO(eventId, tagId));
             }
         }
+    }
+
+    /**
+     * 将 PO 列表批量转换为 Domain 并通过一次 JOIN 查询填充每个事件的标签详情。
+     * 列表为空时跳过 JOIN 查询。
+     */
+    private List<Event> loadWithTags(List<EventPO> pos) {
+        if (pos == null || pos.isEmpty()) return List.of();
+        List<Event> events = pos.stream().map(this::toDomain).collect(Collectors.toList());
+        Map<Long, Event> byId = events.stream()
+            .collect(Collectors.toMap(Event::getId, e -> e));
+
+        List<EventTagJoinRow> rows = eventTagMapper.selectTagsByEventIds(byId.keySet());
+        Map<Long, List<Tag>> tagsByEvent = new HashMap<>();
+        Map<Long, Set<Long>> tagIdsByEvent = new HashMap<>();
+        for (EventTagJoinRow row : rows) {
+            Tag tag = new Tag();
+            tag.setId(row.getId());
+            tag.setName(row.getName());
+            tag.setColor(row.getColor());
+            tag.setCreatedAt(row.getCreatedAt());
+            tag.setUpdatedAt(row.getUpdatedAt());
+            tagsByEvent.computeIfAbsent(row.getEventIdRef(), k -> new ArrayList<>()).add(tag);
+            tagIdsByEvent.computeIfAbsent(row.getEventIdRef(), k -> new HashSet<>()).add(row.getId());
+        }
+        for (Event e : events) {
+            e.setTags(tagsByEvent.getOrDefault(e.getId(), Collections.emptyList()));
+            e.setTagIds(tagIdsByEvent.getOrDefault(e.getId(), Collections.emptySet()));
+        }
+        return events;
     }
 
     private Event toDomain(EventPO po) {
@@ -96,6 +134,7 @@ public class EventRepositoryImpl implements EventRepository {
         e.setColor(po.getColor());
         e.setReminderMinutes(po.getReminderMinutes());
         e.setCategoryId(po.getCategoryId());
+        e.setLastRemindedAt(po.getLastRemindedAt());
         e.setCreatedAt(po.getCreatedAt());
         e.setUpdatedAt(po.getUpdatedAt());
         return e;
@@ -113,6 +152,7 @@ public class EventRepositoryImpl implements EventRepository {
         po.setColor(event.getColor());
         po.setReminderMinutes(event.getReminderMinutes());
         po.setCategoryId(event.getCategoryId());
+        po.setLastRemindedAt(event.getLastRemindedAt());
         return po;
     }
 }

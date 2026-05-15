@@ -5,6 +5,7 @@ import com.dailyschedule.api.generated.dto.EventUpdateRequest;
 import com.dailyschedule.api.generated.dto.EventResponse;
 import com.dailyschedule.api.generated.dto.TagResponse;
 import com.dailyschedule.domain.event.Event;
+import com.dailyschedule.domain.tag.Tag;
 
 import java.util.List;
 import java.util.Set;
@@ -62,14 +63,31 @@ public class EventAssembler {
         resp.setCategoryColor(event.getCategoryColor());
         resp.setCreatedAt(event.getCreatedAt());
         resp.setUpdatedAt(event.getUpdatedAt());
+        resp.setTags(buildTagResponses(event));
+        return resp;
+    }
+
+    private static List<TagResponse> buildTagResponses(Event event) {
+        if (event.getTags() != null && !event.getTags().isEmpty()) {
+            return event.getTags().stream().map(EventAssembler::toTagResponse)
+                .collect(Collectors.toList());
+        }
         if (event.getTagIds() != null && !event.getTagIds().isEmpty()) {
-            resp.setTags(event.getTagIds().stream().map(id -> {
+            return event.getTagIds().stream().map(id -> {
                 TagResponse t = new TagResponse();
                 t.setId(id);
                 return t;
-            }).collect(Collectors.toList()));
+            }).collect(Collectors.toList());
         }
-        return resp;
+        return List.of();
+    }
+
+    private static TagResponse toTagResponse(Tag tag) {
+        TagResponse t = new TagResponse();
+        t.setId(tag.getId());
+        t.setName(tag.getName());
+        t.setColor(tag.getColor());
+        return t;
     }
 
     public static List<EventResponse> toResponseList(List<Event> events) {

@@ -11,4 +11,11 @@ public interface EventRepository {
     Event save(Event event);
     void delete(Long id);
     List<Event> findUpcoming(LocalDateTime now, LocalDateTime threshold);
+
+    /**
+     * 将事件标记为已提醒。
+     * @param id 事件 ID
+     * @param remindedAt 提醒发生时间
+     */
+    void markReminded(Long id, LocalDateTime remindedAt);
 }

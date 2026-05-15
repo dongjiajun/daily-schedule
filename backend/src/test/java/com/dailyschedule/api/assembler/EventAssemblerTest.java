@@ -102,8 +102,8 @@ class EventAssemblerTest {
     }
 
     @Test
-    @DisplayName("toResponse：tagIds 为空时 tags 字段不应包含元素")
-    void toResponse_emptyTagIds_emptyOrNullTags() {
+    @DisplayName("toResponse：tagIds 为空时 tags 字段为空列表")
+    void toResponse_emptyTagIds_emptyList() {
         Event e = new Event("无标签",
             LocalDateTime.of(2026, 5, 9, 10, 0),
             LocalDateTime.of(2026, 5, 9, 11, 0));
@@ -111,7 +111,30 @@ class EventAssemblerTest {
 
         EventResponse resp = EventAssembler.toResponse(e);
 
-        assertThat(resp.getTags() == null || resp.getTags().isEmpty()).isTrue();
+        assertThat(resp.getTags()).isNotNull().isEmpty();
+    }
+
+    @Test
+    @DisplayName("toResponse：当 tags 详情已加载时优先使用，包含 name+color")
+    void toResponse_whenTagsLoaded_returnsFullTagInfo() {
+        Event e = new Event("有标签",
+            LocalDateTime.of(2026, 5, 9, 10, 0),
+            LocalDateTime.of(2026, 5, 9, 11, 0));
+        e.setId(1L);
+        com.dailyschedule.domain.tag.Tag t1 = new com.dailyschedule.domain.tag.Tag("紧急", "#f00");
+        t1.setId(11L);
+        com.dailyschedule.domain.tag.Tag t2 = new com.dailyschedule.domain.tag.Tag("工作", "#0f0");
+        t2.setId(22L);
+        e.setTags(List.of(t1, t2));
+        e.setTagIds(Set.of(11L, 22L));
+
+        EventResponse resp = EventAssembler.toResponse(e);
+
+        assertThat(resp.getTags()).hasSize(2);
+        assertThat(resp.getTags()).extracting(t -> t.getName())
+            .containsExactlyInAnyOrder("紧急", "工作");
+        assertThat(resp.getTags()).extracting(t -> t.getColor())
+            .containsExactlyInAnyOrder("#f00", "#0f0");
     }
 
     @Test
