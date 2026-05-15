@@ -3,7 +3,6 @@ package com.dailyschedule.api.controller;
 import com.dailyschedule.api.assembler.CategoryAssembler;
 import com.dailyschedule.api.generated.api.CategoriesApi;
 import com.dailyschedule.api.generated.dto.CategoryCreateRequest;
-import com.dailyschedule.api.generated.dto.CategoryListResponse;
 import com.dailyschedule.api.generated.dto.CategoryResponse;
 import com.dailyschedule.application.category.CategoryApplicationService;
 import com.dailyschedule.domain.category.Category;
@@ -23,13 +22,9 @@ public class CategoryController implements CategoriesApi {
     }
 
     @Override
-    public CategoryListResponse listCategories() {
+    public List<CategoryResponse> listCategories() {
         List<Category> categories = categoryAppService.listAll();
-        CategoryListResponse resp = new CategoryListResponse();
-        resp.setCode(200);
-        resp.setMessage("success");
-        resp.setData(CategoryAssembler.toResponseList(categories));
-        return resp;
+        return CategoryAssembler.toResponseList(categories);
     }
 
     @Override
@@ -41,9 +36,10 @@ public class CategoryController implements CategoriesApi {
     }
 
     @Override
-    public void updateCategory(Long id, CategoryCreateRequest request) {
+    public CategoryResponse updateCategory(Long id, CategoryCreateRequest request) {
         Category data = CategoryAssembler.toDomain(request);
-        categoryAppService.update(id, data);
+        Category updated = categoryAppService.update(id, data);
+        return CategoryAssembler.toResponse(updated);
     }
 
     @Override

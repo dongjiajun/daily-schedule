@@ -1,12 +1,6 @@
 import { useEffect, useRef } from 'react'
+import type { ReminderEvent } from '../api/types.gen'
 import { useNotification } from './useNotification'
-
-interface ReminderPayload {
-  id: number
-  title: string
-  startTime: string
-  reminderMinutes: number
-}
 
 export function useSseNotifications() {
   const { notify } = useNotification()
@@ -18,13 +12,14 @@ export function useSseNotifications() {
 
     es.addEventListener('reminder', (e: MessageEvent) => {
       try {
-        const payload: ReminderPayload = JSON.parse(e.data)
+        const payload = JSON.parse(e.data) as ReminderEvent
+        if (!payload.title || !payload.startTime) return
         notify(
           `日程提醒: ${payload.title}`,
           `即将在 ${new Date(payload.startTime).toLocaleTimeString('zh-CN')} 开始`
         )
       } catch {
-        // 解析失败忽略
+        // 忽略解析失败
       }
     })
 

@@ -37,12 +37,6 @@ export type EventResponse = {
     updatedAt?: string;
 };
 
-export type EventListResponse = {
-    code?: number;
-    message?: string;
-    data?: Array<EventResponse>;
-};
-
 export type CategoryCreateRequest = {
     name: string;
     color?: string;
@@ -56,12 +50,6 @@ export type CategoryResponse = {
     description?: string;
 };
 
-export type CategoryListResponse = {
-    code?: number;
-    message?: string;
-    data?: Array<CategoryResponse>;
-};
-
 export type TagCreateRequest = {
     name: string;
     color?: string;
@@ -73,18 +61,34 @@ export type TagResponse = {
     color?: string;
 };
 
-export type TagListResponse = {
-    code?: number;
-    message?: string;
-    data?: Array<TagResponse>;
+/**
+ * SSE `reminder` 事件的 data JSON 反序列化结构
+ */
+export type ReminderEvent = {
+    /**
+     * 日程 ID
+     */
+    id?: number;
+    /**
+     * 日程标题
+     */
+    title?: string;
+    /**
+     * 日程开始时间
+     */
+    startTime?: string;
+    /**
+     * 提前提醒分钟数
+     */
+    reminderMinutes?: number;
 };
 
+/**
+ * 统一错误响应包装
+ */
 export type ApiResponse = {
     code?: number;
     message?: string;
-    data?: {
-        [key: string]: unknown;
-    };
 };
 
 export type ListEventsData = {
@@ -98,11 +102,20 @@ export type ListEventsData = {
     url: '/events';
 };
 
+export type ListEventsErrors = {
+    /**
+     * 请求参数不合法
+     */
+    400: ApiResponse;
+};
+
+export type ListEventsError = ListEventsErrors[keyof ListEventsErrors];
+
 export type ListEventsResponses = {
     /**
      * 成功
      */
-    200: EventListResponse;
+    200: Array<EventResponse>;
 };
 
 export type ListEventsResponse = ListEventsResponses[keyof ListEventsResponses];
@@ -113,6 +126,15 @@ export type CreateEventData = {
     query?: never;
     url: '/events';
 };
+
+export type CreateEventErrors = {
+    /**
+     * 请求参数不合法
+     */
+    400: ApiResponse;
+};
+
+export type CreateEventError = CreateEventErrors[keyof CreateEventErrors];
 
 export type CreateEventResponses = {
     /**
@@ -132,6 +154,15 @@ export type DeleteEventData = {
     url: '/events/{id}';
 };
 
+export type DeleteEventErrors = {
+    /**
+     * 资源不存在
+     */
+    404: ApiResponse;
+};
+
+export type DeleteEventError = DeleteEventErrors[keyof DeleteEventErrors];
+
 export type DeleteEventResponses = {
     /**
      * 删除成功
@@ -150,6 +181,15 @@ export type GetEventByIdData = {
     url: '/events/{id}';
 };
 
+export type GetEventByIdErrors = {
+    /**
+     * 资源不存在
+     */
+    404: ApiResponse;
+};
+
+export type GetEventByIdError = GetEventByIdErrors[keyof GetEventByIdErrors];
+
 export type GetEventByIdResponses = {
     /**
      * 成功
@@ -167,6 +207,19 @@ export type UpdateEventData = {
     query?: never;
     url: '/events/{id}';
 };
+
+export type UpdateEventErrors = {
+    /**
+     * 请求参数不合法
+     */
+    400: ApiResponse;
+    /**
+     * 资源不存在
+     */
+    404: ApiResponse;
+};
+
+export type UpdateEventError = UpdateEventErrors[keyof UpdateEventErrors];
 
 export type UpdateEventResponses = {
     /**
@@ -188,7 +241,7 @@ export type ListCategoriesResponses = {
     /**
      * 成功
      */
-    200: CategoryListResponse;
+    200: Array<CategoryResponse>;
 };
 
 export type ListCategoriesResponse = ListCategoriesResponses[keyof ListCategoriesResponses];
@@ -199,6 +252,15 @@ export type CreateCategoryData = {
     query?: never;
     url: '/categories';
 };
+
+export type CreateCategoryErrors = {
+    /**
+     * 请求参数不合法
+     */
+    400: ApiResponse;
+};
+
+export type CreateCategoryError = CreateCategoryErrors[keyof CreateCategoryErrors];
 
 export type CreateCategoryResponses = {
     /**
@@ -218,6 +280,15 @@ export type DeleteCategoryData = {
     url: '/categories/{id}';
 };
 
+export type DeleteCategoryErrors = {
+    /**
+     * 资源不存在
+     */
+    404: ApiResponse;
+};
+
+export type DeleteCategoryError = DeleteCategoryErrors[keyof DeleteCategoryErrors];
+
 export type DeleteCategoryResponses = {
     /**
      * 删除成功
@@ -236,12 +307,23 @@ export type UpdateCategoryData = {
     url: '/categories/{id}';
 };
 
+export type UpdateCategoryErrors = {
+    /**
+     * 资源不存在
+     */
+    404: ApiResponse;
+};
+
+export type UpdateCategoryError = UpdateCategoryErrors[keyof UpdateCategoryErrors];
+
 export type UpdateCategoryResponses = {
     /**
      * 更新成功
      */
-    200: unknown;
+    200: CategoryResponse;
 };
+
+export type UpdateCategoryResponse = UpdateCategoryResponses[keyof UpdateCategoryResponses];
 
 export type ListTagsData = {
     body?: never;
@@ -254,7 +336,7 @@ export type ListTagsResponses = {
     /**
      * 成功
      */
-    200: TagListResponse;
+    200: Array<TagResponse>;
 };
 
 export type ListTagsResponse = ListTagsResponses[keyof ListTagsResponses];
@@ -266,12 +348,23 @@ export type CreateTagData = {
     url: '/tags';
 };
 
+export type CreateTagErrors = {
+    /**
+     * 请求参数不合法
+     */
+    400: ApiResponse;
+};
+
+export type CreateTagError = CreateTagErrors[keyof CreateTagErrors];
+
 export type CreateTagResponses = {
     /**
      * 创建成功
      */
-    201: unknown;
+    201: TagResponse;
 };
+
+export type CreateTagResponse = CreateTagResponses[keyof CreateTagResponses];
 
 export type DeleteTagData = {
     body?: never;
@@ -281,6 +374,15 @@ export type DeleteTagData = {
     query?: never;
     url: '/tags/{id}';
 };
+
+export type DeleteTagErrors = {
+    /**
+     * 资源不存在
+     */
+    404: ApiResponse;
+};
+
+export type DeleteTagError = DeleteTagErrors[keyof DeleteTagErrors];
 
 export type DeleteTagResponses = {
     /**
@@ -300,9 +402,36 @@ export type UpdateTagData = {
     url: '/tags/{id}';
 };
 
+export type UpdateTagErrors = {
+    /**
+     * 资源不存在
+     */
+    404: ApiResponse;
+};
+
+export type UpdateTagError = UpdateTagErrors[keyof UpdateTagErrors];
+
 export type UpdateTagResponses = {
     /**
      * 更新成功
      */
-    200: unknown;
+    200: TagResponse;
 };
+
+export type UpdateTagResponse = UpdateTagResponses[keyof UpdateTagResponses];
+
+export type SubscribeNotificationsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/sse/notifications';
+};
+
+export type SubscribeNotificationsResponses = {
+    /**
+     * SSE 事件流；reminder 事件的 data 字段结构见 `ReminderEvent`。
+     */
+    200: string;
+};
+
+export type SubscribeNotificationsResponse = SubscribeNotificationsResponses[keyof SubscribeNotificationsResponses];

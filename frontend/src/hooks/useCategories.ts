@@ -7,7 +7,7 @@ export function useCategories() {
     queryKey: ['categories'],
     queryFn: async () => {
       const resp = await listCategories()
-      return resp.data?.data ?? []
+      return resp.data ?? []
     },
     staleTime: 60_000,
   })

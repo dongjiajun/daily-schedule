@@ -40,8 +40,7 @@ class EventControllerTest {
                 .param("start", "2026-05-01T00:00:00")
                 .param("end", "2026-05-31T23:59:59"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(200))
-            .andExpect(jsonPath("$.data").isArray());
+            .andExpect(jsonPath("$").isArray());
     }
 
     @Test

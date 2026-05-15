@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { CreateCategoryData, CreateCategoryResponses, CreateEventData, CreateEventResponses, CreateTagData, CreateTagResponses, DeleteCategoryData, DeleteCategoryResponses, DeleteEventData, DeleteEventResponses, DeleteTagData, DeleteTagResponses, GetEventByIdData, GetEventByIdResponses, ListCategoriesData, ListCategoriesResponses, ListEventsData, ListEventsResponses, ListTagsData, ListTagsResponses, UpdateCategoryData, UpdateCategoryResponses, UpdateEventData, UpdateEventResponses, UpdateTagData, UpdateTagResponses } from './types.gen';
+import type { CreateCategoryData, CreateCategoryErrors, CreateCategoryResponses, CreateEventData, CreateEventErrors, CreateEventResponses, CreateTagData, CreateTagErrors, CreateTagResponses, DeleteCategoryData, DeleteCategoryErrors, DeleteCategoryResponses, DeleteEventData, DeleteEventErrors, DeleteEventResponses, DeleteTagData, DeleteTagErrors, DeleteTagResponses, GetEventByIdData, GetEventByIdErrors, GetEventByIdResponses, ListCategoriesData, ListCategoriesResponses, ListEventsData, ListEventsErrors, ListEventsResponses, ListTagsData, ListTagsResponses, SubscribeNotificationsData, SubscribeNotificationsResponse, SubscribeNotificationsResponses, UpdateCategoryData, UpdateCategoryErrors, UpdateCategoryResponses, UpdateEventData, UpdateEventErrors, UpdateEventResponses, UpdateTagData, UpdateTagErrors, UpdateTagResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -21,12 +21,12 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
 /**
  * 按时间范围查询日程
  */
-export const listEvents = <ThrowOnError extends boolean = false>(options: Options<ListEventsData, ThrowOnError>) => (options.client ?? client).get<ListEventsResponses, unknown, ThrowOnError>({ url: '/events', ...options });
+export const listEvents = <ThrowOnError extends boolean = false>(options: Options<ListEventsData, ThrowOnError>) => (options.client ?? client).get<ListEventsResponses, ListEventsErrors, ThrowOnError>({ url: '/events', ...options });
 
 /**
  * 创建日程
  */
-export const createEvent = <ThrowOnError extends boolean = false>(options: Options<CreateEventData, ThrowOnError>) => (options.client ?? client).post<CreateEventResponses, unknown, ThrowOnError>({
+export const createEvent = <ThrowOnError extends boolean = false>(options: Options<CreateEventData, ThrowOnError>) => (options.client ?? client).post<CreateEventResponses, CreateEventErrors, ThrowOnError>({
     url: '/events',
     ...options,
     headers: {
@@ -38,17 +38,17 @@ export const createEvent = <ThrowOnError extends boolean = false>(options: Optio
 /**
  * 删除日程
  */
-export const deleteEvent = <ThrowOnError extends boolean = false>(options: Options<DeleteEventData, ThrowOnError>) => (options.client ?? client).delete<DeleteEventResponses, unknown, ThrowOnError>({ url: '/events/{id}', ...options });
+export const deleteEvent = <ThrowOnError extends boolean = false>(options: Options<DeleteEventData, ThrowOnError>) => (options.client ?? client).delete<DeleteEventResponses, DeleteEventErrors, ThrowOnError>({ url: '/events/{id}', ...options });
 
 /**
  * 查询单个日程
  */
-export const getEventById = <ThrowOnError extends boolean = false>(options: Options<GetEventByIdData, ThrowOnError>) => (options.client ?? client).get<GetEventByIdResponses, unknown, ThrowOnError>({ url: '/events/{id}', ...options });
+export const getEventById = <ThrowOnError extends boolean = false>(options: Options<GetEventByIdData, ThrowOnError>) => (options.client ?? client).get<GetEventByIdResponses, GetEventByIdErrors, ThrowOnError>({ url: '/events/{id}', ...options });
 
 /**
  * 更新日程
  */
-export const updateEvent = <ThrowOnError extends boolean = false>(options: Options<UpdateEventData, ThrowOnError>) => (options.client ?? client).put<UpdateEventResponses, unknown, ThrowOnError>({
+export const updateEvent = <ThrowOnError extends boolean = false>(options: Options<UpdateEventData, ThrowOnError>) => (options.client ?? client).put<UpdateEventResponses, UpdateEventErrors, ThrowOnError>({
     url: '/events/{id}',
     ...options,
     headers: {
@@ -65,7 +65,7 @@ export const listCategories = <ThrowOnError extends boolean = false>(options?: O
 /**
  * 创建分类
  */
-export const createCategory = <ThrowOnError extends boolean = false>(options: Options<CreateCategoryData, ThrowOnError>) => (options.client ?? client).post<CreateCategoryResponses, unknown, ThrowOnError>({
+export const createCategory = <ThrowOnError extends boolean = false>(options: Options<CreateCategoryData, ThrowOnError>) => (options.client ?? client).post<CreateCategoryResponses, CreateCategoryErrors, ThrowOnError>({
     url: '/categories',
     ...options,
     headers: {
@@ -77,12 +77,12 @@ export const createCategory = <ThrowOnError extends boolean = false>(options: Op
 /**
  * 删除分类
  */
-export const deleteCategory = <ThrowOnError extends boolean = false>(options: Options<DeleteCategoryData, ThrowOnError>) => (options.client ?? client).delete<DeleteCategoryResponses, unknown, ThrowOnError>({ url: '/categories/{id}', ...options });
+export const deleteCategory = <ThrowOnError extends boolean = false>(options: Options<DeleteCategoryData, ThrowOnError>) => (options.client ?? client).delete<DeleteCategoryResponses, DeleteCategoryErrors, ThrowOnError>({ url: '/categories/{id}', ...options });
 
 /**
  * 更新分类
  */
-export const updateCategory = <ThrowOnError extends boolean = false>(options: Options<UpdateCategoryData, ThrowOnError>) => (options.client ?? client).put<UpdateCategoryResponses, unknown, ThrowOnError>({
+export const updateCategory = <ThrowOnError extends boolean = false>(options: Options<UpdateCategoryData, ThrowOnError>) => (options.client ?? client).put<UpdateCategoryResponses, UpdateCategoryErrors, ThrowOnError>({
     url: '/categories/{id}',
     ...options,
     headers: {
@@ -99,7 +99,7 @@ export const listTags = <ThrowOnError extends boolean = false>(options?: Options
 /**
  * 创建标签
  */
-export const createTag = <ThrowOnError extends boolean = false>(options: Options<CreateTagData, ThrowOnError>) => (options.client ?? client).post<CreateTagResponses, unknown, ThrowOnError>({
+export const createTag = <ThrowOnError extends boolean = false>(options: Options<CreateTagData, ThrowOnError>) => (options.client ?? client).post<CreateTagResponses, CreateTagErrors, ThrowOnError>({
     url: '/tags',
     ...options,
     headers: {
@@ -111,12 +111,12 @@ export const createTag = <ThrowOnError extends boolean = false>(options: Options
 /**
  * 删除标签
  */
-export const deleteTag = <ThrowOnError extends boolean = false>(options: Options<DeleteTagData, ThrowOnError>) => (options.client ?? client).delete<DeleteTagResponses, unknown, ThrowOnError>({ url: '/tags/{id}', ...options });
+export const deleteTag = <ThrowOnError extends boolean = false>(options: Options<DeleteTagData, ThrowOnError>) => (options.client ?? client).delete<DeleteTagResponses, DeleteTagErrors, ThrowOnError>({ url: '/tags/{id}', ...options });
 
 /**
  * 更新标签
  */
-export const updateTag = <ThrowOnError extends boolean = false>(options: Options<UpdateTagData, ThrowOnError>) => (options.client ?? client).put<UpdateTagResponses, unknown, ThrowOnError>({
+export const updateTag = <ThrowOnError extends boolean = false>(options: Options<UpdateTagData, ThrowOnError>) => (options.client ?? client).put<UpdateTagResponses, UpdateTagErrors, ThrowOnError>({
     url: '/tags/{id}',
     ...options,
     headers: {
@@ -124,3 +124,17 @@ export const updateTag = <ThrowOnError extends boolean = false>(options: Options
         ...options.headers
     }
 });
+
+/**
+ * 订阅实时通知（SSE）
+ *
+ * Server-Sent Events 长连接，服务端会推送以下命名事件：
+ *
+ * - `connect`：连接建立成功，data 为字符串 `"connected"`。
+ * - `reminder`：日程提醒，data 为 `ReminderEvent` 的 JSON 序列化字符串。
+ * - `heartbeat`：心跳保活，data 为字符串 `"ping"`。
+ *
+ * 前端应使用浏览器原生 `EventSource` 订阅，并通过 `addEventListener('reminder', handler)` 监听具体事件类型。
+ *
+ */
+export const subscribeNotifications = <ThrowOnError extends boolean = false>(options?: Options<SubscribeNotificationsData, ThrowOnError, SubscribeNotificationsResponse>) => (options?.client ?? client).sse.get<SubscribeNotificationsResponses, unknown, ThrowOnError>({ url: '/sse/notifications', ...options });

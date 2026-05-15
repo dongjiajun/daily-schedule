@@ -3,7 +3,6 @@ package com.dailyschedule.api.controller;
 import com.dailyschedule.api.assembler.EventAssembler;
 import com.dailyschedule.api.generated.api.EventsApi;
 import com.dailyschedule.api.generated.dto.EventCreateRequest;
-import com.dailyschedule.api.generated.dto.EventListResponse;
 import com.dailyschedule.api.generated.dto.EventResponse;
 import com.dailyschedule.api.generated.dto.EventUpdateRequest;
 import com.dailyschedule.application.event.EventApplicationService;
@@ -45,13 +44,9 @@ public class EventController implements EventsApi {
     }
 
     @Override
-    public EventListResponse listEvents(LocalDateTime start, LocalDateTime end, Long categoryId) {
+    public List<EventResponse> listEvents(LocalDateTime start, LocalDateTime end, Long categoryId) {
         List<Event> events = eventAppService.listByRange(start, end, categoryId);
-        EventListResponse resp = new EventListResponse();
-        resp.setCode(200);
-        resp.setMessage("success");
-        resp.setData(EventAssembler.toResponseList(events));
-        return resp;
+        return EventAssembler.toResponseList(events);
     }
 
     @Override

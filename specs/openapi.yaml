@@ -2,7 +2,13 @@ openapi: 3.0.3
 info:
   title: 日程管理系统 API
   version: 1.0.0
-  description: v1 接口定义 — 前后端契约唯一真相源
+  description: |
+    v1 接口定义 — 前后端契约唯一真相源。
+
+    **响应约定**：
+    - 成功响应直接返回业务数据：单条返回对象，列表返回数组。
+    - HTTP 状态码承载语义（200 / 201 / 204 / 400 / 404 / 500）。
+    - 异常响应统一为 `ApiResponse`：`{ code, message }`。
 
 servers:
   - url: /api/v1
@@ -38,7 +44,11 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EventListResponse'
+                type: array
+                items:
+                  $ref: '#/components/schemas/EventResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
     post:
       operationId: createEvent
       tags: [Event]
@@ -56,6 +66,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/EventResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
 
   /events/{id}:
     get:
@@ -76,6 +88,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/EventResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
     put:
       operationId: updateEvent
       tags: [Event]
@@ -100,6 +114,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/EventResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
     delete:
       operationId: deleteEvent
       tags: [Event]
@@ -114,6 +132,8 @@ paths:
       responses:
         '204':
           description: 删除成功
+        '404':
+          $ref: '#/components/responses/NotFound'
 
   /categories:
     get:
@@ -126,7 +146,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CategoryListResponse'
+                type: array
+                items:
+                  $ref: '#/components/schemas/CategoryResponse'
     post:
       operationId: createCategory
       tags: [Category]
@@ -144,6 +166,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CategoryResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
 
   /categories/{id}:
     put:
@@ -166,6 +190,12 @@ paths:
       responses:
         '200':
           description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
     delete:
       operationId: deleteCategory
       tags: [Category]
@@ -180,6 +210,8 @@ paths:
       responses:
         '204':
           description: 删除成功
+        '404':
+          $ref: '#/components/responses/NotFound'
 
   /tags:
     get:
@@ -192,7 +224,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TagListResponse'
+                type: array
+                items:
+                  $ref: '#/components/schemas/TagResponse'
     post:
       operationId: createTag
       tags: [Tag]
@@ -206,6 +240,12 @@ paths:
       responses:
         '201':
           description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TagResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
 
   /tags/{id}:
     put:
@@ -228,6 +268,12 @@ paths:
       responses:
         '200':
           description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TagResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
     delete:
       operationId: deleteTag
       tags: [Tag]
@@ -242,8 +288,46 @@ paths:
       responses:
         '204':
           description: 删除成功
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /sse/notifications:
+    get:
+      operationId: subscribeNotifications
+      tags: [Notification]
+      summary: 订阅实时通知（SSE）
+      description: |
+        Server-Sent Events 长连接，服务端会推送以下命名事件：
+
+        - `connect`：连接建立成功，data 为字符串 `"connected"`。
+        - `reminder`：日程提醒，data 为 `ReminderEvent` 的 JSON 序列化字符串。
+        - `heartbeat`：心跳保活，data 为字符串 `"ping"`。
+
+        前端应使用浏览器原生 `EventSource` 订阅，并通过 `addEventListener('reminder', handler)` 监听具体事件类型。
+      responses:
+        '200':
+          description: SSE 流建立成功
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                description: SSE 事件流；reminder 事件的 data 字段结构见 `ReminderEvent`。
 
 components:
+  responses:
+    BadRequest:
+      description: 请求参数不合法
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiResponse'
+    NotFound:
+      description: 资源不存在
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiResponse'
+
   schemas:
     EventCreateRequest:
       type: object
@@ -324,18 +408,6 @@ components:
           type: string
           format: date-time
 
-    EventListResponse:
-      type: object
-      properties:
-        code:
-          type: integer
-        message:
-          type: string
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/EventResponse'
-
     CategoryCreateRequest:
       type: object
       required: [name]
@@ -361,18 +433,6 @@ components:
         description:
           type: string
 
-    CategoryListResponse:
-      type: object
-      properties:
-        code:
-          type: integer
-        message:
-          type: string
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/CategoryResponse'
-
     TagCreateRequest:
       type: object
       required: [name]
@@ -394,24 +454,30 @@ components:
         color:
           type: string
 
-    TagListResponse:
+    ReminderEvent:
       type: object
+      description: SSE `reminder` 事件的 data JSON 反序列化结构
       properties:
-        code:
+        id:
           type: integer
-        message:
+          format: int64
+          description: 日程 ID
+        title:
           type: string
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/TagResponse'
+          description: 日程标题
+        startTime:
+          type: string
+          format: date-time
+          description: 日程开始时间
+        reminderMinutes:
+          type: integer
+          description: 提前提醒分钟数
 
     ApiResponse:
       type: object
+      description: 统一错误响应包装
       properties:
         code:
           type: integer
         message:
           type: string
-        data:
-          type: object
