@@ -7,7 +7,7 @@ export function useTags() {
     queryKey: ['tags'],
     queryFn: async () => {
       const resp = await listTags()
-      return resp.data?.data ?? []
+      return resp.data ?? []
     },
     staleTime: 60_000,
   })

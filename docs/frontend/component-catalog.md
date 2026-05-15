@@ -51,8 +51,16 @@ App
 - **AppShell** (`components/layout/AppShell.tsx`) — 侧边栏 + 内容区 flex 布局
 - **Sidebar** (`components/layout/Sidebar.tsx`) — 导航 + 新建按钮 + 分类筛选
 
-### UI 基础
-- **Button** (`components/ui/button.tsx`) — shadcn/ui 按钮（variant + size）
+### UI 基础（shadcn/ui）
+- **Button** (`components/ui/button.tsx`) — variant（default/destructive/outline/secondary/ghost/link）+ size（default/sm/lg/icon）
+- **Input** (`components/ui/input.tsx`) — 标准文本输入
+- **Textarea** (`components/ui/textarea.tsx`) — 多行文本输入
+- **Label** (`components/ui/label.tsx`) — 基于 Radix Label，可关联表单控件
+- **Dialog** (`components/ui/dialog.tsx`) — Radix Dialog 封装；Header/Title/Description/Footer 子组件
+- **Switch** (`components/ui/switch.tsx`) — Radix Switch，单一布尔切换
+- **Select** (`components/ui/select.tsx`) — Radix Select，可选项下拉
+- **Popover** (`components/ui/popover.tsx`) — Radix Popover，浮层容器
+- **Tabs** (`components/ui/tabs.tsx`) — Radix Tabs，多标签切换
 
 ## 自定义 Hooks
 
@@ -68,5 +76,9 @@ App
 
 | 文件 | 来源 | 说明 |
 |------|------|------|
-| api/sdk.gen.ts | specs/openapi.yaml | 类型安全 API 客户端 |
-| api/types.gen.ts | specs/openapi.yaml | 请求/响应 TypeScript 类型 |
+| api/sdk.gen.ts | specs/openapi.yaml | 类型安全 API 客户端（含 `subscribeNotifications` SSE 方法） |
+| api/types.gen.ts | specs/openapi.yaml | 请求/响应 TypeScript 类型，含 `ReminderEvent` SSE 负载 |
+| api/client.gen.ts | @hey-api/openapi-ts | fetch 客户端实例（baseUrl `/api/v1`） |
+| api/core/ | @hey-api/openapi-ts | 序列化/SSE 等运行时支撑代码 |
+
+执行 `npm run generate:api`（在 `frontend/` 下）从 `../specs/openapi.yaml` 重新生成。配置见 `frontend/openapi-ts.config.ts`。

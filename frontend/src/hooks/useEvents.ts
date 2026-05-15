@@ -37,7 +37,7 @@ export function useEvents(date: dayjs.Dayjs, view: string, categoryId?: number |
       const resp = await listEvents({
         query: { start, end, categoryId: categoryId ?? undefined },
       })
-      return resp.data?.data ?? []
+      return resp.data ?? []
     },
     staleTime: 30_000,
     placeholderData: (prev) => prev,
