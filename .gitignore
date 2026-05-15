@@ -13,7 +13,7 @@ application-dev.yml
 backend/target/
 backend/.mvn/
 frontend/dist/
-frontend/node_modules/
+node_modules/
 
 # === IDE ===
 .idea/
