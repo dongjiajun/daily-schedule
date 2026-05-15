@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { listTags, createTag, deleteTag } from '../api/sdk.gen'
-import type { TagCreateRequest } from '../api/types.gen'
+import type { TagCreateRequest, TagResponse } from '../api/types.gen'
 
 export function useTags() {
   return useQuery({
@@ -16,8 +16,10 @@ export function useTags() {
 export function useCreateTag() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (data: TagCreateRequest) =>
-      createTag({ body: data }).then((r: any) => r.data),
+    mutationFn: async (data: TagCreateRequest): Promise<TagResponse | undefined> => {
+      const r = await createTag({ body: data })
+      return r.data
+    },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tags'] }),
   })
 }

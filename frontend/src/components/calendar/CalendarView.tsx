@@ -1,5 +1,5 @@
 import { useMemo, useCallback } from 'react'
-import { Calendar, dayjsLocalizer } from 'react-big-calendar'
+import { Calendar, dayjsLocalizer, type ToolbarProps, type View } from 'react-big-calendar'
 import dayjs from 'dayjs'
 import { useCalendarStore, type CalendarView } from '../../store/calendarStore'
 import { useEvents } from '../../hooks/useEvents'
@@ -99,7 +99,7 @@ export function CalendarView() {
         startAccessor="start"
         endAccessor="end"
         views={{ month: true, week: true, day: true, agenda: true }}
-        view={view as any}
+        view={view as View}
         date={currentDate.toDate()}
         onView={(v) => setView(v as CalendarView)}
         onNavigate={(d) => setCurrentDate(dayjs(d))}
@@ -131,7 +131,12 @@ export function CalendarView() {
   )
 }
 
-function CalendarToolbar({ date, view, onView, onNavigate }: any) {
+function CalendarToolbar({
+  date,
+  view,
+  onView,
+  onNavigate,
+}: ToolbarProps<CalendarEvent>) {
   const label = useMemo(() => {
     const d = dayjs(date)
     switch (view) {

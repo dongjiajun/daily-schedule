@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components -- shadcn 模式：同文件导出组件与 cva variants，与官方模板保持一致 */
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { cva, type VariantProps } from "class-variance-authority"
