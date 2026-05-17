@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import dayjs from 'dayjs'
+import { toast } from 'sonner'
 import { listEvents, createEvent, updateEvent, deleteEvent } from '../api/sdk.gen'
 import type { EventCreateRequest, EventResponse } from '../api/types.gen'
 
@@ -28,14 +29,19 @@ function getViewRange(date: dayjs.Dayjs, view: string) {
   }
 }
 
-export function useEvents(date: dayjs.Dayjs, view: string, categoryId?: number | null) {
+export function useEvents(date: dayjs.Dayjs, view: string, categoryId?: number | null, keyword?: string) {
   const { start, end } = getViewRange(date, view)
 
   return useQuery({
-    queryKey: ['events', start, end, categoryId],
+    queryKey: ['events', start, end, categoryId, keyword],
     queryFn: async () => {
       const resp = await listEvents({
-        query: { start, end, categoryId: categoryId ?? undefined },
+        query: {
+          start,
+          end,
+          categoryId: categoryId ?? undefined,
+          keyword: keyword || undefined,
+        },
       })
       return resp.data ?? []
     },
@@ -72,6 +78,12 @@ export function useDeleteEvent() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (id: number) => deleteEvent({ path: { id } }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['events'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['events'] })
+      toast.success('日程已删除')
+    },
+    onError: (err: Error) => {
+      toast.error(`删除失败: ${err.message}`)
+    },
   })
 }

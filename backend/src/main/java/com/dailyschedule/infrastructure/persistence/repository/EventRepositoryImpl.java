@@ -8,6 +8,7 @@ import com.dailyschedule.infrastructure.persistence.mapper.EventTagMapper;
 import com.dailyschedule.infrastructure.persistence.mapper.EventTagMapper.EventTagJoinRow;
 import com.dailyschedule.infrastructure.persistence.po.EventPO;
 import com.dailyschedule.infrastructure.persistence.po.EventTagPO;
+import com.dailyschedule.infrastructure.persistence.po.TagPO;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,10 +28,12 @@ public class EventRepositoryImpl implements EventRepository {
 
     private final EventMapper eventMapper;
     private final EventTagMapper eventTagMapper;
+    private final TagMapper tagMapper;
 
-    public EventRepositoryImpl(EventMapper eventMapper, EventTagMapper eventTagMapper) {
+    public EventRepositoryImpl(EventMapper eventMapper, EventTagMapper eventTagMapper, TagMapper tagMapper) {
         this.eventMapper = eventMapper;
         this.eventTagMapper = eventTagMapper;
+        this.tagMapper = tagMapper;
     }
 
     @Override
@@ -86,9 +89,10 @@ public class EventRepositoryImpl implements EventRepository {
     private void saveTags(Long eventId, Set<Long> tagIds) {
         eventTagMapper.deleteByEventId(eventId);
         if (tagIds != null && !tagIds.isEmpty()) {
-            for (Long tagId : tagIds) {
-                eventTagMapper.insert(new EventTagPO(eventId, tagId));
-            }
+            List<EventTagPO> mappings = tagIds.stream()
+                .map(tagId -> new EventTagPO(eventId, tagId))
+                .collect(Collectors.toList());
+            eventTagMapper.batchInsert(mappings);
         }
     }
 

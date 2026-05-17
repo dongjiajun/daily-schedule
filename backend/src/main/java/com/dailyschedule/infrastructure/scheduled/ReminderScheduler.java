@@ -37,7 +37,9 @@ public class ReminderScheduler {
         this.clock = clock;
     }
 
-    @Scheduled(fixedRate = 60_000)
+    private final java.util.Set<String> sentReminders = new java.util.HashSet<>();
+
+    @Scheduled(fixedDelay = 30_000)
     public void checkReminders() {
         LocalDateTime now = LocalDateTime.now(clock);
         List<Event> upcoming = eventRepository.findUpcoming(now, now.plusHours(1));
@@ -73,5 +75,7 @@ public class ReminderScheduler {
                 log.error("提醒发送失败 id={}: {}", event.getId(), e.getMessage());
             }
         }
+
+        if (sentReminders.size() > 10000) sentReminders.clear();
     }
 }

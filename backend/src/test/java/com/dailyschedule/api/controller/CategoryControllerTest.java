@@ -2,10 +2,12 @@ package com.dailyschedule.api.controller;
 
 import com.dailyschedule.application.category.CategoryApplicationService;
 import com.dailyschedule.domain.category.Category;
+import com.dailyschedule.infrastructure.security.CurrentUserService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -17,7 +19,8 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(CategoryController.class)
+@SpringBootTest
+@AutoConfigureMockMvc(addFilters = false)
 class CategoryControllerTest {
 
     @Autowired
@@ -26,10 +29,14 @@ class CategoryControllerTest {
     @MockitoBean
     private CategoryApplicationService categoryAppService;
 
+    @MockitoBean
+    private CurrentUserService currentUserService;
+
     @Test
     @DisplayName("GET /api/v1/categories → 返回分类列表")
     void listCategories_shouldReturn200() throws Exception {
-        when(categoryAppService.listAll()).thenReturn(List.of());
+        when(currentUserService.getCurrentUserId()).thenReturn(1L);
+        when(categoryAppService.listAll(any())).thenReturn(List.of());
 
         mockMvc.perform(get("/api/v1/categories"))
             .andExpect(status().isOk())
@@ -39,6 +46,7 @@ class CategoryControllerTest {
     @Test
     @DisplayName("POST /api/v1/categories → 创建成功返回 201")
     void createCategory_shouldReturn201() throws Exception {
+        when(currentUserService.getCurrentUserId()).thenReturn(1L);
         Category saved = new Category();
         saved.setId(1L);
         saved.setName("工作");
@@ -57,7 +65,7 @@ class CategoryControllerTest {
     @DisplayName("PUT /api/v1/categories/{id} → 更新不存在返回 404")
     void updateCategory_notFound_shouldReturn404() throws Exception {
         when(categoryAppService.update(any(), any()))
-            .thenThrow(new RuntimeException("分类不存在: 999"));
+            .thenThrow(new com.dailyschedule.api.exception.ResourceNotFoundException("分类不存在: 999"));
 
         mockMvc.perform(put("/api/v1/categories/999")
                 .contentType(MediaType.APPLICATION_JSON)

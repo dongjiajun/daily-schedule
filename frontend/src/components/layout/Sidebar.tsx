@@ -1,4 +1,4 @@
-import { CalendarDays, Layers, Plus } from 'lucide-react'
+import { CalendarDays, Layers, LogOut, Plus, Search } from 'lucide-react'
 import { useCategories } from '../../hooks/useCategories'
 import { useCalendarStore } from '../../store/calendarStore'
 import { Button } from '@/components/ui/button'
@@ -6,7 +6,8 @@ import { cn } from '../../lib/utils'
 
 export function Sidebar() {
   const { data: categories } = useCategories()
-  const { filterCategoryId, setFilterCategory, openCreateModal } = useCalendarStore()
+  const { filterCategoryId, searchKeyword, setFilterCategory, setSearchKeyword, openCreateModal } = useCalendarStore()
+  const { username, logout } = useAuthStore()
 
   return (
     <aside className="w-60 bg-white/80 backdrop-blur border-r border-gray-200 flex flex-col">
@@ -24,6 +25,19 @@ export function Sidebar() {
         <Plus className="w-4 h-4" />
         新建日程
       </Button>
+
+      <div className="px-3 mt-4">
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            type="text"
+            value={searchKeyword}
+            onChange={(e) => setSearchKeyword(e.target.value)}
+            placeholder="搜索日程..."
+            className="w-full rounded-lg border border-gray-200 pl-8 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+          />
+        </div>
+      </div>
 
       <nav className="flex-1 overflow-y-auto p-3">
         <div className="space-y-1">
@@ -60,6 +74,19 @@ export function Sidebar() {
           ))}
         </div>
       </nav>
+
+      <div className="p-3 border-t border-gray-100">
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-gray-600 truncate">{username}</span>
+          <button
+            onClick={logout}
+            className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+            title="退出登录"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
     </aside>
   )
 }

@@ -1,12 +1,15 @@
 package com.dailyschedule.api.controller;
 
+import com.dailyschedule.api.exception.ResourceNotFoundException;
 import com.dailyschedule.application.event.EventApplicationService;
 import com.dailyschedule.domain.event.Event;
+import com.dailyschedule.infrastructure.security.CurrentUserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -15,11 +18,13 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(EventController.class)
+@SpringBootTest
+@AutoConfigureMockMvc(addFilters = false)
 class EventControllerTest {
 
     @Autowired
@@ -28,13 +33,18 @@ class EventControllerTest {
     @MockitoBean
     private EventApplicationService appService;
 
+    @MockitoBean
+    private CurrentUserService currentUserService;
+
     @Autowired
     private ObjectMapper objectMapper;
 
     @Test
     @DisplayName("GET /api/v1/events → 参数合法返回 200")
     void listEvents_shouldReturn200() throws Exception {
-        when(appService.listByRange(any(), any(), any())).thenReturn(List.of());
+        when(currentUserService.getCurrentUserId()).thenReturn(1L);
+        when(appService.listByRange(any(), any(), any(), any(), any(), anyInt(), anyInt()))
+            .thenReturn(new EventApplicationService.PagedEvents(List.of(), 0, 1, 50));
 
         mockMvc.perform(get("/api/v1/events")
                 .param("start", "2026-05-01T00:00:00")
@@ -54,6 +64,7 @@ class EventControllerTest {
     @Test
     @DisplayName("POST /api/v1/events → 创建成功返回 201")
     void createEvent_shouldReturn201() throws Exception {
+        when(currentUserService.getCurrentUserId()).thenReturn(1L);
         Event saved = new Event();
         saved.setId(1L);
         saved.setTitle("Test");
@@ -83,7 +94,7 @@ class EventControllerTest {
     @DisplayName("GET /api/v1/events/{id} → 不存在返回 404")
     void getEventById_notFound_shouldReturn404() throws Exception {
         when(appService.getById(999L))
-            .thenThrow(new RuntimeException("日程不存在: 999"));
+            .thenThrow(new ResourceNotFoundException("日程不存在: 999"));
 
         mockMvc.perform(get("/api/v1/events/999"))
             .andExpect(status().isNotFound());

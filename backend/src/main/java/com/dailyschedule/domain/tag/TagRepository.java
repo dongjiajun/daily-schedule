@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface TagRepository {
-    List<Tag> findAll();
+    List<Tag> findAll(Long userId);
     Optional<Tag> findById(Long id);
     Tag save(Tag tag);
     void delete(Long id);

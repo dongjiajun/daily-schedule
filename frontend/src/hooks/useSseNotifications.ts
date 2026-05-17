@@ -4,11 +4,11 @@ import { useNotification } from './useNotification'
 
 export function useSseNotifications() {
   const { notify } = useNotification()
-  const eventSourceRef = useRef<EventSource | null>(null)
+  const reconnectTimeoutRef = useRef<number | null>(null)
+  const retryCountRef = useRef(0)
 
-  useEffect(() => {
+  const connect = useCallback(() => {
     const es = new EventSource('/api/v1/sse/notifications')
-    eventSourceRef.current = es
 
     es.addEventListener('reminder', (e: MessageEvent) => {
       try {
@@ -23,12 +23,27 @@ export function useSseNotifications() {
       }
     })
 
-    es.onerror = () => {
-      es.close()
+    es.onopen = () => {
+      retryCountRef.current = 0
     }
 
+    es.onerror = () => {
+      es.close()
+      const delay = Math.min(30000, 1000 * Math.pow(2, retryCountRef.current))
+      retryCountRef.current++
+      reconnectTimeoutRef.current = window.setTimeout(connect, delay)
+    }
+
+    return es
+  }, [notify])
+
+  useEffect(() => {
+    const es = connect()
     return () => {
       es.close()
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current)
+      }
     }
-  }, [notify])
+  }, [connect])
 }

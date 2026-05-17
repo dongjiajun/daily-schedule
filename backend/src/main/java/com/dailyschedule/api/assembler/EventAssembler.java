@@ -75,7 +75,9 @@ public class EventAssembler {
         if (event.getTagIds() != null && !event.getTagIds().isEmpty()) {
             return event.getTagIds().stream().map(id -> {
                 TagResponse t = new TagResponse();
-                t.setId(id);
+                t.setId(tag.getId());
+                t.setName(tag.getName());
+                t.setColor(tag.getColor());
                 return t;
             }).collect(Collectors.toList());
         }

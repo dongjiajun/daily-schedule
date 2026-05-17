@@ -1,14 +1,18 @@
 import { useMemo, useCallback } from 'react'
 import { Calendar, dayjsLocalizer, type ToolbarProps, type View } from 'react-big-calendar'
 import dayjs from 'dayjs'
+import { DndProvider } from 'react-dnd'
+import { HTML5Backend } from 'react-dnd-html5-backend'
 import { useCalendarStore, type CalendarView } from '../../store/calendarStore'
-import { useEvents } from '../../hooks/useEvents'
+import { useEvents, useUpdateEvent } from '../../hooks/useEvents'
 import type { EventResponse } from '../../api/types.gen'
 
 import 'react-big-calendar/lib/css/react-big-calendar.css'
+import 'react-big-calendar/lib/addons/dragAndDrop/styles.css'
 import './calendar.css'
 
 const localizer = dayjsLocalizer(dayjs)
+const DnDCalendar = withDragAndDrop<CalendarEvent>(Calendar)
 
 interface CalendarEvent {
   id: number
@@ -20,9 +24,10 @@ interface CalendarEvent {
 }
 
 export function CalendarView() {
-  const { currentDate, view, setCurrentDate, setView, filterCategoryId, openCreateModal, openEditModal } =
+  const { currentDate, view, setCurrentDate, setView, filterCategoryId, searchKeyword, openCreateModal, openEditModal } =
     useCalendarStore()
-  const { data: events, isLoading } = useEvents(currentDate, view, filterCategoryId)
+  const { data: events, isLoading } = useEvents(currentDate, view, filterCategoryId, searchKeyword)
+  const updateEvent = useUpdateEvent()
 
   const calendarEvents: CalendarEvent[] = useMemo(
     () =>
@@ -55,6 +60,50 @@ export function CalendarView() {
     [openCreateModal]
   )
 
+  const handleEventDrop = useCallback(
+    ({ event, start, end }: EventInteractionArgs<CalendarEvent>) => {
+      const resource = (event as CalendarEvent).resource
+      const fmt = (d: Date) => dayjs(d).format('YYYY-MM-DDTHH:mm:ss')
+      updateEvent.mutate({
+        id: resource.id!,
+        data: {
+          title: resource.title!,
+          startTime: fmt(start),
+          endTime: fmt(end),
+          allDay: resource.allDay ?? false,
+          description: resource.description ?? undefined,
+          location: resource.location ?? undefined,
+          color: resource.color ?? undefined,
+          reminderMinutes: resource.reminderMinutes ?? undefined,
+          categoryId: resource.categoryId ?? undefined,
+        },
+      })
+    },
+    [updateEvent]
+  )
+
+  const handleEventResize = useCallback(
+    ({ event, start, end }: EventInteractionArgs<CalendarEvent>) => {
+      const resource = (event as CalendarEvent).resource
+      const fmt = (d: Date) => dayjs(d).format('YYYY-MM-DDTHH:mm:ss')
+      updateEvent.mutate({
+        id: resource.id!,
+        data: {
+          title: resource.title!,
+          startTime: fmt(start),
+          endTime: fmt(end),
+          allDay: resource.allDay ?? false,
+          description: resource.description ?? undefined,
+          location: resource.location ?? undefined,
+          color: resource.color ?? undefined,
+          reminderMinutes: resource.reminderMinutes ?? undefined,
+          categoryId: resource.categoryId ?? undefined,
+        },
+      })
+    },
+    [updateEvent]
+  )
+
   const eventStyleGetter = useCallback((event: CalendarEvent) => {
     const color = event.resource.color ?? '#1890ff'
     return {
@@ -83,10 +132,23 @@ export function CalendarView() {
     []
   )
 
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'TEXTAREA') return
+      if (e.key === 'n' || e.key === 'N') {
+        e.preventDefault()
+        openCreateModal()
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [openCreateModal])
+
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="animate-pulse text-gray-400">加载中...</div>
+      <div className="flex flex-col items-center justify-center h-full gap-3">
+        <div className="animate-pulse rounded-xl bg-gray-100 h-[60vh] w-[90%]" />
+        <div className="text-sm text-gray-400">加载中...</div>
       </div>
     )
   }

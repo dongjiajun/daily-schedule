@@ -30,6 +30,14 @@ export function EventModal({ open, eventId, onClose }: EventModalProps) {
 
   const existingEvent = eventId ? events?.find((e) => e.id === eventId) : undefined
 
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [onClose])
+
   const handleSubmit = (values: EventFormValues) => {
     if (eventId) {
       updateMutation.mutate(
@@ -64,14 +72,14 @@ export function EventModal({ open, eventId, onClose }: EventModalProps) {
           <DialogTitle>{eventId ? '编辑日程' : '新建日程'}</DialogTitle>
         </DialogHeader>
 
-        <div className="p-6">
-          <EventForm
-            initialValues={existingEvent}
-            categories={categories ?? []}
-            tags={tags ?? []}
-            onSubmit={handleSubmit}
-            loading={isLoading}
-          />
+          <div className="p-6">
+            <EventForm
+              initialValues={existingEvent}
+              categories={categories ?? []}
+              tags={tags ?? []}
+              onSubmit={handleSubmit}
+              loading={isLoading}
+            />
 
           {eventId && (
             <div className="mt-4 pt-4 border-t border-gray-100">

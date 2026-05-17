@@ -16,10 +16,13 @@
 - 持久层: MyBatis-Plus，domain 定义仓储接口，infrastructure 实现
 - API: 契约驱动，specs/openapi.yaml → Maven 插件生成 Java 接口 + DTO
 - Controller: 实现 generated/api/ 下的接口，编译期强制契约同步
-- 前端: React 19 + TypeScript + Tailwind CSS + shadcn/ui + Framer Motion
-- 状态管理: Zustand 管 UI 状态，React Query 管服务端数据
-- 日历: react-big-calendar + dayjs，CSS 覆盖适配 Tailwind 设计系统
+- 安全: Spring Security + JWT 无状态认证，多用户数据隔离（user_id）
+- 前端: React 19 + TypeScript + Tailwind CSS + Framer Motion + sonner Toast
+- 状态管理: Zustand 管 UI 状态（含 authStore），React Query 管服务端数据
+- 日历: react-big-calendar + dayjs，支持拖拽调整日程时间
 - UI 风格: 现代极简，类似 Notion Calendar / Cron
+- 缓存: Caffeine 本地缓存分类/标签列表
+- 容器化: Dockerfile + docker-compose（MySQL + 后端 + 前端 Nginx）
 
 ## 本地环境
 - MySQL 8.0.29 服务名 MySQL80，root/123456

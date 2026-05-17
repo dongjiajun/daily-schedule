@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import { listCategories, createCategory, updateCategory, deleteCategory } from '../api/sdk.gen'
 import type { CategoryCreateRequest, CategoryResponse } from '../api/types.gen'
 
@@ -41,6 +42,12 @@ export function useDeleteCategory() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (id: number) => deleteCategory({ path: { id } }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['categories'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['categories'] })
+      toast.success('分类已删除')
+    },
+    onError: (err: Error) => {
+      toast.error(`删除分类失败: ${err.message}`)
+    },
   })
 }

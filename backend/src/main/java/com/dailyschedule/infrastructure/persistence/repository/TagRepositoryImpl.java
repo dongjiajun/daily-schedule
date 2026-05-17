@@ -24,8 +24,10 @@ public class TagRepositoryImpl implements TagRepository {
     }
 
     @Override
-    public List<Tag> findAll() {
-        return tagMapper.selectList(null).stream()
+    public List<Tag> findAll(Long userId) {
+        LambdaQueryWrapper<TagPO> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(TagPO::getUserId, userId);
+        return tagMapper.selectList(wrapper).stream()
             .map(this::toDomain).collect(Collectors.toList());
     }
 
@@ -81,6 +83,7 @@ public class TagRepositoryImpl implements TagRepository {
         t.setId(po.getId());
         t.setName(po.getName());
         t.setColor(po.getColor());
+        t.setUserId(po.getUserId());
         t.setCreatedAt(po.getCreatedAt());
         t.setUpdatedAt(po.getUpdatedAt());
         return t;
@@ -91,6 +94,7 @@ public class TagRepositoryImpl implements TagRepository {
         po.setId(tag.getId());
         po.setName(tag.getName());
         po.setColor(tag.getColor());
+        po.setUserId(tag.getUserId());
         return po;
     }
 }

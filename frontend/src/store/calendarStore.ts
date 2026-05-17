@@ -10,6 +10,7 @@ interface CalendarState {
   modalOpen: boolean
   editingEventId: number | null
   filterCategoryId: number | null
+  searchKeyword: string
   defaultStart: string | null
   defaultEnd: string | null
 
@@ -20,6 +21,7 @@ interface CalendarState {
   openEditModal: (id: number) => void
   closeModal: () => void
   setFilterCategory: (id: number | null) => void
+  setSearchKeyword: (keyword: string) => void
 }
 
 export const useCalendarStore = create<CalendarState>((set) => ({
@@ -29,6 +31,7 @@ export const useCalendarStore = create<CalendarState>((set) => ({
   modalOpen: false,
   editingEventId: null,
   filterCategoryId: null,
+  searchKeyword: '',
   defaultStart: null,
   defaultEnd: null,
 
@@ -41,4 +44,5 @@ export const useCalendarStore = create<CalendarState>((set) => ({
   closeModal: () =>
     set({ modalOpen: false, editingEventId: null, selectedEventId: null, defaultStart: null, defaultEnd: null }),
   setFilterCategory: (id) => set({ filterCategoryId: id }),
+  setSearchKeyword: (keyword) => set({ searchKeyword: keyword }),
 }))

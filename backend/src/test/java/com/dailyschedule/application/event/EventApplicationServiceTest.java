@@ -1,5 +1,6 @@
 package com.dailyschedule.application.event;
 
+import com.dailyschedule.api.exception.ResourceNotFoundException;
 import com.dailyschedule.domain.event.Event;
 import com.dailyschedule.domain.event.EventDomainService;
 import com.dailyschedule.domain.event.EventRepository;
@@ -17,6 +18,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -39,7 +41,7 @@ class EventApplicationServiceTest {
         Event event = new Event("团队周会",
             LocalDateTime.of(2026, 5, 10, 9, 0),
             LocalDateTime.of(2026, 5, 10, 10, 0));
-        when(eventRepository.findByRange(any(), any())).thenReturn(List.of());
+        when(eventRepository.findByRange(any(), any(), any(), any(), any(Integer.class), any(Integer.class))).thenReturn(List.of());
         when(eventRepository.save(any())).thenAnswer(inv -> {
             Event e = inv.getArgument(0);
             e.setId(1L);
@@ -70,7 +72,7 @@ class EventApplicationServiceTest {
             LocalDateTime.of(2026, 5, 10, 9, 0),
             LocalDateTime.of(2026, 5, 10, 10, 0));
         existing.setId(1L);
-        when(eventRepository.findByRange(any(), any())).thenReturn(List.of(existing));
+        when(eventRepository.findByRange(any(), any(), any(), any(), any(Integer.class), any(Integer.class))).thenReturn(List.of(existing));
 
         Event newEvent = new Event("新日程",
             LocalDateTime.of(2026, 5, 10, 9, 30),
@@ -87,10 +89,12 @@ class EventApplicationServiceTest {
         LocalDateTime start = LocalDateTime.of(2026, 5, 1, 0, 0);
         LocalDateTime end = LocalDateTime.of(2026, 5, 31, 23, 59);
         Event event = new Event("五月日程", start, end);
-        when(eventRepository.findByRange(start, end)).thenReturn(List.of(event));
+        when(eventRepository.findByRange(eq(start), eq(end), eq(1L), eq(null), eq(1), eq(50))).thenReturn(List.of(event));
+        when(eventRepository.countByRange(eq(start), eq(end), eq(1L), eq(null))).thenReturn(1L);
 
-        List<Event> result = appService.listByRange(start, end, null);
-        assertThat(result).hasSize(1);
+        var result = appService.listByRange(start, end, null, 1L, null, 1, 50);
+        assertThat(result.events()).hasSize(1);
+        assertThat(result.total()).isEqualTo(1);
     }
 
     @Test
@@ -99,7 +103,7 @@ class EventApplicationServiceTest {
         when(eventRepository.findById(999L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> appService.delete(999L))
-            .isInstanceOf(RuntimeException.class)
+            .isInstanceOf(ResourceNotFoundException.class)
             .hasMessageContaining("日程不存在");
         verify(eventRepository, never()).delete(any());
     }

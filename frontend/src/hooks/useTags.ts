@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import { listTags, createTag, deleteTag } from '../api/sdk.gen'
 import type { TagCreateRequest, TagResponse } from '../api/types.gen'
 
@@ -28,6 +29,12 @@ export function useDeleteTag() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (id: number) => deleteTag({ path: { id } }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tags'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tags'] })
+      toast.success('标签已删除')
+    },
+    onError: (err: Error) => {
+      toast.error(`删除标签失败: ${err.message}`)
+    },
   })
 }

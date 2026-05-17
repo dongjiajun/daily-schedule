@@ -4,19 +4,10 @@ import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
 import type { CreateCategoryData, CreateCategoryErrors, CreateCategoryResponses, CreateEventData, CreateEventErrors, CreateEventResponses, CreateTagData, CreateTagErrors, CreateTagResponses, DeleteCategoryData, DeleteCategoryErrors, DeleteCategoryResponses, DeleteEventData, DeleteEventErrors, DeleteEventResponses, DeleteTagData, DeleteTagErrors, DeleteTagResponses, GetEventByIdData, GetEventByIdErrors, GetEventByIdResponses, ListCategoriesData, ListCategoriesResponses, ListEventsData, ListEventsErrors, ListEventsResponses, ListTagsData, ListTagsResponses, SubscribeNotificationsData, SubscribeNotificationsResponse, SubscribeNotificationsResponses, UpdateCategoryData, UpdateCategoryErrors, UpdateCategoryResponses, UpdateEventData, UpdateEventErrors, UpdateEventResponses, UpdateTagData, UpdateTagErrors, UpdateTagResponses } from './types.gen';
 
-export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
-    /**
-     * You can provide a client instance returned by `createClient()` instead of
-     * individual options. This might be also useful if you want to implement a
-     * custom client.
-     */
-    client?: Client;
-    /**
-     * You can pass arbitrary values through the `meta` object. This can be
-     * used to access values that aren't defined as part of the SDK function.
-     */
-    meta?: Record<string, unknown>;
-};
+export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
+  client?: Client
+  meta?: Record<string, unknown>
+}
 
 /**
  * 按时间范围查询日程
@@ -57,10 +48,8 @@ export const updateEvent = <ThrowOnError extends boolean = false>(options: Optio
     }
 });
 
-/**
- * 获取所有分类
- */
-export const listCategories = <ThrowOnError extends boolean = false>(options?: Options<ListCategoriesData, ThrowOnError>) => (options?.client ?? client).get<ListCategoriesResponses, unknown, ThrowOnError>({ url: '/categories', ...options });
+export const listCategories = <ThrowOnError extends boolean = false>(options?: Options<ListCategoriesData, ThrowOnError>) =>
+  (options?.client ?? client).get<ListCategoriesResponses, unknown, ThrowOnError>({ url: '/categories', ...options })
 
 /**
  * 创建分类
@@ -91,10 +80,8 @@ export const updateCategory = <ThrowOnError extends boolean = false>(options: Op
     }
 });
 
-/**
- * 获取所有标签
- */
-export const listTags = <ThrowOnError extends boolean = false>(options?: Options<ListTagsData, ThrowOnError>) => (options?.client ?? client).get<ListTagsResponses, unknown, ThrowOnError>({ url: '/tags', ...options });
+export const listTags = <ThrowOnError extends boolean = false>(options?: Options<ListTagsData, ThrowOnError>) =>
+  (options?.client ?? client).get<ListTagsResponses, unknown, ThrowOnError>({ url: '/tags', ...options })
 
 /**
  * 创建标签

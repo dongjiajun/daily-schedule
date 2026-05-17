@@ -21,8 +21,10 @@ public class CategoryRepositoryImpl implements CategoryRepository {
     }
 
     @Override
-    public List<Category> findAll() {
-        return categoryMapper.selectList(null).stream()
+    public List<Category> findAll(Long userId) {
+        LambdaQueryWrapper<CategoryPO> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(CategoryPO::getUserId, userId);
+        return categoryMapper.selectList(wrapper).stream()
             .map(this::toDomain).collect(Collectors.toList());
     }
 
@@ -52,9 +54,10 @@ public class CategoryRepositoryImpl implements CategoryRepository {
     }
 
     @Override
-    public boolean existsByName(String name) {
+    public boolean existsByNameAndUserId(String name, Long userId) {
         LambdaQueryWrapper<CategoryPO> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(CategoryPO::getName, name);
+        wrapper.eq(CategoryPO::getUserId, userId);
         return categoryMapper.selectCount(wrapper) > 0;
     }
 
@@ -71,6 +74,7 @@ public class CategoryRepositoryImpl implements CategoryRepository {
         c.setName(po.getName());
         c.setColor(po.getColor());
         c.setDescription(po.getDescription());
+        c.setUserId(po.getUserId());
         c.setCreatedAt(po.getCreatedAt());
         c.setUpdatedAt(po.getUpdatedAt());
         return c;
@@ -82,6 +86,7 @@ public class CategoryRepositoryImpl implements CategoryRepository {
         po.setName(category.getName());
         po.setColor(category.getColor());
         po.setDescription(category.getDescription());
+        po.setUserId(category.getUserId());
         return po;
     }
 }
