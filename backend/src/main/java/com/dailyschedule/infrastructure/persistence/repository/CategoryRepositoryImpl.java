@@ -54,10 +54,9 @@ public class CategoryRepositoryImpl implements CategoryRepository {
     }
 
     @Override
-    public boolean existsByNameAndUserId(String name, Long userId) {
+    public boolean existsByName(String name) {
         LambdaQueryWrapper<CategoryPO> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(CategoryPO::getName, name);
-        wrapper.eq(CategoryPO::getUserId, userId);
         return categoryMapper.selectCount(wrapper) > 0;
     }
 

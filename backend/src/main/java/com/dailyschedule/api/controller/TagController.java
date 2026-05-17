@@ -29,7 +29,7 @@ public class TagController implements TagsApi {
 
     @Override
     public List<TagResponse> listTags() {
-        List<Tag> tags = tagAppService.listAll();
+        List<Tag> tags = tagAppService.listAll(currentUserService.getCurrentUserId());
         return TagAssembler.toResponseList(tags);
     }
 

@@ -6,7 +6,6 @@ import com.dailyschedule.api.generated.dto.EventCreateRequest;
 import com.dailyschedule.api.generated.dto.EventResponse;
 import com.dailyschedule.api.generated.dto.EventUpdateRequest;
 import com.dailyschedule.application.event.EventApplicationService;
-import com.dailyschedule.application.event.EventApplicationService.PagedEvents;
 import com.dailyschedule.domain.event.Event;
 import com.dailyschedule.infrastructure.security.CurrentUserService;
 import jakarta.validation.Valid;
@@ -14,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1")
@@ -49,9 +49,13 @@ public class EventController implements EventsApi {
     }
 
     @Override
-    public List<EventResponse> listEvents(LocalDateTime start, LocalDateTime end, Long categoryId) {
-        List<Event> events = eventAppService.listByRange(start, end, categoryId);
-        return EventAssembler.toResponseList(events);
+    public List<EventResponse> listEvents(LocalDateTime start, LocalDateTime end, Long categoryId,
+                                          String keyword, Integer page, Integer size) {
+        Long userId = currentUserService.getCurrentUserId();
+        int p = page != null && page > 0 ? page : 1;
+        int s = size != null && size > 0 ? size : 50;
+        var result = eventAppService.listByRange(start, end, categoryId, userId, keyword, p, s);
+        return EventAssembler.toResponseList(result.events());
     }
 
     @Override

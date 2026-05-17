@@ -29,7 +29,7 @@ public class CategoryController implements CategoriesApi {
 
     @Override
     public List<CategoryResponse> listCategories() {
-        List<Category> categories = categoryAppService.listAll();
+        List<Category> categories = categoryAppService.listAll(currentUserService.getCurrentUserId());
         return CategoryAssembler.toResponseList(categories);
     }
 

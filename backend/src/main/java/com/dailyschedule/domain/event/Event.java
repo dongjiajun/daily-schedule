@@ -22,11 +22,8 @@ public class Event {
     private String categoryName;
     private String categoryColor;
     private Set<Long> tagIds = new HashSet<>();
-    /**
-     * 已加载的标签详情（读路径投影）。仅由 Repository 在查询时填充，
-     * 写路径（create/update）使用 {@link #tagIds}。
-     */
     private List<Tag> tags = new ArrayList<>();
+    private Long userId;
     private LocalDateTime lastRemindedAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -63,7 +60,6 @@ public class Event {
         if (data.tagIds != null) this.tagIds = data.tagIds;
     }
 
-    // Getters and setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getTitle() { return title; }
@@ -92,6 +88,8 @@ public class Event {
     public void setTagIds(Set<Long> tagIds) { this.tagIds = tagIds; }
     public List<Tag> getTags() { return tags; }
     public void setTags(List<Tag> tags) { this.tags = tags; }
+    public Long getUserId() { return userId; }
+    public void setUserId(Long userId) { this.userId = userId; }
     public LocalDateTime getLastRemindedAt() { return lastRemindedAt; }
     public void setLastRemindedAt(LocalDateTime lastRemindedAt) { this.lastRemindedAt = lastRemindedAt; }
     public LocalDateTime getCreatedAt() { return createdAt; }

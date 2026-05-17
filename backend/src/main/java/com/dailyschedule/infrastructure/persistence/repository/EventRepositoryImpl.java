@@ -6,21 +6,14 @@ import com.dailyschedule.domain.tag.Tag;
 import com.dailyschedule.infrastructure.persistence.mapper.EventMapper;
 import com.dailyschedule.infrastructure.persistence.mapper.EventTagMapper;
 import com.dailyschedule.infrastructure.persistence.mapper.EventTagMapper.EventTagJoinRow;
+import com.dailyschedule.infrastructure.persistence.mapper.TagMapper;
 import com.dailyschedule.infrastructure.persistence.po.EventPO;
 import com.dailyschedule.infrastructure.persistence.po.EventTagPO;
-import com.dailyschedule.infrastructure.persistence.po.TagPO;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Repository
@@ -37,13 +30,25 @@ public class EventRepositoryImpl implements EventRepository {
     }
 
     @Override
-    public List<Event> findByRange(LocalDateTime start, LocalDateTime end) {
-        return loadWithTags(eventMapper.selectByRange(start, end));
+    public List<Event> findByRange(LocalDateTime start, LocalDateTime end, Long userId, String keyword, int page, int size) {
+        int offset = (page - 1) * size;
+        return loadWithTags(eventMapper.selectByRange(start, end, userId, keyword, offset, size));
     }
 
     @Override
-    public List<Event> findByRangeAndCategory(LocalDateTime start, LocalDateTime end, Long categoryId) {
-        return loadWithTags(eventMapper.selectByRangeAndCategory(start, end, categoryId));
+    public List<Event> findByRangeAndCategory(LocalDateTime start, LocalDateTime end, Long categoryId, Long userId, String keyword, int page, int size) {
+        int offset = (page - 1) * size;
+        return loadWithTags(eventMapper.selectByRangeAndCategory(start, end, categoryId, userId, keyword, offset, size));
+    }
+
+    @Override
+    public long countByRange(LocalDateTime start, LocalDateTime end, Long userId, String keyword) {
+        return eventMapper.countByRange(start, end, userId, keyword);
+    }
+
+    @Override
+    public long countByRangeAndCategory(LocalDateTime start, LocalDateTime end, Long categoryId, Long userId, String keyword) {
+        return eventMapper.countByRangeAndCategory(start, end, categoryId, userId, keyword);
     }
 
     @Override
@@ -96,10 +101,6 @@ public class EventRepositoryImpl implements EventRepository {
         }
     }
 
-    /**
-     * 将 PO 列表批量转换为 Domain 并通过一次 JOIN 查询填充每个事件的标签详情。
-     * 列表为空时跳过 JOIN 查询。
-     */
     private List<Event> loadWithTags(List<EventPO> pos) {
         if (pos == null || pos.isEmpty()) return List.of();
         List<Event> events = pos.stream().map(this::toDomain).collect(Collectors.toList());
@@ -138,6 +139,7 @@ public class EventRepositoryImpl implements EventRepository {
         e.setColor(po.getColor());
         e.setReminderMinutes(po.getReminderMinutes());
         e.setCategoryId(po.getCategoryId());
+        e.setUserId(po.getUserId());
         e.setLastRemindedAt(po.getLastRemindedAt());
         e.setCreatedAt(po.getCreatedAt());
         e.setUpdatedAt(po.getUpdatedAt());
@@ -156,6 +158,7 @@ public class EventRepositoryImpl implements EventRepository {
         po.setColor(event.getColor());
         po.setReminderMinutes(event.getReminderMinutes());
         po.setCategoryId(event.getCategoryId());
+        po.setUserId(event.getUserId());
         po.setLastRemindedAt(event.getLastRemindedAt());
         return po;
     }

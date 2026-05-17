@@ -28,6 +28,9 @@ public class EventPO {
     @TableField("category_id")
     private Long categoryId;
 
+    @TableField("user_id")
+    private Long userId;
+
     @TableField("last_reminded_at")
     private LocalDateTime lastRemindedAt;
 
@@ -58,6 +61,8 @@ public class EventPO {
     public void setReminderMinutes(Integer reminderMinutes) { this.reminderMinutes = reminderMinutes; }
     public Long getCategoryId() { return categoryId; }
     public void setCategoryId(Long categoryId) { this.categoryId = categoryId; }
+    public Long getUserId() { return userId; }
+    public void setUserId(Long userId) { this.userId = userId; }
     public LocalDateTime getLastRemindedAt() { return lastRemindedAt; }
     public void setLastRemindedAt(LocalDateTime lastRemindedAt) { this.lastRemindedAt = lastRemindedAt; }
     public LocalDateTime getCreatedAt() { return createdAt; }

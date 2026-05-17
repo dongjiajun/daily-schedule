@@ -34,7 +34,7 @@ public class CategoryApplicationService {
         if (!category.isValid()) {
             throw new IllegalArgumentException("分类名称不能为空");
         }
-        if (categoryRepository.existsByNameAndUserId(category.getName(), category.getUserId())) {
+        if (categoryRepository.existsByName(category.getName())) {
             throw new IllegalArgumentException("分类名称已存在: " + category.getName());
         }
         return categoryRepository.save(category);
