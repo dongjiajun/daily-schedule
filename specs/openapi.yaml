@@ -1,9 +1,8 @@
 openapi: 3.0.3
 info:
   title: 日程管理系统 API
-  version: 2.0.0
-  description: |
-    v1 接口定义 — 前后端契约唯一真相源。
+  version: 1.1.0
+  description: v1.1 接口定义 — 前后端契约唯一真相源
 
     **响应约定**：
     - 成功响应直接返回业务数据：单条返回对象，列表返回数组。
