@@ -100,7 +100,7 @@ Token 通过注册/登录获取。前端自动附加，见 `client.gen.ts`。
 |------|------|---------|------|
 | GET | `/categories` | 200 `CategoryListResponse` | 获取当前用户所有分类 |
 | POST | `/categories` | 201 `CategoryResponse` | 创建分类 |
-| PUT | `/categories/{id}` | 200 | 更新分类 |
+| PUT | `/categories/{id}` | 200 `CategoryResponse` | 更新分类 |
 | DELETE | `/categories/{id}` | 204 | 删除分类 |
 
 **创建请求示例：**
@@ -118,7 +118,7 @@ Token 通过注册/登录获取。前端自动附加，见 `client.gen.ts`。
 |------|------|---------|------|
 | GET | `/tags` | 200 `TagListResponse` | 获取当前用户所有标签 |
 | POST | `/tags` | 201 `TagResponse` | 创建标签 |
-| PUT | `/tags/{id}` | 200 | 更新标签 |
+| PUT | `/tags/{id}` | 200 `TagResponse` | 更新标签 |
 | DELETE | `/tags/{id}` | 204 | 删除标签 |
 
 **创建请求示例：**
