@@ -6,7 +6,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 
 import java.time.LocalDateTime;
 
-@TableName("user")
+@TableName("`user`")
 public class UserPO {
     @TableId(type = IdType.AUTO)
     private Long id;
