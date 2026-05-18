@@ -1,57 +1,77 @@
-/* react-big-calendar 现代简约风格覆盖 */
+/* react-big-calendar 现代卡片风格覆盖 */
 
 .calendar-container {
   --cal-bg: #ffffff;
   --cal-border: #f1f5f9;
   --cal-text: #334155;
   --cal-muted: #94a3b8;
-  --cal-today: rgba(15, 23, 42, 0.04);
 }
 
-/* 隐藏默认工具栏（使用自定义） */
+/* 隐藏默认工具栏 */
 .rbc-toolbar { display: none !important; }
 
 /* ========== 头部 ========== */
 .rbc-header {
-  padding: 14px 0 !important;
+  padding: 12px 0 !important;
   font-size: 11px !important;
   font-weight: 600 !important;
   color: #94a3b8 !important;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  border-bottom: 1px solid #f1f5f9 !important;
-  background: #fafbfc;
-}
-
-.rbc-header + .rbc-header {
-  border-left: 1px solid #f1f5f9 !important;
+  border: none !important;
+  background: transparent !important;
 }
 
 /* ========== 月视图 ========== */
 .rbc-month-view {
   border: none !important;
+  background: transparent !important;
 }
 
+/* 表格间隙 = 卡片悬浮感 */
+.rbc-month-view > div > div > table,
+.rbc-month-view table {
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+}
+
+/* 行间距 */
 .rbc-month-row {
-  min-height: 130px !important;
+  min-height: 120px !important;
+  border: none !important;
+  padding: 0 4px !important;
 }
 
 .rbc-month-row + .rbc-month-row {
-  border-top: 1px solid #f1f5f9 !important;
+  border-top: none !important;
+  margin-top: 2px !important;
+}
+
+/* 天格子背景 - 卡片效果 */
+.rbc-day-bg {
+  border-radius: 10px !important;
+  transition: background 0.15s ease !important;
 }
 
 .rbc-day-bg + .rbc-day-bg {
-  border-left: 1px solid #f1f5f9 !important;
+  border-left: none !important;
+  margin-left: 2px !important;
 }
 
-/* 今日 */
-.rbc-today {
-  background-color: var(--cal-today) !important;
+/* 悬停反馈 */
+.rbc-month-row .rbc-day-bg:hover {
+  background-color: rgba(15, 23, 42, 0.02) !important;
+}
+
+/* 今日卡片 */
+.rbc-today .rbc-day-bg {
+  background-color: #f8fafc !important;
+  box-shadow: inset 0 0 0 1px #e2e8f0 !important;
 }
 
 /* 非当月 */
 .rbc-off-range-bg {
-  background: #fafbfc !important;
+  background: transparent !important;
 }
 
 .rbc-off-range {
@@ -79,8 +99,8 @@
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  width: 26px !important;
-  height: 26px !important;
+  width: 24px !important;
+  height: 24px !important;
   border-radius: 50% !important;
   background: #0f172a !important;
   color: #fff !important;
@@ -90,14 +110,35 @@
 /* ========== 周/日视图 ========== */
 .rbc-time-view {
   border: none !important;
+  background: transparent !important;
+}
+
+.rbc-time-header {
+  margin-bottom: 4px !important;
 }
 
 .rbc-time-header-content {
-  border-left: none !important;
+  border: none !important;
+  background: transparent !important;
+}
+
+/* 周视图天头部卡片 */
+.rbc-time-header .rbc-header {
+  padding: 10px 0 !important;
+  border-radius: 10px 10px 0 0 !important;
+  background: #fafbfc !important;
+  border: 1px solid #f1f5f9 !important;
+  border-bottom: none !important;
+  margin: 0 2px !important;
+}
+
+.rbc-time-header .rbc-header.rbc-today {
+  background: #f0f4f8 !important;
+  border-color: #e2e8f0 !important;
 }
 
 .rbc-time-content {
-  border-top: 1px solid #f1f5f9 !important;
+  border-top: none !important;
 }
 
 .rbc-time-content > * + * > * {
@@ -117,6 +158,7 @@
   font-size: 11px !important;
   color: #94a3b8 !important;
   font-weight: 500 !important;
+  padding-right: 12px !important;
 }
 
 /* 当前时间线 */
@@ -125,35 +167,40 @@
   height: 2px !important;
 }
 
+.rbc-current-time-indicator::before {
+  content: '' !important;
+  display: block !important;
+  width: 8px !important;
+  height: 8px !important;
+  background: #ef4444 !important;
+  border-radius: 50% !important;
+  margin-left: -4px !important;
+  margin-top: -3px !important;
+}
+
 /* ========== 事件卡片 ========== */
 .rbc-event {
-  border-radius: 6px !important;
+  border-radius: 5px !important;
   border: none !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08) !important;
-  padding: 3px 8px !important;
-  font-size: 12px !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06) !important;
+  padding: 2px 7px !important;
+  font-size: 11.5px !important;
   font-weight: 500 !important;
   transition: box-shadow 0.2s, transform 0.2s !important;
   cursor: pointer !important;
 }
 
 .rbc-event:hover {
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
   transform: translateY(-1px);
   z-index: 10;
 }
 
-.rbc-event-label {
-  display: none !important;
-}
+.rbc-event-label { display: none !important; }
+.rbc-event-content { line-height: 1.4 !important; }
 
-.rbc-event-content {
-  line-height: 1.4 !important;
-}
-
-/* 月视图中的事件 */
 .rbc-month-view .rbc-event {
-  margin: 1px 2px !important;
+  margin: 1px 3px !important;
 }
 
 /* 更多链接 */
@@ -165,9 +212,7 @@
   text-decoration: none !important;
 }
 
-.rbc-show-more:hover {
-  color: #0f172a !important;
-}
+.rbc-show-more:hover { color: #0f172a !important; }
 
 /* ========== 议程视图 ========== */
 .rbc-agenda-view table {
@@ -215,4 +260,10 @@
 /* ========== 时间段 hover ========== */
 .rbc-day-slot .rbc-time-slot:hover {
   background: rgba(15, 23, 42, 0.02) !important;
+}
+
+/* ========== 选中态（点击空白处创建日程） ========== */
+.rbc-slot-selecting {
+  background: rgba(15, 23, 42, 0.06) !important;
+  border-radius: 8px !important;
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from 'sonner'
@@ -8,6 +8,7 @@ import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
 import { OnboardingGuide } from './components/layout/OnboardingGuide'
 import { useAuthStore } from './store/authStore'
+import { useCalendarStore } from './store/calendarStore'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -26,25 +27,20 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 }
 
 function OnboardingOverlay() {
-  const [showOnboarding, setShowOnboarding] = useState(false)
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+  const showOnboarding = useCalendarStore((s) => s.showOnboarding)
+  const openOnboarding = useCalendarStore((s) => s.openOnboarding)
+  const closeOnboarding = useCalendarStore((s) => s.closeOnboarding)
 
   useEffect(() => {
     if (isAuthenticated && !localStorage.getItem('onboarding_done')) {
-      setShowOnboarding(true)
+      openOnboarding()
     }
-  }, [isAuthenticated])
+  }, [isAuthenticated, openOnboarding])
 
   if (!showOnboarding) return null
 
-  return (
-    <OnboardingGuide
-      onClose={() => {
-        localStorage.setItem('onboarding_done', '1')
-        setShowOnboarding(false)
-      }}
-    />
-  )
+  return <OnboardingGuide onClose={closeOnboarding} />
 }
 
 export default function App() {

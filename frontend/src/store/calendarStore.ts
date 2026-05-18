@@ -22,6 +22,9 @@ interface CalendarState {
   closeModal: () => void
   setFilterCategory: (id: number | null) => void
   setSearchKeyword: (keyword: string) => void
+  showOnboarding: boolean
+  openOnboarding: () => void
+  closeOnboarding: () => void
 }
 
 export const useCalendarStore = create<CalendarState>((set) => ({
@@ -45,4 +48,10 @@ export const useCalendarStore = create<CalendarState>((set) => ({
     set({ modalOpen: false, editingEventId: null, selectedEventId: null, defaultStart: null, defaultEnd: null }),
   setFilterCategory: (id) => set({ filterCategoryId: id }),
   setSearchKeyword: (keyword) => set({ searchKeyword: keyword }),
+  showOnboarding: false,
+  openOnboarding: () => set({ showOnboarding: true }),
+  closeOnboarding: () => {
+    localStorage.setItem('onboarding_done', '1')
+    set({ showOnboarding: false })
+  },
 }))

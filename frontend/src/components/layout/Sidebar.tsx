@@ -1,4 +1,4 @@
-import { CalendarDays, Layers, LogOut, Plus, Search } from 'lucide-react'
+import { CalendarDays, HelpCircle, Layers, LogOut, Plus, Search } from 'lucide-react'
 import { useCategories } from '../../hooks/useCategories'
 import { useCalendarStore } from '../../store/calendarStore'
 import { useAuthStore } from '../../store/authStore'
@@ -7,7 +7,7 @@ import { cn } from '../../lib/utils'
 
 export function Sidebar() {
   const { data: categories } = useCategories()
-  const { filterCategoryId, searchKeyword, setFilterCategory, setSearchKeyword, openCreateModal } = useCalendarStore()
+  const { filterCategoryId, searchKeyword, setFilterCategory, setSearchKeyword, openCreateModal, openOnboarding } = useCalendarStore()
   const { username, logout } = useAuthStore()
 
   return (
@@ -87,7 +87,15 @@ export function Sidebar() {
       </nav>
 
       {/* User footer */}
-      <div className="px-4 py-3.5 border-t border-gray-100/80">
+      <div className="px-4 py-3.5 border-t border-gray-100/80 space-y-2">
+        <button
+          onClick={openOnboarding}
+          className="flex items-center gap-2 text-[13px] text-gray-400 hover:text-gray-600 transition-colors w-full"
+          title="查看使用指南"
+        >
+          <HelpCircle className="w-3.5 h-3.5" />
+          <span>使用指南</span>
+        </button>
         <div
           className="flex items-center justify-between group cursor-pointer py-1"
           onClick={logout}
