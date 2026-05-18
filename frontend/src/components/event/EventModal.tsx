@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { EventForm, type EventFormValues } from './EventForm'
 import { useCreateEvent, useUpdateEvent, useDeleteEvent, useEvents } from '../../hooks/useEvents'
 import { useCategories } from '../../hooks/useCategories'
@@ -29,14 +29,6 @@ export function EventModal({ open, eventId, onClose }: EventModalProps) {
   const [showDelete, setShowDelete] = useState(false)
 
   const existingEvent = eventId ? events?.find((e) => e.id === eventId) : undefined
-
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [onClose])
 
   const handleSubmit = (values: EventFormValues) => {
     if (eventId) {

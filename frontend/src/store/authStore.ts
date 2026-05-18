@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { clearCachedToken } from '../api/client.gen'
 
 interface AuthState {
   token: string | null
@@ -21,11 +22,13 @@ export const useAuthStore = create<AuthState>((set) => {
 
     login: (token, userId, username) => {
       localStorage.setItem('auth', JSON.stringify({ token, userId, username }))
+      clearCachedToken()
       set({ token, userId, username, isAuthenticated: true })
     },
 
     logout: () => {
       localStorage.removeItem('auth')
+      clearCachedToken()
       set({ token: null, userId: null, username: null, isAuthenticated: false })
     },
   }

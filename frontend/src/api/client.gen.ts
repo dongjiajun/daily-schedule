@@ -1,24 +1,36 @@
 import { createClient, createConfig } from './client/client.gen'
 
 let _client: ReturnType<typeof createClient> | undefined
+let _cachedToken: string | null | undefined
 
-function getAuthHeaders(): Record<string, string> {
+function getToken(): string | null {
+  if (_cachedToken !== undefined) return _cachedToken as string | null
   try {
     const stored = localStorage.getItem('auth')
     if (stored) {
       const { token } = JSON.parse(stored)
-      if (token) return { Authorization: `Bearer ${token}` }
+      _cachedToken = token ?? null
+      return _cachedToken as string | null
     }
   } catch {}
-  return {}
+  _cachedToken = null
+  return null
 }
 
+export function clearCachedToken() {
+  _cachedToken = undefined
+}
+
+const JSON_HEADER: Record<string, string> = { 'Content-Type': 'application/json' }
+
 function request(method: string, opts: Record<string, unknown>) {
-  const authHeaders = getAuthHeaders()
   const clientInstance = _client ?? (_client = createClient(createConfig()))
+  const token = getToken()
+  const authHeaders: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {}
+  const defaultHeaders = (method === 'post' || method === 'put') ? JSON_HEADER : {}
   const merged = {
     ...opts,
-    headers: { ...authHeaders, ...(opts.headers as Record<string, string> || {}) },
+    headers: { ...defaultHeaders, ...authHeaders, ...(opts.headers as Record<string, string> || {}) },
   }
   switch (method) {
     case 'get': return clientInstance.get(merged as any)

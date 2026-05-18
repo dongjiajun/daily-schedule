@@ -1,15 +1,11 @@
 import type { Client, Config, Options, TDataShape } from './types.gen'
 
-let _config: Config
-
 export const createConfig = (overrides?: Partial<Config>): Config => ({
   baseUrl: '/api/v1',
   ...overrides,
 })
 
 export const createClient = (config: Config = createConfig()): Client => {
-  _config = config
-
   const request = async <TData extends TDataShape = TDataShape>(
     opts: Options<TData>
   ): Promise<{ data?: unknown; error?: Error }> => {
@@ -48,7 +44,7 @@ export const createClient = (config: Config = createConfig()): Client => {
     delete: (opts) => request({ ...opts, method: 'delete' }),
   }
 
-  Object.defineProperty(client, 'getConfig', { value: () => _config })
+  Object.defineProperty(client, 'getConfig', { value: () => config })
   return client
 }
 

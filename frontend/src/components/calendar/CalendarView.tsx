@@ -3,6 +3,7 @@ import { Calendar, dayjsLocalizer, type ToolbarProps, type View } from 'react-bi
 import dayjs from 'dayjs'
 import { useCalendarStore, type CalendarView } from '../../store/calendarStore'
 import { useEvents } from '../../hooks/useEvents'
+import { cn } from '../../lib/utils'
 import type { EventResponse } from '../../api/types.gen'
 
 import 'react-big-calendar/lib/css/react-big-calendar.css'
@@ -46,10 +47,7 @@ export function CalendarView() {
 
   const handleSelectSlot = useCallback(
     ({ start, end }: { start: Date; end: Date }) => {
-      const fmt = (d: Date) => {
-        const pad = (n: number) => String(n).padStart(2, '0')
-        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
-      }
+      const fmt = (d: Date) => dayjs(d).format('YYYY-MM-DDTHH:mm')
       openCreateModal(fmt(start), fmt(end))
     },
     [openCreateModal]
@@ -177,7 +175,7 @@ function CalendarToolbar({
         {viewKeys.map((v) => (
           <button
             key={v}
-            className={`${btnClass} ${view === v ? activeClass : inactiveClass}`}
+            className={cn(btnClass, view === v ? activeClass : inactiveClass)}
             onClick={() => onView(v)}
           >
             {labels[v]}

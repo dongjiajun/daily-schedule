@@ -23,6 +23,4 @@ export interface Options<TData extends TDataShape = TDataShape> {
   headers?: Record<string, string>
   path?: TData['path']
   query?: TData['query']
-  client?: Client
-  meta?: Record<string, unknown>
 }
