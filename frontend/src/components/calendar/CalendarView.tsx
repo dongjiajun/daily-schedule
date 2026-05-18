@@ -162,16 +162,16 @@ function CalendarToolbar({
     }
   }, [date, view])
 
-  const btnClass = 'px-3 py-1.5 text-sm font-medium rounded-lg transition-colors'
-  const activeClass = 'bg-gray-900 text-white'
-  const inactiveClass = 'text-gray-500 hover:bg-gray-100'
+  const btnClass = 'px-3 py-1.5 text-[13px] font-medium rounded-lg transition-all'
+  const activeClass = 'bg-gray-900 text-white shadow-sm'
+  const inactiveClass = 'text-gray-400 hover:text-gray-700 hover:bg-gray-100'
 
   const viewKeys = ['month', 'week', 'day', 'agenda'] as const
   const labels: Record<string, string> = { month: '月', week: '周', day: '日', agenda: '议程' }
 
   return (
-    <div className="flex items-center justify-between px-6 py-3 border-b border-gray-100 bg-white/80 backdrop-blur">
-      <div className="flex items-center gap-1">
+    <div className="flex items-center justify-between px-5 py-3 bg-white/90 backdrop-blur">
+      <div className="flex items-center bg-gray-100/80 rounded-lg p-0.5 gap-0.5">
         {viewKeys.map((v) => (
           <button
             key={v}
@@ -183,16 +183,16 @@ function CalendarToolbar({
         ))}
       </div>
 
-      <h2 className="text-lg font-semibold text-gray-900">{label}</h2>
+      <h2 className="text-base font-semibold text-gray-800 tracking-tight">{label}</h2>
 
-      <div className="flex items-center gap-1">
-        <button className={`${btnClass} ${inactiveClass}`} onClick={() => onNavigate('PREV')}>
+      <div className="flex items-center gap-0.5">
+        <button className={cn(btnClass, inactiveClass, 'text-base w-8 h-8 flex items-center justify-center')} onClick={() => onNavigate('PREV')}>
           ‹
         </button>
-        <button className={`${btnClass} ${inactiveClass}`} onClick={() => onNavigate('TODAY')}>
+        <button className={cn(btnClass, inactiveClass)} onClick={() => onNavigate('TODAY')}>
           今天
         </button>
-        <button className={`${btnClass} ${inactiveClass}`} onClick={() => onNavigate('NEXT')}>
+        <button className={cn(btnClass, inactiveClass, 'text-base w-8 h-8 flex items-center justify-center')} onClick={() => onNavigate('NEXT')}>
           ›
         </button>
       </div>

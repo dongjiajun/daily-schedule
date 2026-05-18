@@ -14,19 +14,29 @@
 
 /* 头部 */
 .rbc-header {
-  padding: 10px 0 !important;
-  font-size: 12px !important;
-  font-weight: 500 !important;
-  color: var(--rbc-muted) !important;
+  padding: 12px 0 !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: #94a3b8 !important;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  border-bottom: 1px solid var(--rbc-border) !important;
-  background: var(--rbc-bg);
+  letter-spacing: 0.08em;
+  border-bottom: 1px solid #f1f5f9 !important;
+  background: #fafbfc;
 }
 
 /* 今日高亮 */
 .rbc-today {
-  background-color: rgba(59, 130, 246, 0.04) !important;
+  background-color: rgba(15, 23, 42, 0.03) !important;
+}
+
+/* 月视图行高 */
+.rbc-month-row {
+  min-height: 120px !important;
+}
+
+/* 时间格 hover */
+.rbc-day-bg:hover {
+  background-color: rgba(15, 23, 42, 0.02) !important;
 }
 
 /* 非当月日期 */
