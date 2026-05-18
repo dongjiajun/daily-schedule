@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { EventForm, type EventFormValues } from './EventForm'
 import { useCreateEvent, useUpdateEvent, useDeleteEvent, useEvents } from '../../hooks/useEvents'
 import { useCategories } from '../../hooks/useCategories'

@@ -1,6 +1,7 @@
 import { CalendarDays, Layers, LogOut, Plus, Search } from 'lucide-react'
 import { useCategories } from '../../hooks/useCategories'
 import { useCalendarStore } from '../../store/calendarStore'
+import { useAuthStore } from '../../store/authStore'
 import { Button } from '@/components/ui/button'
 import { cn } from '../../lib/utils'
 
