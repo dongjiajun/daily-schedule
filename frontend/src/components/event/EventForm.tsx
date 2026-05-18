@@ -156,9 +156,16 @@ export function EventForm({ initialValues, categories, tags, onSubmit, loading }
           <Label>分类</Label>
           <Select
             value={categoryId !== undefined ? String(categoryId) : NO_CATEGORY}
-            onValueChange={(v) =>
-              setCategoryId(v === NO_CATEGORY ? undefined : Number(v))
-            }
+            onValueChange={(v) => {
+              if (v === NO_CATEGORY) {
+                setCategoryId(undefined)
+              } else {
+                const cat = categories.find((c) => c.id === Number(v))
+                if (!cat) return
+                setCategoryId(cat.id!)
+                if (cat.color) setColor(cat.color)
+              }
+            }}
           >
             <SelectTrigger>
               <SelectValue placeholder="无分类" />
@@ -180,14 +187,22 @@ export function EventForm({ initialValues, categories, tags, onSubmit, loading }
           </Select>
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="event-color-text">颜色</Label>
+          <Label htmlFor="event-color-text">
+            颜色{categoryId !== undefined ? '（继承自分类）' : ''}
+          </Label>
           <div className="flex items-center gap-2">
             <input
               type="color"
-              className="w-9 h-9 rounded-lg border border-gray-200 cursor-pointer shrink-0"
+              className={cn(
+                'w-9 h-9 rounded-lg border border-gray-200 shrink-0 transition-opacity',
+                categoryId !== undefined
+                  ? 'opacity-50 cursor-not-allowed pointer-events-none'
+                  : 'cursor-pointer'
+              )}
               value={color}
               onChange={(e) => setColor(e.target.value)}
               aria-label="选择颜色"
+              disabled={categoryId !== undefined}
             />
             <Input
               id="event-color-text"
@@ -195,6 +210,7 @@ export function EventForm({ initialValues, categories, tags, onSubmit, loading }
               value={color}
               onChange={(e) => setColor(e.target.value)}
               placeholder="#1890ff"
+              disabled={categoryId !== undefined}
             />
           </div>
         </div>
