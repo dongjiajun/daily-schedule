@@ -4,11 +4,11 @@ import { listTags, createTag, deleteTag } from '../api/sdk.gen'
 import type { TagCreateRequest, TagResponse } from '../api/types.gen'
 
 export function useTags() {
-  return useQuery({
+  return useQuery<TagResponse[]>({
     queryKey: ['tags'],
     queryFn: async () => {
       const resp = await listTags()
-      return resp.data ?? []
+      return (resp.data ?? []) as TagResponse[]
     },
     staleTime: 60_000,
   })
@@ -16,25 +16,27 @@ export function useTags() {
 
 export function useCreateTag() {
   const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: async (data: TagCreateRequest): Promise<TagResponse | undefined> => {
+  return useMutation<TagResponse | undefined, Error, TagCreateRequest>({
+    mutationFn: async (data) => {
       const r = await createTag({ body: data })
-      return r.data
+      return r.data as TagResponse | undefined
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tags'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tags'] })
+      toast.success('标签创建成功')
+    },
+    onError: (err) => toast.error(`创建标签失败: ${err.message}`),
   })
 }
 
 export function useDeleteTag() {
   const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: (id: number) => deleteTag({ path: { id } }),
+  return useMutation<void, Error, number>({
+    mutationFn: async (id) => { await deleteTag({ path: { id } }) },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tags'] })
       toast.success('标签已删除')
     },
-    onError: (err: Error) => {
-      toast.error(`删除标签失败: ${err.message}`)
-    },
+    onError: (err) => toast.error(`删除标签失败: ${err.message}`),
   })
 }

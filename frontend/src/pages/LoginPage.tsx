@@ -28,8 +28,8 @@ export function LoginPage() {
       }
       const data = await res.json()
       login(data.token, data.userId, data.username)
-    } catch (err: any) {
-      setError(err.message || '操作失败')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '操作失败')
     } finally {
       setLoading(false)
     }

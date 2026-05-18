@@ -32,7 +32,7 @@ function getViewRange(date: dayjs.Dayjs, view: string) {
 export function useEvents(date: dayjs.Dayjs, view: string, categoryId?: number | null, keyword?: string) {
   const { start, end } = getViewRange(date, view)
 
-  return useQuery({
+  return useQuery<EventResponse[]>({
     queryKey: ['events', start, end, categoryId, keyword],
     queryFn: async () => {
       const resp = await listEvents({
@@ -43,7 +43,7 @@ export function useEvents(date: dayjs.Dayjs, view: string, categoryId?: number |
           keyword: keyword || undefined,
         },
       })
-      return resp.data ?? []
+      return (resp.data ?? []) as EventResponse[]
     },
     staleTime: 30_000,
     placeholderData: (prev) => prev,
@@ -52,38 +52,42 @@ export function useEvents(date: dayjs.Dayjs, view: string, categoryId?: number |
 
 export function useCreateEvent() {
   const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: async (data: EventCreateRequest): Promise<EventResponse | undefined> => {
+  return useMutation<EventResponse | undefined, Error, EventCreateRequest>({
+    mutationFn: async (data) => {
       const r = await createEvent({ body: data })
-      return r.data
+      return r.data as EventResponse | undefined
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['events'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['events'] })
+      toast.success('日程创建成功')
+    },
+    onError: (err) => { toast.error(`创建失败: ${err.message}`) },
   })
 }
 
 export function useUpdateEvent() {
   const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: async (
-      { id, data }: { id: number; data: EventCreateRequest }
-    ): Promise<EventResponse | undefined> => {
+  return useMutation<EventResponse | undefined, Error, { id: number; data: EventCreateRequest }>({
+    mutationFn: async ({ id, data }) => {
       const r = await updateEvent({ path: { id }, body: data })
-      return r.data
+      return r.data as EventResponse | undefined
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['events'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['events'] })
+      toast.success('日程已更新')
+    },
+    onError: (err) => { toast.error(`更新失败: ${err.message}`) },
   })
 }
 
 export function useDeleteEvent() {
   const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: (id: number) => deleteEvent({ path: { id } }),
+  return useMutation<void, Error, number>({
+    mutationFn: async (id) => { await deleteEvent({ path: { id } }) },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['events'] })
       toast.success('日程已删除')
     },
-    onError: (err: Error) => {
-      toast.error(`删除失败: ${err.message}`)
-    },
+    onError: (err) => { toast.error(`删除失败: ${err.message}`) },
   })
 }

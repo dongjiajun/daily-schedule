@@ -1,7 +1,6 @@
-import { createClient, createConfig, type Client } from './client/client.gen'
-import type { TDataShape } from './client/types.gen'
+import { createClient, createConfig } from './client/client.gen'
 
-let _client: Client
+let _client: ReturnType<typeof createClient> | undefined
 
 function getAuthHeaders(): Record<string, string> {
   try {
@@ -14,21 +13,25 @@ function getAuthHeaders(): Record<string, string> {
   return {}
 }
 
-function withAuth(opts: any): any {
+function request(method: string, opts: Record<string, unknown>) {
   const authHeaders = getAuthHeaders()
-  return {
+  const clientInstance = _client ?? (_client = createClient(createConfig()))
+  const merged = {
     ...opts,
-    headers: { ...authHeaders, ...opts.headers },
+    headers: { ...authHeaders, ...(opts.headers as Record<string, string> || {}) },
+  }
+  switch (method) {
+    case 'get': return clientInstance.get(merged as any)
+    case 'post': return clientInstance.post(merged as any)
+    case 'put': return clientInstance.put(merged as any)
+    case 'delete': return clientInstance.delete(merged as any)
+    default: throw new Error(`Unknown method: ${method}`)
   }
 }
 
-export const client: Client = {
-  get: <TData extends TDataShape = TDataShape, ThrowOnError extends boolean = false>(opts: any) =>
-    (_client ?? (_client = createClient(createConfig()))).get<TData, unknown, ThrowOnError>(withAuth(opts)),
-  post: <TData extends TDataShape = TDataShape, ThrowOnError extends boolean = false>(opts: any) =>
-    (_client ?? (_client = createClient(createConfig()))).post<TData, unknown, ThrowOnError>(withAuth(opts)),
-  put: <TData extends TDataShape = TDataShape, ThrowOnError extends boolean = false>(opts: any) =>
-    (_client ?? (_client = createClient(createConfig()))).put<TData, unknown, ThrowOnError>(withAuth(opts)),
-  delete: <TData extends TDataShape = TDataShape, ThrowOnError extends boolean = false>(opts: any) =>
-    (_client ?? (_client = createClient(createConfig()))).delete<TData, unknown, ThrowOnError>(withAuth(opts)),
+export const client = {
+  get: (opts: Record<string, unknown>) => request('get', opts),
+  post: (opts: Record<string, unknown>) => request('post', opts),
+  put: (opts: Record<string, unknown>) => request('put', opts),
+  delete: (opts: Record<string, unknown>) => request('delete', opts),
 }

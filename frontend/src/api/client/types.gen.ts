@@ -6,24 +6,23 @@ export interface TDataShape {
 }
 
 export interface Client {
-  get: <TData extends TDataShape = TDataShape, TError = unknown, ThrowOnError extends boolean = false>(opts: Options<TData, ThrowOnError>) => Promise<{ data?: any; error?: any }>
-  post: <TData extends TDataShape = TDataShape, TError = unknown, ThrowOnError extends boolean = false>(opts: Options<TData, ThrowOnError>) => Promise<{ data?: any; error?: any }>
-  put: <TData extends TDataShape = TDataShape, TError = unknown, ThrowOnError extends boolean = false>(opts: Options<TData, ThrowOnError>) => Promise<{ data?: any; error?: any }>
-  delete: <TData extends TDataShape = TDataShape, TError = unknown, ThrowOnError extends boolean = false>(opts: Options<TData, ThrowOnError>) => Promise<{ data?: any; error?: any }>
+  get: (opts: Options) => Promise<{ data?: unknown; error?: Error }>
+  post: (opts: Options) => Promise<{ data?: unknown; error?: Error }>
+  put: (opts: Options) => Promise<{ data?: unknown; error?: Error }>
+  delete: (opts: Options) => Promise<{ data?: unknown; error?: Error }>
 }
 
 export interface Config {
   baseUrl: string
 }
 
-export interface Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> {
+export interface Options<TData extends TDataShape = TDataShape> {
   url: string
   method?: string
   body?: TData['body']
   headers?: Record<string, string>
   path?: TData['path']
   query?: TData['query']
-  throwOnError?: ThrowOnError
   client?: Client
   meta?: Record<string, unknown>
 }
