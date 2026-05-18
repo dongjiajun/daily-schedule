@@ -1,16 +1,20 @@
 import { useEffect, useRef } from 'react'
 import type { ReminderEvent } from '../api/types.gen'
 import { useNotification } from './useNotification'
+import { useAuthStore } from '../store/authStore'
 
 export function useSseNotifications() {
   const { notify } = useNotification()
+  const token = useAuthStore((s) => s.token)
   const esRef = useRef<EventSource | null>(null)
   const reconnectTimeoutRef = useRef<number | null>(null)
   const retryCountRef = useRef(0)
 
   useEffect(() => {
+    if (!token) return
+
     function connect(): EventSource {
-      const es = new EventSource('/api/v1/sse/notifications')
+      const es = new EventSource(`/api/v1/sse/notifications?token=${encodeURIComponent(token!)}`)
 
       es.addEventListener('reminder', (e: MessageEvent) => {
         try {
@@ -48,5 +52,5 @@ export function useSseNotifications() {
         clearTimeout(reconnectTimeoutRef.current)
       }
     }
-  }, [notify])
+  }, [notify, token])
 }
