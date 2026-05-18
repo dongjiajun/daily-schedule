@@ -4,6 +4,7 @@ import com.dailyschedule.domain.event.Event;
 import com.dailyschedule.infrastructure.persistence.mapper.EventMapper;
 import com.dailyschedule.infrastructure.persistence.mapper.EventTagMapper;
 import com.dailyschedule.infrastructure.persistence.mapper.EventTagMapper.EventTagJoinRow;
+import com.dailyschedule.infrastructure.persistence.mapper.TagMapper;
 import com.dailyschedule.infrastructure.persistence.po.EventPO;
 import com.dailyschedule.infrastructure.persistence.po.EventTagPO;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,9 +21,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyCollection;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -34,23 +33,28 @@ class EventRepositoryImplTest {
     @Mock
     private EventTagMapper eventTagMapper;
 
+    @Mock
+    private TagMapper tagMapper;
+
     private EventRepositoryImpl repository;
 
     @BeforeEach
     void setUp() {
-        repository = new EventRepositoryImpl(eventMapper, eventTagMapper);
+        repository = new EventRepositoryImpl(eventMapper, eventTagMapper, tagMapper);
     }
 
     @Test
     @DisplayName("PO → Domain：allDay=1 应转换为 Boolean.TRUE")
     void findByRange_convertsAllDayIntToBoolean_true() {
         EventPO po = sampleEventPO(1L, 1);
-        when(eventMapper.selectByRange(any(), any())).thenReturn(List.of(po));
+        when(eventMapper.selectByRange(any(), any(), anyLong(), any(), anyInt(), anyInt()))
+            .thenReturn(List.of(po));
         when(eventTagMapper.selectTagsByEventIds(anyCollection())).thenReturn(List.of());
 
         List<Event> events = repository.findByRange(
             LocalDateTime.of(2026, 5, 1, 0, 0),
-            LocalDateTime.of(2026, 5, 31, 23, 59));
+            LocalDateTime.of(2026, 5, 31, 23, 59),
+            1L, null, 1, 50);
 
         assertThat(events).hasSize(1);
         Event e = events.get(0);
@@ -64,12 +68,14 @@ class EventRepositoryImplTest {
     @DisplayName("PO → Domain：allDay=0 应转换为 Boolean.FALSE")
     void findByRange_convertsAllDayIntToBoolean_false() {
         EventPO po = sampleEventPO(1L, 0);
-        when(eventMapper.selectByRange(any(), any())).thenReturn(List.of(po));
+        when(eventMapper.selectByRange(any(), any(), anyLong(), any(), anyInt(), anyInt()))
+            .thenReturn(List.of(po));
         when(eventTagMapper.selectTagsByEventIds(anyCollection())).thenReturn(List.of());
 
         List<Event> events = repository.findByRange(
             LocalDateTime.of(2026, 5, 1, 0, 0),
-            LocalDateTime.of(2026, 5, 31, 23, 59));
+            LocalDateTime.of(2026, 5, 31, 23, 59),
+            1L, null, 1, 50);
 
         assertThat(events.get(0).getAllDay()).isFalse();
     }
@@ -79,10 +85,12 @@ class EventRepositoryImplTest {
     void findByRange_passesLastRemindedAt() {
         EventPO po = sampleEventPO(1L, 0);
         po.setLastRemindedAt(LocalDateTime.of(2026, 5, 9, 9, 45));
-        when(eventMapper.selectByRange(any(), any())).thenReturn(List.of(po));
+        when(eventMapper.selectByRange(any(), any(), anyLong(), any(), anyInt(), anyInt()))
+            .thenReturn(List.of(po));
         when(eventTagMapper.selectTagsByEventIds(anyCollection())).thenReturn(List.of());
 
-        List<Event> events = repository.findByRange(LocalDateTime.MIN, LocalDateTime.MAX);
+        List<Event> events = repository.findByRange(
+            LocalDateTime.MIN, LocalDateTime.MAX, 1L, null, 1, 50);
         assertThat(events.get(0).getLastRemindedAt())
             .isEqualTo(LocalDateTime.of(2026, 5, 9, 9, 45));
     }
@@ -121,14 +129,16 @@ class EventRepositoryImplTest {
     void findByRange_groupsTagsByEvent() {
         EventPO a = sampleEventPO(1L, 0);
         EventPO b = sampleEventPO(2L, 0);
-        when(eventMapper.selectByRange(any(), any())).thenReturn(List.of(a, b));
+        when(eventMapper.selectByRange(any(), any(), anyLong(), any(), anyInt(), anyInt()))
+            .thenReturn(List.of(a, b));
         when(eventTagMapper.selectTagsByEventIds(anyCollection())).thenReturn(List.of(
             joinRow(1L, 100L, "T1", "#fff"),
             joinRow(2L, 200L, "T2", "#000"),
             joinRow(2L, 201L, "T3", "#888")
         ));
 
-        List<Event> events = repository.findByRange(LocalDateTime.MIN, LocalDateTime.MAX);
+        List<Event> events = repository.findByRange(
+            LocalDateTime.MIN, LocalDateTime.MAX, 1L, null, 1, 50);
 
         assertThat(events).hasSize(2);
         Event ev1 = events.stream().filter(e -> e.getId() == 1L).findFirst().orElseThrow();
@@ -138,7 +148,7 @@ class EventRepositoryImplTest {
     }
 
     @Test
-    @DisplayName("save (insert)：新事件 → 调用 insert，回填 id，重写 event_tag")
+    @DisplayName("save (insert)：新事件 → 调用 insert，回填 id，批量重写 event_tag")
     void save_newEvent_callsInsertAndRewritesTags() {
         Event event = new Event("会议",
             LocalDateTime.of(2026, 5, 9, 10, 0),
@@ -146,6 +156,7 @@ class EventRepositoryImplTest {
         event.setAllDay(true);
         event.setColor("#abcdef");
         event.setCategoryId(3L);
+        event.setUserId(1L);
         event.setTagIds(Set.of(1L, 2L));
 
         doAnswer(inv -> {
@@ -169,7 +180,8 @@ class EventRepositoryImplTest {
         assertThat(saved.getCreatedAt()).isEqualTo(LocalDateTime.of(2026, 5, 9, 8, 0));
 
         verify(eventTagMapper).deleteByEventId(100L);
-        verify(eventTagMapper, times(2)).insert((EventTagPO) any(EventTagPO.class));
+        verify(eventTagMapper).batchInsert(argThat(list ->
+            list.size() == 2 && list.stream().allMatch(m -> m.getEventId() == 100L)));
     }
 
     @Test
@@ -190,7 +202,7 @@ class EventRepositoryImplTest {
     }
 
     @Test
-    @DisplayName("save：空 tagIds 仅删除现有关联，不插入新关联")
+    @DisplayName("save：空 tagIds 仅删除现有关联，不批量插入新关联")
     void save_emptyTagIds_deletesButNotInserts() {
         Event event = new Event("会议",
             LocalDateTime.of(2026, 5, 9, 10, 0),
@@ -200,7 +212,7 @@ class EventRepositoryImplTest {
         repository.save(event);
 
         verify(eventTagMapper).deleteByEventId(50L);
-        verify(eventTagMapper, never()).insert((EventTagPO) any(EventTagPO.class));
+        verify(eventTagMapper, never()).batchInsert(anyList());
     }
 
     @Test
@@ -215,18 +227,18 @@ class EventRepositoryImplTest {
     @Test
     @DisplayName("findByRangeAndCategory：应使用分类过滤的 mapper 方法")
     void findByRangeAndCategory_usesCategoryFilter() {
-        when(eventMapper.selectByRangeAndCategory(any(), any(), eq(3L)))
+        when(eventMapper.selectByRangeAndCategory(any(), any(), eq(3L), anyLong(), any(), anyInt(), anyInt()))
             .thenReturn(List.of(sampleEventPO(1L, 0)));
         when(eventTagMapper.selectTagsByEventIds(anyCollection())).thenReturn(List.of());
 
         List<Event> events = repository.findByRangeAndCategory(
             LocalDateTime.of(2026, 5, 1, 0, 0),
             LocalDateTime.of(2026, 5, 31, 23, 59),
-            3L);
+            3L, 1L, null, 1, 50);
 
         assertThat(events).hasSize(1);
-        verify(eventMapper).selectByRangeAndCategory(any(), any(), eq(3L));
-        verify(eventMapper, never()).selectByRange(any(), any());
+        verify(eventMapper).selectByRangeAndCategory(any(), any(), eq(3L), anyLong(), any(), anyInt(), anyInt());
+        verify(eventMapper, never()).selectByRange(any(), any(), anyLong(), any(), anyInt(), anyInt());
     }
 
     @Test
@@ -242,9 +254,11 @@ class EventRepositoryImplTest {
     @Test
     @DisplayName("空列表：不发起 JOIN 查询")
     void emptyResult_skipsTagJoin() {
-        when(eventMapper.selectByRange(any(), any())).thenReturn(List.of());
+        when(eventMapper.selectByRange(any(), any(), anyLong(), any(), anyInt(), anyInt()))
+            .thenReturn(List.of());
 
-        List<Event> events = repository.findByRange(LocalDateTime.MIN, LocalDateTime.MAX);
+        List<Event> events = repository.findByRange(
+            LocalDateTime.MIN, LocalDateTime.MAX, 1L, null, 1, 50);
 
         assertThat(events).isEmpty();
         verify(eventTagMapper, never()).selectTagsByEventIds(any());
@@ -262,6 +276,7 @@ class EventRepositoryImplTest {
         po.setColor("#1890ff");
         po.setReminderMinutes(15);
         po.setCategoryId(7L);
+        po.setUserId(1L);
         po.setCreatedAt(LocalDateTime.of(2026, 5, 1, 0, 0));
         po.setUpdatedAt(LocalDateTime.of(2026, 5, 2, 0, 0));
         return po;

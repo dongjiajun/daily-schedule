@@ -1,5 +1,6 @@
 package com.dailyschedule.application.tag;
 
+import com.dailyschedule.api.exception.ResourceNotFoundException;
 import com.dailyschedule.domain.tag.Tag;
 import com.dailyschedule.domain.tag.TagRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,6 +16,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -33,22 +35,22 @@ class TagApplicationServiceTest {
     @Test
     @DisplayName("listAll → 返回所有标签")
     void listAll_shouldReturnAll() {
-        when(tagRepository.findAll()).thenReturn(List.of(
+        when(tagRepository.findAll(anyLong())).thenReturn(List.of(
             new Tag("紧急", "#ff4d4f"),
             new Tag("重要", "#faad14")
         ));
 
-        List<Tag> list = appService.listAll();
+        List<Tag> list = appService.listAll(1L);
         assertThat(list).hasSize(2);
     }
 
     @Test
-    @DisplayName("getById → 不存在抛出 RuntimeException")
+    @DisplayName("getById → 不存在抛出 ResourceNotFoundException")
     void getById_notFound_shouldThrow() {
         when(tagRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> appService.getById(99L))
-            .isInstanceOf(RuntimeException.class)
+            .isInstanceOf(ResourceNotFoundException.class)
             .hasMessageContaining("标签不存在");
     }
 
@@ -100,7 +102,7 @@ class TagApplicationServiceTest {
         when(tagRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> appService.update(99L, new Tag("x", "#000")))
-            .isInstanceOf(RuntimeException.class);
+            .isInstanceOf(ResourceNotFoundException.class);
         verify(tagRepository, never()).save(any());
     }
 
@@ -121,7 +123,7 @@ class TagApplicationServiceTest {
         when(tagRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> appService.delete(99L))
-            .isInstanceOf(RuntimeException.class);
+            .isInstanceOf(ResourceNotFoundException.class);
         verify(tagRepository, never()).delete(any());
     }
 }

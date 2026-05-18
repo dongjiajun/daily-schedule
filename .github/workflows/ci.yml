@@ -24,9 +24,9 @@ jobs:
           java-version: 21
           cache: maven
 
-      - name: Compile
+      - name: Run unit tests
         working-directory: backend
-        run: mvn -B -ntp compile
+        run: mvn -B -ntp test
 
   frontend:
     name: Frontend (lint + tsc + build)

@@ -1,5 +1,6 @@
 package com.dailyschedule.application.category;
 
+import com.dailyschedule.api.exception.ResourceNotFoundException;
 import com.dailyschedule.domain.category.Category;
 import com.dailyschedule.domain.category.CategoryRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,6 +16,8 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -33,23 +36,23 @@ class CategoryApplicationServiceTest {
     @Test
     @DisplayName("listAll → 返回所有分类")
     void listAll_shouldReturnAll() {
-        when(categoryRepository.findAll()).thenReturn(List.of(
+        when(categoryRepository.findAll(anyLong())).thenReturn(List.of(
             new Category("工作", "#1890ff"),
             new Category("生活", "#52c41a")
         ));
 
-        List<Category> list = appService.listAll();
+        List<Category> list = appService.listAll(1L);
         assertThat(list).hasSize(2);
-        verify(categoryRepository).findAll();
+        verify(categoryRepository).findAll(1L);
     }
 
     @Test
-    @DisplayName("getById → 不存在抛出 RuntimeException")
+    @DisplayName("getById → 不存在抛出 ResourceNotFoundException")
     void getById_notFound_shouldThrow() {
         when(categoryRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> appService.getById(99L))
-            .isInstanceOf(RuntimeException.class)
+            .isInstanceOf(ResourceNotFoundException.class)
             .hasMessageContaining("分类不存在");
     }
 
@@ -116,7 +119,7 @@ class CategoryApplicationServiceTest {
         when(categoryRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> appService.update(99L, new Category("x", "#000")))
-            .isInstanceOf(RuntimeException.class);
+            .isInstanceOf(ResourceNotFoundException.class);
         verify(categoryRepository, never()).save(any());
     }
 
@@ -137,7 +140,7 @@ class CategoryApplicationServiceTest {
         when(categoryRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> appService.delete(99L))
-            .isInstanceOf(RuntimeException.class);
+            .isInstanceOf(ResourceNotFoundException.class);
         verify(categoryRepository, never()).delete(any());
     }
 }

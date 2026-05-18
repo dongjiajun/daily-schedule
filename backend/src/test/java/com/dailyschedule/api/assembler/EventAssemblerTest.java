@@ -4,6 +4,7 @@ import com.dailyschedule.api.generated.dto.EventCreateRequest;
 import com.dailyschedule.api.generated.dto.EventResponse;
 import com.dailyschedule.api.generated.dto.EventUpdateRequest;
 import com.dailyschedule.domain.event.Event;
+import com.dailyschedule.domain.tag.Tag;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -87,6 +88,9 @@ class EventAssemblerTest {
         e.setCategoryName("工作");
         e.setCategoryColor("#1890ff");
         e.setTagIds(Set.of(1L, 2L));
+        Tag t1 = new Tag("Tag1", "#111"); t1.setId(1L);
+        Tag t2 = new Tag("Tag2", "#222"); t2.setId(2L);
+        e.setTags(List.of(t1, t2));
         e.setCreatedAt(LocalDateTime.of(2026, 5, 1, 0, 0));
         e.setUpdatedAt(LocalDateTime.of(2026, 5, 2, 0, 0));
 
