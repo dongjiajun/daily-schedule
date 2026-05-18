@@ -48,6 +48,18 @@ const REMINDER_OPTIONS: Array<{ value: string; label: string }> = [
   { value: '1440', label: '1 天前' },
 ]
 
+/** 将 ISO 时间字符串转换为表单输入需要的格式 */
+function toInputValue(iso: string | undefined, allDay: boolean): string {
+  if (!iso) return ''
+  return allDay ? iso.slice(0, 10) : iso.slice(0, 16)
+}
+
+/** 将表单输入值转换为提交用的 ISO 时间字符串 */
+function toSubmitTime(value: string, allDay: boolean): string {
+  if (!value) return ''
+  return allDay ? `${value}T00:00:00` : `${value}:00`
+}
+
 export function EventForm({ initialValues, categories, tags, onSubmit, loading }: EventFormProps) {
   const defaultStart = useCalendarStore((s) => s.defaultStart)
   const defaultEnd = useCalendarStore((s) => s.defaultEnd)
@@ -55,14 +67,16 @@ export function EventForm({ initialValues, categories, tags, onSubmit, loading }
   const [title, setTitle] = useState(initialValues?.title ?? '')
   const [description, setDescription] = useState(initialValues?.description ?? '')
   const [startTime, setStartTime] = useState(
-    initialValues?.startTime?.slice(0, 16) ?? defaultStart ?? ''
+    toInputValue(initialValues?.startTime, initialValues?.allDay ?? false) || defaultStart || ''
   )
   const [endTime, setEndTime] = useState(
-    initialValues?.endTime?.slice(0, 16) ?? defaultEnd ?? ''
+    toInputValue(initialValues?.endTime, initialValues?.allDay ?? false) || defaultEnd || ''
   )
   const [allDay, setAllDay] = useState(initialValues?.allDay ?? false)
   const [location, setLocation] = useState(initialValues?.location ?? '')
-  const [color, setColor] = useState(initialValues?.color ?? '#1890ff')
+  const [color, setColor] = useState(
+    initialValues?.categoryId ? (initialValues?.categoryColor ?? initialValues?.color ?? '#1890ff') : (initialValues?.color ?? '#1890ff')
+  )
   const [categoryId, setCategoryId] = useState<number | undefined>(
     initialValues?.categoryId ?? undefined
   )
@@ -79,8 +93,8 @@ export function EventForm({ initialValues, categories, tags, onSubmit, loading }
     onSubmit({
       title: title.trim(),
       description: description || undefined,
-      startTime: startTime + ':00',
-      endTime: endTime + ':00',
+      startTime: toSubmitTime(startTime, allDay),
+      endTime: toSubmitTime(endTime, allDay),
       allDay,
       location: location || undefined,
       color,
@@ -110,7 +124,11 @@ export function EventForm({ initialValues, categories, tags, onSubmit, loading }
         <Switch
           id="event-all-day"
           checked={allDay}
-          onCheckedChange={setAllDay}
+          onCheckedChange={(v) => {
+            setAllDay(v)
+            setStartTime(v ? startTime.slice(0, 10) : (startTime || defaultStart || ''))
+            setEndTime(v ? endTime.slice(0, 10) : (endTime || defaultEnd || ''))
+          }}
         />
         <Label htmlFor="event-all-day" className="text-gray-600 cursor-pointer">
           全天事件

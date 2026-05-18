@@ -54,16 +54,16 @@ public class CategoryRepositoryImpl implements CategoryRepository {
     }
 
     @Override
-    public boolean existsByName(String name) {
+    public boolean existsByName(String name, Long userId) {
         LambdaQueryWrapper<CategoryPO> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(CategoryPO::getName, name);
+        wrapper.eq(CategoryPO::getName, name).eq(CategoryPO::getUserId, userId);
         return categoryMapper.selectCount(wrapper) > 0;
     }
 
     @Override
-    public boolean existsByNameExcludingId(String name, Long excludeId) {
+    public boolean existsByNameExcludingId(String name, Long excludeId, Long userId) {
         LambdaQueryWrapper<CategoryPO> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(CategoryPO::getName, name).ne(CategoryPO::getId, excludeId);
+        wrapper.eq(CategoryPO::getName, name).ne(CategoryPO::getId, excludeId).eq(CategoryPO::getUserId, userId);
         return categoryMapper.selectCount(wrapper) > 0;
     }
 

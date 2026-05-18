@@ -150,7 +150,7 @@ Scheduler     Repository     Channel    SseEmitter    Browser
   │  alreadyReminded(last_reminded_at)? │  │            │
   │  │                          │           │            │
   │  ├─ dispatch(event) ──────>│           │            │
-  │  │                          │ sendToAll │            │
+  │  │                          │ sendToUser(userId)     │
   │  │                          │──────────>│            │
   │  │                          │           │ SSE event  │
   │  │                          │           │───────────>│

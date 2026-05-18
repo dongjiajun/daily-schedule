@@ -139,6 +139,8 @@ public class EventRepositoryImpl implements EventRepository {
         e.setColor(po.getColor());
         e.setReminderMinutes(po.getReminderMinutes());
         e.setCategoryId(po.getCategoryId());
+        e.setCategoryName(po.getCategoryName());
+        e.setCategoryColor(po.getCategoryColor());
         e.setUserId(po.getUserId());
         e.setLastRemindedAt(po.getLastRemindedAt());
         e.setCreatedAt(po.getCreatedAt());

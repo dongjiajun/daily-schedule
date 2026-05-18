@@ -49,7 +49,7 @@ class TagApplicationServiceTest {
     void getById_notFound_shouldThrow() {
         when(tagRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> appService.getById(99L))
+        assertThatThrownBy(() -> appService.getById(99L, 1L))
             .isInstanceOf(ResourceNotFoundException.class)
             .hasMessageContaining("标签不存在");
     }
@@ -69,6 +69,7 @@ class TagApplicationServiceTest {
     @DisplayName("create → 合法标签应保存并返回")
     void create_validTag_shouldSave() {
         Tag tag = new Tag("紧急", "#ff4d4f");
+        tag.setUserId(1L);
         when(tagRepository.save(any())).thenAnswer(inv -> {
             Tag t = inv.getArgument(0);
             t.setId(7L);
@@ -85,13 +86,14 @@ class TagApplicationServiceTest {
     void update_partialFields_shouldMergeOnlyNonNull() {
         Tag existing = new Tag("紧急", "#ff0000");
         existing.setId(1L);
+        existing.setUserId(1L);
         when(tagRepository.findById(1L)).thenReturn(Optional.of(existing));
         when(tagRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         Tag patch = new Tag();
         patch.setName("非常紧急");
 
-        Tag updated = appService.update(1L, patch);
+        Tag updated = appService.update(1L, patch, 1L);
         assertThat(updated.getName()).isEqualTo("非常紧急");
         assertThat(updated.getColor()).isEqualTo("#ff0000");
     }
@@ -101,7 +103,7 @@ class TagApplicationServiceTest {
     void update_notFound_shouldThrow() {
         when(tagRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> appService.update(99L, new Tag("x", "#000")))
+        assertThatThrownBy(() -> appService.update(99L, new Tag("x", "#000"), 1L))
             .isInstanceOf(ResourceNotFoundException.class);
         verify(tagRepository, never()).save(any());
     }
@@ -111,9 +113,10 @@ class TagApplicationServiceTest {
     void delete_existing_shouldCallDelete() {
         Tag t = new Tag("紧急", "#000");
         t.setId(1L);
+        t.setUserId(1L);
         when(tagRepository.findById(1L)).thenReturn(Optional.of(t));
 
-        appService.delete(1L);
+        appService.delete(1L, 1L);
         verify(tagRepository).delete(1L);
     }
 
@@ -122,7 +125,7 @@ class TagApplicationServiceTest {
     void delete_notFound_shouldThrow() {
         when(tagRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> appService.delete(99L))
+        assertThatThrownBy(() -> appService.delete(99L, 1L))
             .isInstanceOf(ResourceNotFoundException.class);
         verify(tagRepository, never()).delete(any());
     }

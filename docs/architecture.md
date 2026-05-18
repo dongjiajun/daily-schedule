@@ -72,10 +72,10 @@
 1. Browser `GET /api/v1/events?start=&end=&keyword=&page=&size=` → `EventController.listEvents()`
 2. `EventApplicationService.listByRange()` → `EventRepository.findByRange()`
 3. `EventRepositoryImpl.loadWithTags()`：
-   - `EventMapper.selectByRange` 查 event 主表（含 keyword LIKE + user_id 过滤 + LIMIT/OFFSET 分页）
+   - `EventMapper.selectByRange` 查 event 主表 LEFT JOIN category（含 keyword LIKE + user_id 过滤 + LIMIT/OFFSET 分页 + category_name/category_color）
    - **单次** `EventTagMapper.selectTagsByEventIds(allIds)` JOIN tag 表，避免 N+1
-   - 按 `event_id` 分组回填 `Event.tags`（完整 name/color）
-4. `EventAssembler.toResponse()` 使用 `Event.tags` 输出完整 `TagResponse[]`
+   - 按 `event_id` 分组回填 `Event.tags`（完整 name/color）及 `Event.categoryName`/`Event.categoryColor`
+4. `EventAssembler.toResponse()` 使用 `Event.tags`、`Event.categoryName`、`Event.categoryColor` 输出完整响应
 
 ## 提醒通道（幂等）
 
@@ -84,14 +84,14 @@ Scheduler (30s fixedDelay, Clock-injected)
    │
    ├─ findUpcoming(now, now+1h)         读取设有 reminderMinutes 的事件
    │
-   ├─ 跳过：!withinWindow(remindAt)      ±35s 触发窗口
-   ├─ 跳过：sentReminders 去重           key = eventId + remindAt
+   ├─ 跳过：!withinWindow(remindAt)      ±30s 触发窗口
+   ├─ 跳过：alreadyReminded()             last_reminded_at >= remindAt 则幂等跳过
    │
    ├─ 分发：channels.forEach(send)      所有 NotificationChannel
    └─ 幂等写回（去重 Set 定期清理）
 ```
 
-`BrowserNotificationService` 通过 `SseEmitterManager.sendToAll` 广播 SSE，前端 `useSseNotifications` 指数退避自动重连。
+`BrowserNotificationService` 通过 `SseEmitterManager.sendToUser` 按 userId 推送 SSE，前端 `useSseNotifications` 通过 `?token=` 查询参数传递 JWT，指数退避自动重连。
 
 ## 缓存
 

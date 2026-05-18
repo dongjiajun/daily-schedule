@@ -8,12 +8,13 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 class SseEmitterManagerTest {
 
@@ -27,7 +28,7 @@ class SseEmitterManagerTest {
     @Test
     @DisplayName("register：成功返回 SseEmitter 且计数 +1")
     void register_increasesActiveCount() {
-        SseEmitter emitter = manager.register();
+        SseEmitter emitter = manager.register(1L);
 
         assertThat(emitter).isNotNull();
         assertThat(manager.getActiveCount()).isEqualTo(1);
@@ -36,56 +37,55 @@ class SseEmitterManagerTest {
     @Test
     @DisplayName("register：多次注册各自独立")
     void register_multiple_emitters() {
-        manager.register();
-        manager.register();
-        manager.register();
+        manager.register(1L);
+        manager.register(1L);
+        manager.register(2L);
         assertThat(manager.getActiveCount()).isEqualTo(3);
     }
 
     @Test
-    @DisplayName("sendToAll：调用每个 emitter.send(builder)")
-    void sendToAll_invokesEverySend() throws Exception {
+    @DisplayName("sendToUser：只推送给指定用户，不影响其他用户")
+    void sendToUser_invokesCorrectUserEmitters() throws Exception {
         SseEmitter a = mock(SseEmitter.class);
         SseEmitter b = mock(SseEmitter.class);
-        injectEmitters(manager, List.of(a, b));
+        injectEmitters(manager, 1L, List.of(a));
+        injectEmitters(manager, 2L, List.of(b));
 
-        manager.sendToAll("{\"id\":1}");
+        manager.sendToUser(1L, "{\"id\":1}");
 
         verify(a).send(org.mockito.ArgumentMatchers.any(SseEmitter.SseEventBuilder.class));
-        verify(b).send(org.mockito.ArgumentMatchers.any(SseEmitter.SseEventBuilder.class));
+        verify(b, org.mockito.Mockito.never()).send(org.mockito.ArgumentMatchers.any(SseEmitter.SseEventBuilder.class));
     }
 
     @Test
-    @DisplayName("sendToAll：IOException 的连接被移除，其他不受影响")
-    void sendToAll_failedEmitter_isRemoved() throws Exception {
+    @DisplayName("sendToUser：IOException 的连接被移除，其他不受影响")
+    void sendToUser_failedEmitter_isRemoved() throws Exception {
         SseEmitter ok = mock(SseEmitter.class);
         SseEmitter bad = mock(SseEmitter.class);
         doThrow(new IOException("boom")).when(bad).send(org.mockito.ArgumentMatchers.any(SseEmitter.SseEventBuilder.class));
-        injectEmitters(manager, List.of(ok, bad));
+        injectEmitters(manager, 1L, List.of(ok, bad));
         assertThat(manager.getActiveCount()).isEqualTo(2);
 
-        manager.sendToAll("payload");
+        manager.sendToUser(1L, "payload");
 
         verify(ok).send(org.mockito.ArgumentMatchers.any(SseEmitter.SseEventBuilder.class));
         assertThat(manager.getActiveCount()).isEqualTo(1);
     }
 
     @Test
-    @DisplayName("sendToAll：无连接时静默不抛")
-    void sendToAll_noEmitters_doesNotThrow() {
-        manager.sendToAll("payload");
+    @DisplayName("sendToUser：目标用户无连接时静默不抛")
+    void sendToUser_noEmitters_doesNotThrow() {
+        manager.sendToUser(999L, "payload");
         assertThat(manager.getActiveCount()).isZero();
     }
 
     @SuppressWarnings("unchecked")
-    private static void injectEmitters(SseEmitterManager manager, List<SseEmitter> emitters) {
+    private static void injectEmitters(SseEmitterManager manager, Long userId, List<SseEmitter> emitters) {
         try {
-            Field f = SseEmitterManager.class.getDeclaredField("emitters");
+            Field f = SseEmitterManager.class.getDeclaredField("userEmitters");
             f.setAccessible(true);
-            List<SseEmitter> list = (List<SseEmitter>) f.get(manager);
-            list.addAll(emitters);
-            // 模拟真实连接生命周期需要的 onCompletion/onTimeout/onError 回调由 register() 注册；
-            // 直接注入的 mock 不携带这些回调，因此测试中我们只观察 sendToAll 行为。
+            Map<Long, CopyOnWriteArrayList<SseEmitter>> map = (Map<Long, CopyOnWriteArrayList<SseEmitter>>) f.get(manager);
+            map.computeIfAbsent(userId, k -> new CopyOnWriteArrayList<>()).addAll(emitters);
         } catch (ReflectiveOperationException ex) {
             throw new RuntimeException(ex);
         }

@@ -15,6 +15,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.contains;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
@@ -33,6 +37,12 @@ class BrowserNotificationServiceTest {
         service = new BrowserNotificationService(sseEmitterManager, objectMapper);
     }
 
+    private static Event createEvent(String title, LocalDateTime start, LocalDateTime end) {
+        Event event = new Event(title, start, end);
+        event.setUserId(1L);
+        return event;
+    }
+
     @Test
     @DisplayName("supports：仅匹配 BROWSER 通道类型")
     void supports_onlyBrowser() {
@@ -42,9 +52,9 @@ class BrowserNotificationServiceTest {
     }
 
     @Test
-    @DisplayName("send：以 JSON 形式向 SseEmitterManager 广播")
+    @DisplayName("send：以 JSON 形式向对应用户推送")
     void send_publishesJsonPayload() {
-        Event event = new Event("团队周会",
+        Event event = createEvent("团队周会",
             LocalDateTime.of(2026, 5, 10, 9, 0),
             LocalDateTime.of(2026, 5, 10, 10, 0));
         event.setId(42L);
@@ -53,7 +63,7 @@ class BrowserNotificationServiceTest {
         service.send(event);
 
         ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
-        verify(sseEmitterManager).sendToAll(captor.capture());
+        verify(sseEmitterManager).sendToUser(eq(1L), captor.capture());
         String payload = captor.getValue();
         assertThat(payload).contains("\"id\":42");
         assertThat(payload).contains("\"title\":\"团队周会\"");
@@ -63,7 +73,7 @@ class BrowserNotificationServiceTest {
     @Test
     @DisplayName("send：标题包含特殊字符（双引号、反斜杠、换行）也能正确 JSON 转义")
     void send_handlesSpecialCharactersInTitle() {
-        Event event = new Event("title with \"quotes\" and \\ slash\nand newline",
+        Event event = createEvent("title with \"quotes\" and \\ slash\nand newline",
             LocalDateTime.of(2026, 5, 10, 9, 0),
             LocalDateTime.of(2026, 5, 10, 10, 0));
         event.setId(1L);
@@ -72,30 +82,27 @@ class BrowserNotificationServiceTest {
         service.send(event);
 
         ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
-        verify(sseEmitterManager).sendToAll(captor.capture());
+        verify(sseEmitterManager).sendToUser(eq(1L), captor.capture());
         String payload = captor.getValue();
-        // 应该能成功解析回 JSON 对象（无引号 / 反斜杠破坏）
         assertThat(payload).startsWith("{").endsWith("}");
-        // ObjectMapper 应已正确转义双引号为 \"
         assertThat(payload).contains("\\\"quotes\\\"");
     }
 
     @Test
     @DisplayName("send：reminderMinutes 为 null 时仍能序列化（写入 null）")
     void send_nullReminderMinutes_stillSerializes() {
-        Event event = new Event("无提醒",
+        Event event = createEvent("无提醒",
             LocalDateTime.of(2026, 5, 10, 9, 0),
             LocalDateTime.of(2026, 5, 10, 10, 0));
         event.setId(1L);
-        // reminderMinutes 保持 null
 
         service.send(event);
 
-        verify(sseEmitterManager).sendToAll(org.mockito.ArgumentMatchers.contains("\"reminderMinutes\":null"));
+        verify(sseEmitterManager).sendToUser(eq(1L), contains("\"reminderMinutes\":null"));
     }
 
     @Test
-    @DisplayName("send：序列化失败 → 不调用 sendToAll")
+    @DisplayName("send：序列化失败 → 不调用 sendToUser")
     void send_serializationFailure_skipsBroadcast() throws Exception {
         ObjectMapper failing = new ObjectMapper() {
             @Override
@@ -105,13 +112,13 @@ class BrowserNotificationServiceTest {
             }
         };
         BrowserNotificationService brittle = new BrowserNotificationService(sseEmitterManager, failing);
-        Event event = new Event("x",
+        Event event = createEvent("x",
             LocalDateTime.of(2026, 5, 10, 9, 0),
             LocalDateTime.of(2026, 5, 10, 10, 0));
         event.setId(1L);
 
         brittle.send(event);
 
-        verify(sseEmitterManager, never()).sendToAll(org.mockito.ArgumentMatchers.any());
+        verify(sseEmitterManager, never()).sendToUser(anyLong(), any());
     }
 }

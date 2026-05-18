@@ -35,9 +35,13 @@ public class EventApplicationService {
         return new PagedEvents(events, total, page, size);
     }
 
-    public Event getById(Long id) {
-        return eventRepository.findById(id)
+    public Event getById(Long id, Long userId) {
+        Event event = eventRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("日程不存在: " + id));
+        if (!event.getUserId().equals(userId)) {
+            throw new ResourceNotFoundException("日程不存在: " + id);
+        }
+        return event;
     }
 
     @Transactional
@@ -55,8 +59,8 @@ public class EventApplicationService {
     }
 
     @Transactional
-    public Event update(Long id, Event data) {
-        Event existing = getById(id);
+    public Event update(Long id, Event data, Long userId) {
+        Event existing = getById(id, userId);
         existing.update(data);
         if (!existing.isValid()) {
             throw new IllegalArgumentException("更新后日程数据不合法");
@@ -65,8 +69,8 @@ public class EventApplicationService {
     }
 
     @Transactional
-    public void delete(Long id) {
-        getById(id);
+    public void delete(Long id, Long userId) {
+        getById(id, userId);
         eventRepository.delete(id);
     }
 

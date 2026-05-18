@@ -13,17 +13,23 @@ import java.util.List;
 @Mapper
 public interface EventMapper extends BaseMapper<EventPO> {
 
-    @Select("<script>SELECT * FROM event WHERE user_id = #{userId} AND start_time &lt; #{end} AND end_time &gt; #{start}" +
-        "<if test='keyword != null and keyword != \"\"'> AND (title LIKE CONCAT('%',#{keyword},'%') OR description LIKE CONCAT('%',#{keyword},'%') OR location LIKE CONCAT('%',#{keyword},'%'))</if>" +
-        " ORDER BY start_time LIMIT #{offset}, #{limit}</script>")
+    String SELECT_WITH_CATEGORY =
+        "SELECT e.*, c.name AS category_name, c.color AS category_color FROM event e" +
+        " LEFT JOIN category c ON e.category_id = c.id";
+
+    @Select("<script>" + SELECT_WITH_CATEGORY +
+        " WHERE e.user_id = #{userId} AND e.start_time &lt; #{end} AND e.end_time &gt; #{start}" +
+        "<if test='keyword != null and keyword != \"\"'> AND (e.title LIKE CONCAT('%',#{keyword},'%') OR e.description LIKE CONCAT('%',#{keyword},'%') OR e.location LIKE CONCAT('%',#{keyword},'%'))</if>" +
+        " ORDER BY e.start_time LIMIT #{offset}, #{limit}</script>")
     List<EventPO> selectByRange(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end,
                                 @Param("userId") Long userId,
                                 @Param("keyword") String keyword,
                                 @Param("offset") int offset, @Param("limit") int limit);
 
-    @Select("<script>SELECT * FROM event WHERE user_id = #{userId} AND start_time &lt; #{end} AND end_time &gt; #{start} AND category_id = #{categoryId}" +
-        "<if test='keyword != null and keyword != \"\"'> AND (title LIKE CONCAT('%',#{keyword},'%') OR description LIKE CONCAT('%',#{keyword},'%') OR location LIKE CONCAT('%',#{keyword},'%'))</if>" +
-        " ORDER BY start_time LIMIT #{offset}, #{limit}</script>")
+    @Select("<script>" + SELECT_WITH_CATEGORY +
+        " WHERE e.user_id = #{userId} AND e.start_time &lt; #{end} AND e.end_time &gt; #{start} AND e.category_id = #{categoryId}" +
+        "<if test='keyword != null and keyword != \"\"'> AND (e.title LIKE CONCAT('%',#{keyword},'%') OR e.description LIKE CONCAT('%',#{keyword},'%') OR e.location LIKE CONCAT('%',#{keyword},'%'))</if>" +
+        " ORDER BY e.start_time LIMIT #{offset}, #{limit}</script>")
     List<EventPO> selectByRangeAndCategory(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end,
                                            @Param("categoryId") Long categoryId,
                                            @Param("userId") Long userId,
@@ -43,7 +49,8 @@ public interface EventMapper extends BaseMapper<EventPO> {
                                  @Param("userId") Long userId,
                                  @Param("keyword") String keyword);
 
-    @Select("SELECT * FROM event WHERE start_time BETWEEN #{now} AND #{threshold} AND reminder_minutes IS NOT NULL ORDER BY start_time")
+    @Select(SELECT_WITH_CATEGORY +
+        " WHERE e.start_time BETWEEN #{now} AND #{threshold} AND e.reminder_minutes IS NOT NULL ORDER BY e.start_time")
     List<EventPO> selectUpcoming(@Param("now") LocalDateTime now, @Param("threshold") LocalDateTime threshold);
 
     @Update("UPDATE event SET last_reminded_at = #{remindedAt} WHERE id = #{id}")

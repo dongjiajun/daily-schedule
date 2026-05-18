@@ -39,12 +39,12 @@ public class EventController implements EventsApi {
     @Override
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteEvent(Long id) {
-        eventAppService.delete(id);
+        eventAppService.delete(id, currentUserService.getCurrentUserId());
     }
 
     @Override
     public EventResponse getEventById(Long id) {
-        Event event = eventAppService.getById(id);
+        Event event = eventAppService.getById(id, currentUserService.getCurrentUserId());
         return EventAssembler.toResponse(event);
     }
 
@@ -61,7 +61,7 @@ public class EventController implements EventsApi {
     @Override
     public EventResponse updateEvent(Long id, @Valid @RequestBody EventUpdateRequest request) {
         Event data = EventAssembler.toDomain(request);
-        Event updated = eventAppService.update(id, data);
+        Event updated = eventAppService.update(id, data, currentUserService.getCurrentUserId());
         return EventAssembler.toResponse(updated);
     }
 }

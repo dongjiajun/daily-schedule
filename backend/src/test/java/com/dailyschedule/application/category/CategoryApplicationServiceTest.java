@@ -50,7 +50,7 @@ class CategoryApplicationServiceTest {
     void getById_notFound_shouldThrow() {
         when(categoryRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> appService.getById(99L))
+        assertThatThrownBy(() -> appService.getById(99L, 1L))
             .isInstanceOf(ResourceNotFoundException.class)
             .hasMessageContaining("分类不存在");
     }
@@ -70,7 +70,8 @@ class CategoryApplicationServiceTest {
     @DisplayName("create → 名称已存在抛出 IllegalArgumentException")
     void create_duplicateName_shouldThrow() {
         Category dup = new Category("工作", "#1890ff");
-        when(categoryRepository.existsByName("工作")).thenReturn(true);
+        dup.setUserId(1L);
+        when(categoryRepository.existsByName(eq("工作"), anyLong())).thenReturn(true);
 
         assertThatThrownBy(() -> appService.create(dup))
             .isInstanceOf(IllegalArgumentException.class)
@@ -82,7 +83,8 @@ class CategoryApplicationServiceTest {
     @DisplayName("create → 合法分类应保存并返回")
     void create_validCategory_shouldSave() {
         Category category = new Category("健身", "#fa541c");
-        when(categoryRepository.existsByName("健身")).thenReturn(false);
+        category.setUserId(1L);
+        when(categoryRepository.existsByName(eq("健身"), anyLong())).thenReturn(false);
         when(categoryRepository.save(any())).thenAnswer(inv -> {
             Category c = inv.getArgument(0);
             c.setId(10L);
@@ -99,6 +101,7 @@ class CategoryApplicationServiceTest {
     void update_partialFields_shouldMergeOnlyNonNull() {
         Category existing = new Category("工作", "#1890ff");
         existing.setId(1L);
+        existing.setUserId(1L);
         existing.setDescription("原描述");
         when(categoryRepository.findById(1L)).thenReturn(Optional.of(existing));
         when(categoryRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
@@ -106,7 +109,7 @@ class CategoryApplicationServiceTest {
         Category patch = new Category();
         patch.setColor("#000000");
 
-        Category updated = appService.update(1L, patch);
+        Category updated = appService.update(1L, patch, 1L);
         assertThat(updated.getName()).isEqualTo("工作");
         assertThat(updated.getColor()).isEqualTo("#000000");
         assertThat(updated.getDescription()).isEqualTo("原描述");
@@ -117,7 +120,7 @@ class CategoryApplicationServiceTest {
     void update_notFound_shouldThrow() {
         when(categoryRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> appService.update(99L, new Category("x", "#000")))
+        assertThatThrownBy(() -> appService.update(99L, new Category("x", "#000"), 1L))
             .isInstanceOf(ResourceNotFoundException.class);
         verify(categoryRepository, never()).save(any());
     }
@@ -127,9 +130,10 @@ class CategoryApplicationServiceTest {
     void delete_existing_shouldCallDelete() {
         Category c = new Category("工作", "#000");
         c.setId(1L);
+        c.setUserId(1L);
         when(categoryRepository.findById(1L)).thenReturn(Optional.of(c));
 
-        appService.delete(1L);
+        appService.delete(1L, 1L);
         verify(categoryRepository).delete(1L);
     }
 
@@ -138,7 +142,7 @@ class CategoryApplicationServiceTest {
     void delete_notFound_shouldThrow() {
         when(categoryRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> appService.delete(99L))
+        assertThatThrownBy(() -> appService.delete(99L, 1L))
             .isInstanceOf(ResourceNotFoundException.class);
         verify(categoryRepository, never()).delete(any());
     }

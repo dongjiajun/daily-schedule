@@ -10,8 +10,8 @@ public interface TagRepository {
     void delete(Long id);
     List<Tag> findByEventId(Long eventId);
 
-    boolean existsByName(String name);
+    boolean existsByName(String name, Long userId);
 
     /** 查询同名标签但排除指定 ID（用于 update 路径的重名校验）。 */
-    boolean existsByNameExcludingId(String name, Long excludeId);
+    boolean existsByNameExcludingId(String name, Long excludeId, Long userId);
 }

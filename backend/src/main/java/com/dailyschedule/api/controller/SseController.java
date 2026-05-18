@@ -23,6 +23,7 @@ public class SseController {
         if (!jwtUtil.validateToken(token)) {
             throw new IllegalArgumentException("无效的认证令牌");
         }
-        return sseEmitterManager.register();
+        Long userId = jwtUtil.getUserId(token);
+        return sseEmitterManager.register(userId);
     }
 }

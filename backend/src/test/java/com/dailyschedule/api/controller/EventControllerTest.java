@@ -19,6 +19,8 @@ import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -93,7 +95,8 @@ class EventControllerTest {
     @Test
     @DisplayName("GET /api/v1/events/{id} → 不存在返回 404")
     void getEventById_notFound_shouldReturn404() throws Exception {
-        when(appService.getById(999L))
+        when(currentUserService.getCurrentUserId()).thenReturn(1L);
+        when(appService.getById(eq(999L), anyLong()))
             .thenThrow(new ResourceNotFoundException("日程不存在: 999"));
 
         mockMvc.perform(get("/api/v1/events/999"))

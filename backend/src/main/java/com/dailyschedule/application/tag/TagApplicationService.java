@@ -22,9 +22,13 @@ public class TagApplicationService {
         return tagRepository.findAll(userId);
     }
 
-    public Tag getById(Long id) {
-        return tagRepository.findById(id)
+    public Tag getById(Long id, Long userId) {
+        Tag tag = tagRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("标签不存在: " + id));
+        if (!tag.getUserId().equals(userId)) {
+            throw new ResourceNotFoundException("标签不存在: " + id);
+        }
+        return tag;
     }
 
     @Transactional
@@ -33,7 +37,7 @@ public class TagApplicationService {
         if (!tag.isValid()) {
             throw new IllegalArgumentException("标签名称不能为空");
         }
-        if (tagRepository.existsByName(tag.getName())) {
+        if (tagRepository.existsByName(tag.getName(), tag.getUserId())) {
             throw new IllegalArgumentException("标签名称已存在: " + tag.getName());
         }
         return tagRepository.save(tag);
@@ -41,10 +45,10 @@ public class TagApplicationService {
 
     @Transactional
     @CacheEvict(value = "tags", allEntries = true)
-    public Tag update(Long id, Tag data) {
-        Tag existing = getById(id);
+    public Tag update(Long id, Tag data, Long userId) {
+        Tag existing = getById(id, userId);
         if (data.getName() != null && !data.getName().equals(existing.getName())) {
-            if (tagRepository.existsByNameExcludingId(data.getName(), id)) {
+            if (tagRepository.existsByNameExcludingId(data.getName(), id, userId)) {
                 throw new IllegalArgumentException("标签名称已存在: " + data.getName());
             }
             existing.setName(data.getName());
@@ -55,8 +59,8 @@ public class TagApplicationService {
 
     @Transactional
     @CacheEvict(value = "tags", allEntries = true)
-    public void delete(Long id) {
-        getById(id);
+    public void delete(Long id, Long userId) {
+        getById(id, userId);
         tagRepository.delete(id);
     }
 }

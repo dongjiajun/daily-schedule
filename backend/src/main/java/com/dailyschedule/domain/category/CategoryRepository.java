@@ -8,8 +8,8 @@ public interface CategoryRepository {
     Optional<Category> findById(Long id);
     Category save(Category category);
     void delete(Long id);
-    boolean existsByName(String name);
+    boolean existsByName(String name, Long userId);
 
     /** 查询同名分类但排除指定 ID（用于 update 路径的重名校验）。 */
-    boolean existsByNameExcludingId(String name, Long excludeId);
+    boolean existsByNameExcludingId(String name, Long excludeId, Long userId);
 }

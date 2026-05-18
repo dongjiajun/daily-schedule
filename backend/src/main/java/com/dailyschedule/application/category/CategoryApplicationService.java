@@ -23,9 +23,13 @@ public class CategoryApplicationService {
         return categoryRepository.findAll(userId);
     }
 
-    public Category getById(Long id) {
-        return categoryRepository.findById(id)
+    public Category getById(Long id, Long userId) {
+        Category category = categoryRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("分类不存在: " + id));
+        if (!category.getUserId().equals(userId)) {
+            throw new ResourceNotFoundException("分类不存在: " + id);
+        }
+        return category;
     }
 
     @Transactional
@@ -34,7 +38,7 @@ public class CategoryApplicationService {
         if (!category.isValid()) {
             throw new IllegalArgumentException("分类名称不能为空");
         }
-        if (categoryRepository.existsByName(category.getName())) {
+        if (categoryRepository.existsByName(category.getName(), category.getUserId())) {
             throw new IllegalArgumentException("分类名称已存在: " + category.getName());
         }
         return categoryRepository.save(category);
@@ -42,10 +46,10 @@ public class CategoryApplicationService {
 
     @Transactional
     @CacheEvict(value = "categories", allEntries = true)
-    public Category update(Long id, Category data) {
-        Category existing = getById(id);
+    public Category update(Long id, Category data, Long userId) {
+        Category existing = getById(id, userId);
         if (data.getName() != null && !data.getName().equals(existing.getName())) {
-            if (categoryRepository.existsByNameExcludingId(data.getName(), id)) {
+            if (categoryRepository.existsByNameExcludingId(data.getName(), id, userId)) {
                 throw new IllegalArgumentException("分类名称已存在: " + data.getName());
             }
             existing.setName(data.getName());
@@ -57,8 +61,8 @@ public class CategoryApplicationService {
 
     @Transactional
     @CacheEvict(value = "categories", allEntries = true)
-    public void delete(Long id) {
-        getById(id);
+    public void delete(Long id, Long userId) {
+        getById(id, userId);
         categoryRepository.delete(id);
     }
 }

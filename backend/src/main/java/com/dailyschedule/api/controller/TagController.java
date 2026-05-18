@@ -37,6 +37,7 @@ public class TagController implements TagsApi {
     @ResponseStatus(HttpStatus.CREATED)
     public TagResponse createTag(TagCreateRequest request) {
         Tag tag = TagAssembler.toDomain(request);
+        tag.setUserId(currentUserService.getCurrentUserId());
         Tag saved = tagAppService.create(tag);
         return TagAssembler.toResponse(saved);
     }
@@ -44,13 +45,13 @@ public class TagController implements TagsApi {
     @Override
     public TagResponse updateTag(Long id, TagCreateRequest request) {
         Tag data = TagAssembler.toDomain(request);
-        Tag updated = tagAppService.update(id, data);
+        Tag updated = tagAppService.update(id, data, currentUserService.getCurrentUserId());
         return TagAssembler.toResponse(updated);
     }
 
     @Override
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteTag(Long id) {
-        tagAppService.delete(id);
+        tagAppService.delete(id, currentUserService.getCurrentUserId());
     }
 }

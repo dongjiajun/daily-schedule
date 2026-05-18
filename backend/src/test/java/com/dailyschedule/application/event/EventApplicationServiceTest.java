@@ -102,7 +102,7 @@ class EventApplicationServiceTest {
     void delete_notFound_shouldThrow() {
         when(eventRepository.findById(999L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> appService.delete(999L))
+        assertThatThrownBy(() -> appService.delete(999L, 1L))
             .isInstanceOf(ResourceNotFoundException.class)
             .hasMessageContaining("日程不存在");
         verify(eventRepository, never()).delete(any());

@@ -65,16 +65,16 @@ public class TagRepositoryImpl implements TagRepository {
     }
 
     @Override
-    public boolean existsByName(String name) {
+    public boolean existsByName(String name, Long userId) {
         LambdaQueryWrapper<TagPO> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(TagPO::getName, name);
+        wrapper.eq(TagPO::getName, name).eq(TagPO::getUserId, userId);
         return tagMapper.selectCount(wrapper) > 0;
     }
 
     @Override
-    public boolean existsByNameExcludingId(String name, Long excludeId) {
+    public boolean existsByNameExcludingId(String name, Long excludeId, Long userId) {
         LambdaQueryWrapper<TagPO> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(TagPO::getName, name).ne(TagPO::getId, excludeId);
+        wrapper.eq(TagPO::getName, name).ne(TagPO::getId, excludeId).eq(TagPO::getUserId, userId);
         return tagMapper.selectCount(wrapper) > 0;
     }
 

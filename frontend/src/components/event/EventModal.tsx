@@ -64,14 +64,14 @@ export function EventModal({ open, eventId, onClose }: EventModalProps) {
           <DialogTitle>{eventId ? '编辑日程' : '新建日程'}</DialogTitle>
         </DialogHeader>
 
-          <div className="p-6">
-            <EventForm
-              initialValues={existingEvent}
-              categories={categories ?? []}
-              tags={tags ?? []}
-              onSubmit={handleSubmit}
-              loading={isLoading}
-            />
+        <div className="p-6">
+          <EventForm
+            initialValues={existingEvent}
+            categories={categories ?? []}
+            tags={tags ?? []}
+            onSubmit={handleSubmit}
+            loading={isLoading}
+          />
 
           {eventId && (
             <div className="mt-4 pt-4 border-t border-gray-100">

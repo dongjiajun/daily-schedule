@@ -64,7 +64,7 @@ class CategoryControllerTest {
     @Test
     @DisplayName("PUT /api/v1/categories/{id} → 更新不存在返回 404")
     void updateCategory_notFound_shouldReturn404() throws Exception {
-        when(categoryAppService.update(any(), any()))
+        when(categoryAppService.update(any(), any(), any()))
             .thenThrow(new com.dailyschedule.api.exception.ResourceNotFoundException("分类不存在: 999"));
 
         mockMvc.perform(put("/api/v1/categories/999")

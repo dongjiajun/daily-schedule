@@ -34,6 +34,12 @@ public class EventPO {
     @TableField("last_reminded_at")
     private LocalDateTime lastRemindedAt;
 
+    @TableField(exist = false)
+    private String categoryName;
+
+    @TableField(exist = false)
+    private String categoryColor;
+
     @TableField(value = "created_at", fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
 
@@ -65,6 +71,10 @@ public class EventPO {
     public void setUserId(Long userId) { this.userId = userId; }
     public LocalDateTime getLastRemindedAt() { return lastRemindedAt; }
     public void setLastRemindedAt(LocalDateTime lastRemindedAt) { this.lastRemindedAt = lastRemindedAt; }
+    public String getCategoryName() { return categoryName; }
+    public void setCategoryName(String categoryName) { this.categoryName = categoryName; }
+    public String getCategoryColor() { return categoryColor; }
+    public void setCategoryColor(String categoryColor) { this.categoryColor = categoryColor; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }

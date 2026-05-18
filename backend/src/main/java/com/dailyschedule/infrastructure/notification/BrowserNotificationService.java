@@ -31,7 +31,7 @@ public class BrowserNotificationService implements NotificationChannel {
         String payload = serialize(event);
         if (payload == null) return;
         log.info("浏览器通知: 日程「{}」即将在 {} 开始", event.getTitle(), event.getStartTime());
-        sseEmitterManager.sendToAll(payload);
+        sseEmitterManager.sendToUser(event.getUserId(), payload);
     }
 
     @Override

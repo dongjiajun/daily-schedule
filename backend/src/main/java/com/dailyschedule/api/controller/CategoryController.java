@@ -45,13 +45,13 @@ public class CategoryController implements CategoriesApi {
     @Override
     public CategoryResponse updateCategory(Long id, CategoryCreateRequest request) {
         Category data = CategoryAssembler.toDomain(request);
-        Category updated = categoryAppService.update(id, data);
+        Category updated = categoryAppService.update(id, data, currentUserService.getCurrentUserId());
         return CategoryAssembler.toResponse(updated);
     }
 
     @Override
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteCategory(Long id) {
-        categoryAppService.delete(id);
+        categoryAppService.delete(id, currentUserService.getCurrentUserId());
     }
 }
