@@ -71,11 +71,11 @@
 
 1. Browser `GET /api/v1/events?start=&end=&keyword=&page=&size=` → `EventController.listEvents()`
 2. `EventApplicationService.listByRange()` → `EventRepository.findByRange()`
-3. `EventRepositoryImpl.enrichWithTags()`：
+3. `EventRepositoryImpl.loadWithTags()`：
    - `EventMapper.selectByRange` 查 event 主表（含 keyword LIKE + user_id 过滤 + LIMIT/OFFSET 分页）
-   - **单次** `EventTagMapper.selectByEventIds(allIds)` JOIN tag 表，避免 N+1
-   - 按 `event_id` 分组回填 `Event.tagMap`（完整 name/color）
-4. `EventAssembler.toResponse()` 使用 `Event.tagMap` 输出完整 `TagResponse[]`
+   - **单次** `EventTagMapper.selectTagsByEventIds(allIds)` JOIN tag 表，避免 N+1
+   - 按 `event_id` 分组回填 `Event.tags`（完整 name/color）
+4. `EventAssembler.toResponse()` 使用 `Event.tags` 输出完整 `TagResponse[]`
 
 ## 提醒通道（幂等）
 
@@ -107,15 +107,21 @@ Scheduler (30s fixedDelay, Clock-injected)
 | 领域 | `domain/event/`, `domain/category/`, `domain/tag/`, `domain/user/`, `domain/notification/` | 业务实体与规则、读侧投影、仓储接口 |
 | 基础设施 | `infrastructure/persistence/`, `infrastructure/security/`, `infrastructure/config/`, `infrastructure/scheduled/`, `infrastructure/notification/` | 持久化、JWT/认证、缓存配置、调度、SSE |
 
+## 测试
+- 本地: 需要 MySQL 8.0（dev/test 库）
+- CI: 使用 H2 内存数据库（MySQL 兼容模式），无需外部数据库
+- 测试总数: 81 用例，11 个测试类
+- 运行: `cd backend && mvn test`
+
 ## 测试矩阵
 
 | 层 | 测试类 | 用例数 |
 |---|--------|------|
-| 领域 | `EventDomainServiceTest` | 5 |
-| 应用 | `EventApplicationServiceTest` / `CategoryApplicationServiceTest` / `TagApplicationServiceTest` | 5 / 4 / 4 |
-| 基础设施 | `EventRepositoryImplTest` / `SseEmitterManagerTest` / `BrowserNotificationServiceTest` / `ReminderSchedulerTest` | 5 / 1 / 1 / 1 |
-| API | `EventControllerTest` / `CategoryControllerTest` / `EventAssemblerTest` | 5 / 4 / 3 |
-| **合计** | 11 类 | **38** |
+| 领域 | `EventDomainServiceTest` | 13 |
+| 应用 | `EventApplicationServiceTest` / `CategoryApplicationServiceTest` / `TagApplicationServiceTest` | 5 / 9 / 8 |
+| 基础设施 | `EventRepositoryImplTest` / `SseEmitterManagerTest` / `BrowserNotificationServiceTest` / `ReminderSchedulerTest` | 13 / 5 / 5 / 7 |
+| API | `EventControllerTest` / `CategoryControllerTest` / `EventAssemblerTest` | 5 / 4 / 7 |
+| **合计** | 11 类 | **81** |
 
 ## 容器化部署
 
