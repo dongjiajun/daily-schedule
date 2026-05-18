@@ -77,15 +77,11 @@ export function Sidebar() {
       </nav>
 
       <div className="p-3 border-t border-gray-100">
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-gray-600 truncate">{username}</span>
-          <button
-            onClick={logout}
-            className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
-            title="退出登录"
-          >
-            <LogOut className="w-4 h-4" />
-          </button>
+        <div className="flex items-center justify-between group cursor-pointer" onClick={logout}>
+          <span className="text-sm text-gray-400 truncate group-hover:text-gray-600 transition-colors">
+            {username}
+          </span>
+          <LogOut className="w-3.5 h-3.5 text-gray-300 group-hover:text-gray-500 transition-colors" />
         </div>
       </div>
     </aside>
