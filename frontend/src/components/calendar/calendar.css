@@ -1,92 +1,69 @@
-/* react-big-calendar Tailwind 风格覆盖 */
+/* react-big-calendar 现代简约风格覆盖 */
 
 .calendar-container {
-  --rbc-bg: #ffffff;
-  --rbc-border: #f1f5f9;
-  --rbc-text: #334155;
-  --rbc-muted: #94a3b8;
+  --cal-bg: #ffffff;
+  --cal-border: #f1f5f9;
+  --cal-text: #334155;
+  --cal-muted: #94a3b8;
+  --cal-today: rgba(15, 23, 42, 0.04);
 }
 
-/* 工具栏 */
-.rbc-toolbar {
-  display: none !important;
-}
+/* 隐藏默认工具栏（使用自定义） */
+.rbc-toolbar { display: none !important; }
 
-/* 头部 */
+/* ========== 头部 ========== */
 .rbc-header {
-  padding: 12px 0 !important;
+  padding: 14px 0 !important;
   font-size: 11px !important;
   font-weight: 600 !important;
   color: #94a3b8 !important;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   border-bottom: 1px solid #f1f5f9 !important;
   background: #fafbfc;
 }
 
-/* 今日高亮 */
-.rbc-today {
-  background-color: rgba(15, 23, 42, 0.03) !important;
+.rbc-header + .rbc-header {
+  border-left: 1px solid #f1f5f9 !important;
 }
 
-/* 月视图行高 */
+/* ========== 月视图 ========== */
+.rbc-month-view {
+  border: none !important;
+}
+
 .rbc-month-row {
-  min-height: 120px !important;
-}
-
-/* 时间格 hover */
-.rbc-day-bg:hover {
-  background-color: rgba(15, 23, 42, 0.02) !important;
-}
-
-/* 非当月日期 */
-.rbc-off-range-bg {
-  background: #f8fafc !important;
-}
-
-.rbc-off-range {
-  color: var(--rbc-muted) !important;
-}
-
-/* 日期格子 */
-.rbc-month-view,
-.rbc-time-view {
-  border: 1px solid var(--rbc-border) !important;
-  border-radius: 0 !important;
-  overflow: hidden;
+  min-height: 130px !important;
 }
 
 .rbc-month-row + .rbc-month-row {
-  border-top: 1px solid var(--rbc-border) !important;
+  border-top: 1px solid #f1f5f9 !important;
 }
 
 .rbc-day-bg + .rbc-day-bg {
-  border-left: 1px solid var(--rbc-border) !important;
+  border-left: 1px solid #f1f5f9 !important;
 }
 
-/* 事件卡片 */
-.rbc-event {
-  border-radius: 6px !important;
-  border: none !important;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06) !important;
-  transition: box-shadow 0.15s ease, transform 0.15s ease !important;
+/* 今日 */
+.rbc-today {
+  background-color: var(--cal-today) !important;
 }
 
-.rbc-event:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
-  transform: translateY(-1px);
+/* 非当月 */
+.rbc-off-range-bg {
+  background: #fafbfc !important;
 }
 
-.rbc-event-label {
-  display: none !important;
+.rbc-off-range {
+  color: #cbd5e1 !important;
 }
 
-/* 月视图日期数字 */
+/* 日期数字 */
 .rbc-date-cell {
-  padding: 4px 8px !important;
+  padding: 6px 10px !important;
   font-size: 13px !important;
   font-weight: 500 !important;
-  color: var(--rbc-text);
+  color: #475569;
 }
 
 .rbc-date-cell > a {
@@ -94,71 +71,148 @@
   text-decoration: none !important;
 }
 
-/* 今日日期数字 */
 .rbc-today .rbc-date-cell {
-  color: #3b82f6 !important;
+  color: #0f172a !important;
 }
 
-/* 时间轴 */
+.rbc-today .rbc-date-cell > a {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 26px !important;
+  height: 26px !important;
+  border-radius: 50% !important;
+  background: #0f172a !important;
+  color: #fff !important;
+  font-size: 12px !important;
+}
+
+/* ========== 周/日视图 ========== */
+.rbc-time-view {
+  border: none !important;
+}
+
+.rbc-time-header-content {
+  border-left: none !important;
+}
+
 .rbc-time-content {
-  border-top: 1px solid var(--rbc-border) !important;
+  border-top: 1px solid #f1f5f9 !important;
+}
+
+.rbc-time-content > * + * > * {
+  border-left: 1px solid #f1f5f9 !important;
 }
 
 .rbc-timeslot-group {
   border-bottom: 1px solid #f8fafc !important;
-  min-height: 60px !important;
+  min-height: 56px !important;
 }
 
-.rbc-time-header-content {
-  border-left: 1px solid var(--rbc-border) !important;
+.rbc-time-slot {
+  font-size: 11px !important;
 }
 
 .rbc-label {
-  font-size: 12px !important;
-  color: var(--rbc-muted) !important;
+  font-size: 11px !important;
+  color: #94a3b8 !important;
+  font-weight: 500 !important;
 }
 
-/* 议程视图 */
-.rbc-agenda-view table {
-  border: 1px solid var(--rbc-border) !important;
+/* 当前时间线 */
+.rbc-current-time-indicator {
+  background: #ef4444 !important;
+  height: 2px !important;
 }
 
-.rbc-agenda-view table thead > tr > th {
+/* ========== 事件卡片 ========== */
+.rbc-event {
+  border-radius: 6px !important;
+  border: none !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08) !important;
+  padding: 3px 8px !important;
   font-size: 12px !important;
   font-weight: 500 !important;
-  color: var(--rbc-muted) !important;
-  text-transform: uppercase;
-  padding: 12px 16px !important;
-  border-bottom: 1px solid var(--rbc-border) !important;
+  transition: box-shadow 0.2s, transform 0.2s !important;
+  cursor: pointer !important;
+}
+
+.rbc-event:hover {
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15) !important;
+  transform: translateY(-1px);
+  z-index: 10;
+}
+
+.rbc-event-label {
+  display: none !important;
+}
+
+.rbc-event-content {
+  line-height: 1.4 !important;
+}
+
+/* 月视图中的事件 */
+.rbc-month-view .rbc-event {
+  margin: 1px 2px !important;
+}
+
+/* 更多链接 */
+.rbc-show-more {
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  color: #64748b !important;
+  background: none !important;
+  text-decoration: none !important;
+}
+
+.rbc-show-more:hover {
+  color: #0f172a !important;
+}
+
+/* ========== 议程视图 ========== */
+.rbc-agenda-view table {
+  border: none !important;
+}
+
+.rbc-agenda-view table thead {
+  display: none !important;
+}
+
+.rbc-agenda-view table tbody > tr {
+  border-bottom: 1px solid #f1f5f9 !important;
 }
 
 .rbc-agenda-view table tbody > tr > td {
-  padding: 10px 16px !important;
+  padding: 14px 20px !important;
   font-size: 14px !important;
-  border-bottom: 1px solid #f8fafc !important;
 }
 
-/* Popup (show more) */
+.rbc-agenda-date-cell,
+.rbc-agenda-time-cell {
+  color: #94a3b8 !important;
+  font-size: 13px !important;
+}
+
+/* ========== Popup 浮层 ========== */
 .rbc-overlay {
-  border-radius: 12px !important;
-  border: 1px solid var(--rbc-border) !important;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08) !important;
+  border-radius: 14px !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1) !important;
+  padding: 4px !important;
+  background: #fff !important;
 }
 
-/* scrollbar */
-.rbc-calendar ::-webkit-scrollbar {
-  width: 6px;
+.rbc-overlay .rbc-event {
+  margin: 2px 0 !important;
 }
 
-.rbc-calendar ::-webkit-scrollbar-track {
-  background: transparent;
-}
+/* ========== 滚动条 ========== */
+.rbc-calendar ::-webkit-scrollbar { width: 5px; }
+.rbc-calendar ::-webkit-scrollbar-track { background: transparent; }
+.rbc-calendar ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 3px; }
+.rbc-calendar ::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
 
-.rbc-calendar ::-webkit-scrollbar-thumb {
-  background: #e2e8f0;
-  border-radius: 3px;
-}
-
-.rbc-calendar ::-webkit-scrollbar-thumb:hover {
-  background: #cbd5e1;
+/* ========== 时间段 hover ========== */
+.rbc-day-slot .rbc-time-slot:hover {
+  background: rgba(15, 23, 42, 0.02) !important;
 }

@@ -1,8 +1,17 @@
 import { useState, type FormEvent } from 'react'
 import { CalendarDays } from 'lucide-react'
+import { motion } from 'framer-motion'
 import { useAuthStore } from '../store/authStore'
 
 const API_BASE = '/api/v1/auth'
+
+const dots = [
+  { color: '#3b82f6', size: 180, x: '15%', y: '20%', delay: 0 },
+  { color: '#10b981', size: 120, x: '80%', y: '15%', delay: 0.15 },
+  { color: '#f59e0b', size: 100, x: '75%', y: '75%', delay: 0.3 },
+  { color: '#8b5cf6', size: 140, x: '20%', y: '70%', delay: 0.1 },
+  { color: '#06b6d4', size: 80, x: '50%', y: '10%', delay: 0.25 },
+]
 
 export function LoginPage() {
   const [isRegister, setIsRegister] = useState(false)
@@ -37,37 +46,82 @@ export function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden"
-      style={{
-        background: 'linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 30%, #f0f2f5 60%, #eef1f5 100%)',
-      }}>
-      {/* 背景装饰 */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 rounded-full bg-gray-900/3" />
-        <div className="absolute -bottom-32 -left-32 w-64 h-64 rounded-full bg-gray-900/3" />
-        <div className="absolute top-1/3 left-1/4 w-48 h-48 rounded-full bg-gray-900/[0.02]" />
-      </div>
+      style={{ background: 'linear-gradient(160deg, #f8fafc 0%, #f1f5f9 50%, #e8ecf1 100%)' }}>
 
-      <div className="w-full max-w-sm relative z-10">
+      {/* 彩色装饰光斑 */}
+      {dots.map((d, i) => (
+        <motion.div
+          key={i}
+          className="absolute rounded-full pointer-events-none"
+          style={{
+            width: d.size,
+            height: d.size,
+            left: d.x,
+            top: d.y,
+            background: `radial-gradient(circle, ${d.color}15 0%, ${d.color}03 70%, transparent 100%)`,
+          }}
+          initial={{ opacity: 0, scale: 0.6 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 1, delay: d.delay, ease: 'easeOut' }}
+        />
+      ))}
+
+      {/* 中心内容 */}
+      <motion.div
+        className="w-full max-w-sm relative z-10"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+      >
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-white shadow-sm border border-gray-100 mb-4">
-            <CalendarDays className="w-7 h-7 text-gray-800" />
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">日程管理</h1>
-          <p className="text-sm text-gray-500 mt-2">
+          <motion.div
+            className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white shadow-md shadow-gray-200/60 border border-gray-100 mb-5"
+            whileHover={{ rotate: -5, scale: 1.05 }}
+            transition={{ type: 'spring', stiffness: 300 }}
+          >
+            <CalendarDays className="w-8 h-8 text-gray-800" />
+          </motion.div>
+          <motion.h1
+            className="text-2xl font-bold text-gray-900 tracking-tight"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4 }}
+          >
+            日程管理
+          </motion.h1>
+          <motion.p
+            className="text-sm text-gray-500 mt-2"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5 }}
+          >
             {isRegister ? '创建新账号开始使用' : '欢迎回来'}
-          </p>
+          </motion.p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-lg shadow-gray-200/50 border border-gray-100 p-8 space-y-4">
+        <motion.div
+          className="bg-white rounded-2xl shadow-xl shadow-gray-200/40 border border-gray-100 p-8 space-y-4"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.35, duration: 0.4 }}
+        >
           {error && (
-            <div className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2.5">{error}</div>
+            <motion.div
+              className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2.5"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+            >
+              {error}
+            </motion.div>
           )}
 
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wider">用户名</label>
+            <label className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wider">
+              用户名
+            </label>
             <input
               type="text"
-              className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-300 transition-all"
+              className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400 transition-all"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               placeholder="输入用户名"
@@ -77,10 +131,12 @@ export function LoginPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wider">密码</label>
+            <label className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wider">
+              密码
+            </label>
             <input
               type="password"
-              className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-300 transition-all"
+              className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400 transition-all"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="输入密码"
@@ -88,14 +144,19 @@ export function LoginPage() {
             />
           </div>
 
-          <button
+          <motion.button
             type="submit"
             disabled={loading}
-            className="w-full py-3 rounded-xl bg-gray-900 text-white text-sm font-semibold hover:bg-gray-800 active:bg-gray-950 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm shadow-gray-900/10"
+            className="w-full py-3 rounded-xl text-white text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md"
+            style={{
+              background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
+            }}
+            whileHover={{ scale: 1.01 }}
+            whileTap={{ scale: 0.99 }}
             onClick={handleSubmit}
           >
             {loading ? '处理中...' : isRegister ? '创建账号' : '登录'}
-          </button>
+          </motion.button>
 
           <p className="text-center text-sm text-gray-400 pt-1">
             {isRegister ? '已有账号？' : '没有账号？'}
@@ -107,8 +168,8 @@ export function LoginPage() {
               {isRegister ? '去登录' : '去注册'}
             </button>
           </p>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </div>
   )
 }
