@@ -11,6 +11,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import { Trash2 } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 interface EventModalProps {
   open: boolean
@@ -62,9 +64,38 @@ export function EventModal({ open, eventId, onClose }: EventModalProps) {
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{eventId ? '编辑日程' : '新建日程'}</DialogTitle>
+          {eventId && (
+            <button
+              type="button"
+              onClick={() => setShowDelete(!showDelete)}
+              className={cn(
+                'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all mr-8',
+                showDelete
+                  ? 'bg-red-50 text-red-600'
+                  : 'text-gray-400 hover:text-red-500 hover:bg-red-50'
+              )}
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              删除
+            </button>
+          )}
         </DialogHeader>
 
         <div className="p-6">
+          {showDelete && (
+            <div className="flex items-center justify-between rounded-xl bg-red-50 border border-red-100 p-3 mb-4">
+              <span className="text-sm text-red-700 font-medium">确认删除此日程？此操作不可撤销。</span>
+              <div className="flex gap-2">
+                <Button type="button" variant="ghost" size="sm" onClick={() => setShowDelete(false)}>
+                  取消
+                </Button>
+                <Button type="button" variant="destructive" size="sm" onClick={handleDelete}>
+                  确认删除
+                </Button>
+              </div>
+            </div>
+          )}
+
           <EventForm
             initialValues={existingEvent}
             categories={categories ?? []}
@@ -72,45 +103,6 @@ export function EventModal({ open, eventId, onClose }: EventModalProps) {
             onSubmit={handleSubmit}
             loading={isLoading}
           />
-
-          {eventId && (
-            <div className="mt-4 pt-4 border-t border-gray-100">
-              {showDelete ? (
-                <div className="flex items-center justify-between rounded-lg bg-red-50 p-3">
-                  <span className="text-sm text-red-700">确认删除此日程？</span>
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowDelete(false)}
-                      className="text-red-600 hover:bg-red-100"
-                    >
-                      取消
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="sm"
-                      onClick={handleDelete}
-                    >
-                      删除
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowDelete(true)}
-                  className="text-red-500 hover:bg-red-50"
-                >
-                  删除此日程
-                </Button>
-              )}
-            </div>
-          )}
         </div>
       </DialogContent>
     </Dialog>

@@ -1,6 +1,8 @@
 import { useMemo, useCallback, useEffect } from 'react'
 import { Calendar, dayjsLocalizer, type ToolbarProps, type View } from 'react-big-calendar'
 import dayjs from 'dayjs'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Plus } from 'lucide-react'
 import { useCalendarStore, type CalendarView } from '../../store/calendarStore'
 import { useEvents } from '../../hooks/useEvents'
 import { cn } from '../../lib/utils'
@@ -54,16 +56,17 @@ export function CalendarView() {
   )
 
   const eventStyleGetter = useCallback((event: CalendarEvent) => {
-    const color = event.resource.color ?? '#1890ff'
+    const color = event.resource.categoryColor ?? event.resource.color ?? '#3b82f6'
     return {
       style: {
-        backgroundColor: color,
+        backgroundColor: color + '22',
         borderRadius: '6px',
         border: 'none',
-        color: '#fff',
+        borderLeft: `3px solid ${color}`,
+        color: '#1e293b',
         fontSize: '12px',
         fontWeight: 500,
-        padding: '2px 6px',
+        padding: '2px 8px',
       },
     }
   }, [])
@@ -93,6 +96,23 @@ export function CalendarView() {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [openCreateModal])
 
+  const MonthEvent = useCallback(({ event, title }: { event: CalendarEvent; title: string }) => {
+    const { resource } = event
+    const start = dayjs(resource.startTime!)
+    const end = dayjs(resource.endTime!)
+    const duration = end.diff(start, 'minute')
+    const isLong = duration >= 120
+    let label = title
+    if (!resource.allDay && duration > 0) {
+      label = `${start.format('HH:mm')} ${label}`
+    }
+    return (
+      <span className={cn('block truncate', isLong && 'font-semibold')}>
+        {label}
+      </span>
+    )
+  }, [])
+
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-4">
@@ -102,42 +122,87 @@ export function CalendarView() {
     )
   }
 
+  const isEmpty = !isLoading && calendarEvents.length === 0
+
   return (
-    <div className="h-full calendar-container">
-      <Calendar<CalendarEvent>
-        localizer={localizer}
-        events={calendarEvents}
-        startAccessor="start"
-        endAccessor="end"
-        views={{ month: true, week: true, day: true, agenda: true }}
-        view={view as View}
-        date={currentDate.toDate()}
-        onView={(v) => setView(v as CalendarView)}
-        onNavigate={(d) => setCurrentDate(dayjs(d))}
-        onSelectEvent={handleSelectEvent}
-        onSelectSlot={handleSelectSlot}
-        selectable
-        popup
-        eventPropGetter={eventStyleGetter}
-        dayPropGetter={dayPropGetter}
-        messages={{
-          today: '今天',
-          previous: '‹',
-          next: '›',
-          month: '月',
-          week: '周',
-          day: '日',
-          agenda: '议程',
-          date: '日期',
-          time: '时间',
-          event: '日程',
-          noEventsInRange: '该时段没有日程',
-          showMore: (total: number) => `+${total} 更多`,
-        }}
-        components={{
-          toolbar: CalendarToolbar,
-        }}
-      />
+    <div className="h-full calendar-container relative">
+      <AnimatePresence>
+        <motion.div
+          key={view}
+          className="h-full"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.15, ease: 'easeOut' }}
+        >
+          <Calendar<CalendarEvent>
+            localizer={localizer}
+            events={calendarEvents}
+            startAccessor="start"
+            endAccessor="end"
+            views={{ month: true, week: true, day: true, agenda: true }}
+            view={view as View}
+            date={currentDate.toDate()}
+            onView={(v) => setView(v as CalendarView)}
+            onNavigate={(d) => setCurrentDate(dayjs(d))}
+            onSelectEvent={handleSelectEvent}
+            onSelectSlot={handleSelectSlot}
+            selectable
+            popup
+            eventPropGetter={eventStyleGetter}
+            dayPropGetter={dayPropGetter}
+            messages={{
+              today: '今天',
+              previous: '‹',
+              next: '›',
+              month: '月',
+              week: '周',
+              day: '日',
+              agenda: '议程',
+              date: '日期',
+              time: '时间',
+              event: '日程',
+              noEventsInRange: '该时段没有日程',
+              showMore: (total: number) => `+${total} 更多`,
+            }}
+            components={{
+              toolbar: CalendarToolbar,
+              event: MonthEvent,
+            }}
+          />
+        </motion.div>
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {isEmpty && (
+          <motion.div
+            className="absolute inset-0 flex items-center justify-center pointer-events-none z-10"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.4 }}
+          >
+            <div className="text-center">
+              <motion.div
+                className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gray-100/80 mb-4"
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.2, duration: 0.4 }}
+              >
+                <Plus className="w-7 h-7 text-gray-400" />
+              </motion.div>
+              <motion.p
+                className="text-sm text-gray-400 font-medium"
+                initial={{ y: 8, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.35, duration: 0.3 }}
+              >
+                暂无日程，点击空白区域或按 <kbd className="px-1.5 py-0.5 text-[11px] font-mono bg-gray-100 rounded text-gray-500">N</kbd> 键创建
+              </motion.p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

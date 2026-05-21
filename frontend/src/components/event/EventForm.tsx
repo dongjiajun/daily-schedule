@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
+import { ChevronDown } from 'lucide-react'
 
 export interface EventFormValues {
   title: string
@@ -38,6 +39,7 @@ interface EventFormProps {
 
 const NO_CATEGORY = '__none__'
 const NO_REMINDER = '__none__'
+const PRESET_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#6366f1', '#84cc16']
 
 const REMINDER_OPTIONS: Array<{ value: string; label: string }> = [
   { value: NO_REMINDER, label: '不提醒' },
@@ -48,13 +50,11 @@ const REMINDER_OPTIONS: Array<{ value: string; label: string }> = [
   { value: '1440', label: '1 天前' },
 ]
 
-/** 将 ISO 时间字符串转换为表单输入需要的格式 */
 function toInputValue(iso: string | undefined, allDay: boolean): string {
   if (!iso) return ''
   return allDay ? iso.slice(0, 10) : iso.slice(0, 16)
 }
 
-/** 将表单输入值转换为提交用的 ISO 时间字符串 */
 function toSubmitTime(value: string, allDay: boolean): string {
   if (!value) return ''
   return allDay ? `${value}T00:00:00` : `${value}:00`
@@ -75,7 +75,7 @@ export function EventForm({ initialValues, categories, tags, onSubmit, loading }
   const [allDay, setAllDay] = useState(initialValues?.allDay ?? false)
   const [location, setLocation] = useState(initialValues?.location ?? '')
   const [color, setColor] = useState(
-    initialValues?.categoryId ? (initialValues?.categoryColor ?? initialValues?.color ?? '#1890ff') : (initialValues?.color ?? '#1890ff')
+    initialValues?.categoryId ? (initialValues?.categoryColor ?? initialValues?.color ?? '#3b82f6') : (initialValues?.color ?? '#3b82f6')
   )
   const [categoryId, setCategoryId] = useState<number | undefined>(
     initialValues?.categoryId ?? undefined
@@ -86,10 +86,24 @@ export function EventForm({ initialValues, categories, tags, onSubmit, loading }
   const [tagIds, setTagIds] = useState<number[]>(
     initialValues?.tags?.map((t) => t.id!).filter(Boolean) ?? []
   )
+  const [showMore, setShowMore] = useState(!!initialValues?.description || !!initialValues?.location)
+  const [errors, setErrors] = useState<{ title?: string; startTime?: string; endTime?: string }>({})
+
+  const validate = (): boolean => {
+    const next: typeof errors = {}
+    if (!title.trim()) next.title = '请输入日程标题'
+    if (!startTime) next.startTime = '请选择开始时间'
+    if (!endTime) next.endTime = '请选择结束时间'
+    if (startTime && endTime && startTime > endTime) {
+      next.endTime = '结束时间不能早于开始时间'
+    }
+    setErrors(next)
+    return Object.keys(next).length === 0
+  }
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
-    if (!title.trim()) return
+    if (!validate()) return
     onSubmit({
       title: title.trim(),
       description: description || undefined,
@@ -106,20 +120,24 @@ export function EventForm({ initialValues, categories, tags, onSubmit, loading }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {/* 标题 */}
       <div className="space-y-1.5">
         <Label htmlFor="event-title">标题 *</Label>
         <Input
           id="event-title"
           type="text"
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          onChange={(e) => { setTitle(e.target.value); if (errors.title) setErrors((p) => ({ ...p, title: undefined })) }}
           placeholder="日程标题"
           maxLength={200}
           required
           autoFocus
+          className={errors.title ? 'border-red-300 focus-visible:ring-red-500/20' : ''}
         />
+        {errors.title && <p className="text-xs text-red-500">{errors.title}</p>}
       </div>
 
+      {/* 全天 + 时间 */}
       <div className="flex items-center gap-3">
         <Switch
           id="event-all-day"
@@ -130,9 +148,7 @@ export function EventForm({ initialValues, categories, tags, onSubmit, loading }
             setEndTime(v ? endTime.slice(0, 10) : (endTime || defaultEnd || ''))
           }}
         />
-        <Label htmlFor="event-all-day" className="text-gray-600 cursor-pointer">
-          全天事件
-        </Label>
+        <Label htmlFor="event-all-day" className="text-gray-600 cursor-pointer">全天事件</Label>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
@@ -142,9 +158,11 @@ export function EventForm({ initialValues, categories, tags, onSubmit, loading }
             id="event-start"
             type={allDay ? 'date' : 'datetime-local'}
             value={startTime}
-            onChange={(e) => setStartTime(e.target.value)}
+            onChange={(e) => { setStartTime(e.target.value); if (errors.startTime) setErrors((p) => ({ ...p, startTime: undefined })) }}
             required
+            className={errors.startTime ? 'border-red-300 focus-visible:ring-red-500/20' : ''}
           />
+          {errors.startTime && <p className="text-xs text-red-500">{errors.startTime}</p>}
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="event-end">结束时间 *</Label>
@@ -152,23 +170,15 @@ export function EventForm({ initialValues, categories, tags, onSubmit, loading }
             id="event-end"
             type={allDay ? 'date' : 'datetime-local'}
             value={endTime}
-            onChange={(e) => setEndTime(e.target.value)}
+            onChange={(e) => { setEndTime(e.target.value); if (errors.endTime) setErrors((p) => ({ ...p, endTime: undefined })) }}
             required
+            className={errors.endTime ? 'border-red-300 focus-visible:ring-red-500/20' : ''}
           />
+          {errors.endTime && <p className="text-xs text-red-500">{errors.endTime}</p>}
         </div>
       </div>
 
-      <div className="space-y-1.5">
-        <Label htmlFor="event-desc">描述</Label>
-        <Textarea
-          id="event-desc"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="日程描述（可选）"
-          rows={3}
-        />
-      </div>
-
+      {/* 分类 + 颜色（色板） */}
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
           <Label>分类</Label>
@@ -193,10 +203,7 @@ export function EventForm({ initialValues, categories, tags, onSubmit, loading }
               {categories.map((cat) => (
                 <SelectItem key={cat.id} value={String(cat.id)}>
                   <span className="flex items-center gap-2">
-                    <span
-                      className="w-2 h-2 rounded-full"
-                      style={{ backgroundColor: cat.color ?? '#1890ff' }}
-                    />
+                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: cat.color ?? '#3b82f6' }} />
                     {cat.name}
                   </span>
                 </SelectItem>
@@ -205,68 +212,44 @@ export function EventForm({ initialValues, categories, tags, onSubmit, loading }
           </Select>
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="event-color-text">
-            颜色{categoryId !== undefined ? '（继承自分类）' : ''}
-          </Label>
-          <div className="flex items-center gap-2">
-            <input
-              type="color"
-              className={cn(
-                'w-9 h-9 rounded-lg border border-gray-200 shrink-0 transition-opacity',
-                categoryId !== undefined
-                  ? 'opacity-50 cursor-not-allowed pointer-events-none'
-                  : 'cursor-pointer'
-              )}
-              value={color}
-              onChange={(e) => setColor(e.target.value)}
-              aria-label="选择颜色"
-              disabled={categoryId !== undefined}
-            />
-            <Input
-              id="event-color-text"
-              type="text"
-              value={color}
-              onChange={(e) => setColor(e.target.value)}
-              placeholder="#1890ff"
-              disabled={categoryId !== undefined}
-            />
+          <Label>颜色{categoryId !== undefined ? '（继承自分类）' : ''}</Label>
+          <div className={cn('flex items-center gap-1.5 flex-wrap', categoryId !== undefined && 'opacity-50 pointer-events-none')}>
+            {PRESET_COLORS.map((c) => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => setColor(c)}
+                className={cn(
+                  'w-7 h-7 rounded-full transition-all',
+                  color === c && 'ring-2 ring-offset-1 ring-gray-400 scale-110'
+                )}
+                style={{ backgroundColor: c }}
+                disabled={categoryId !== undefined}
+              />
+            ))}
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1.5">
-          <Label htmlFor="event-location">地点</Label>
-          <Input
-            id="event-location"
-            type="text"
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            placeholder="地点（可选）"
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label>提前提醒</Label>
-          <Select
-            value={reminderMinutes !== undefined ? String(reminderMinutes) : NO_REMINDER}
-            onValueChange={(v) =>
-              setReminderMinutes(v === NO_REMINDER ? undefined : Number(v))
-            }
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="不提醒" />
-            </SelectTrigger>
-            <SelectContent>
-              {REMINDER_OPTIONS.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+      {/* 提醒 */}
+      <div className="space-y-1.5">
+        <Label>提前提醒</Label>
+        <Select
+          value={reminderMinutes !== undefined ? String(reminderMinutes) : NO_REMINDER}
+          onValueChange={(v) => setReminderMinutes(v === NO_REMINDER ? undefined : Number(v))}
+        >
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="不提醒" />
+          </SelectTrigger>
+          <SelectContent>
+            {REMINDER_OPTIONS.map((opt) => (
+              <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
+      {/* 标签 */}
       {tags.length > 0 && (
         <div className="space-y-1.5">
           <Label>标签</Label>
@@ -279,9 +262,7 @@ export function EventForm({ initialValues, categories, tags, onSubmit, loading }
                   type="button"
                   onClick={() =>
                     setTagIds((prev) =>
-                      prev.includes(tag.id!)
-                        ? prev.filter((id) => id !== tag.id)
-                        : [...prev, tag.id!]
+                      prev.includes(tag.id!) ? prev.filter((id) => id !== tag.id) : [...prev, tag.id!]
                     )
                   }
                   className={cn(
@@ -289,16 +270,11 @@ export function EventForm({ initialValues, categories, tags, onSubmit, loading }
                     'focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-400'
                   )}
                   style={{
-                    backgroundColor: active
-                      ? (tag.color ?? '#1890ff') + '20'
-                      : '#f3f4f6',
-                    borderColor: tag.color ?? '#1890ff',
+                    backgroundColor: active ? (tag.color ?? '#3b82f6') + '20' : '#f3f4f6',
+                    borderColor: tag.color ?? '#3b82f6',
                   }}
                 >
-                  <span
-                    className="w-2 h-2 rounded-full"
-                    style={{ backgroundColor: tag.color ?? '#1890ff' }}
-                  />
+                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: tag.color ?? '#3b82f6' }} />
                   {tag.name}
                 </button>
               )
@@ -307,12 +283,44 @@ export function EventForm({ initialValues, categories, tags, onSubmit, loading }
         </div>
       )}
 
-      <div className="flex justify-end gap-2 pt-2">
-        <Button
-          type="submit"
-          disabled={loading || !title.trim()}
-          className="rounded-xl"
+      {/* 更多详情折叠 */}
+      <div className="border-t border-gray-100 pt-1">
+        <button
+          type="button"
+          onClick={() => setShowMore(!showMore)}
+          className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 transition-colors py-1"
         >
+          <ChevronDown className={cn('w-3.5 h-3.5 transition-transform', showMore && 'rotate-180')} />
+          更多详情
+        </button>
+        {showMore && (
+          <div className="space-y-3 mt-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="event-desc">描述</Label>
+              <Textarea
+                id="event-desc"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="日程描述（可选）"
+                rows={3}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="event-location">地点</Label>
+              <Input
+                id="event-location"
+                type="text"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                placeholder="地点（可选）"
+              />
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="flex justify-end pt-1">
+        <Button type="submit" disabled={loading} className="rounded-xl">
           {loading ? '保存中...' : initialValues ? '更新日程' : '创建日程'}
         </Button>
       </div>

@@ -126,24 +126,30 @@ export function Sidebar() {
             <Layers className="w-3.5 h-3.5" />
             全部
           </button>
-          {categories?.map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => setFilterCategory(cat.id!)}
-              className={cn(
-                'w-full flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-all duration-150',
-                filterCategoryId === cat.id
-                  ? 'bg-gray-900/5 text-gray-900 font-medium shadow-sm'
-                  : 'text-gray-600 hover:bg-gray-100/70'
-              )}
-            >
-              <span
-                className="w-2 h-2 rounded-full flex-shrink-0 ring-2 ring-offset-1 ring-gray-200/50"
-                style={{ backgroundColor: cat.color ?? '#1890ff' }}
-              />
-              {cat.name}
-            </button>
-          ))}
+          {categories && categories.length > 0 ? (
+            categories.map((cat) => (
+              <button
+                key={cat.id}
+                onClick={() => setFilterCategory(cat.id!)}
+                className={cn(
+                  'w-full flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-all duration-150',
+                  filterCategoryId === cat.id
+                    ? 'bg-gray-900/5 text-gray-900 font-medium shadow-sm'
+                    : 'text-gray-600 hover:bg-gray-100/70'
+                )}
+              >
+                <span
+                  className="w-2 h-2 rounded-full flex-shrink-0 ring-2 ring-offset-1 ring-gray-200/50"
+                  style={{ backgroundColor: cat.color ?? '#3b82f6' }}
+                />
+                <span className="truncate">{cat.name}</span>
+              </button>
+            ))
+          ) : (
+            <p className="text-xs text-gray-400 px-3 py-3 text-center">
+              暂无分类，点击上方 <span className="text-gray-500 font-medium">+</span> 创建
+            </p>
+          )}
         </div>
       </nav>
 
