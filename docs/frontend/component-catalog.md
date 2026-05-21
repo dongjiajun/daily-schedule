@@ -7,34 +7,42 @@ App
 ├── QueryClientProvider (React Query)
 │   └── BrowserRouter
 │       └── Routes
-│           └── AppShell
-│               ├── Sidebar
-│               │   ├── 应用标题 (CalendarDays)
-│               │   ├── 新建日程按钮
-│               │   └── 分类筛选列表
-│               └── HomePage
-│                   ├── CalendarView (react-big-calendar)
-│                   │   └── 自定义 Toolbar + 中文 locale
-│                   └── EventModal (条件渲染)
-│                       └── EventForm
-│                           ├── 标题 / 全天开关
-│                           ├── 开始/结束时间选择器
-│                           ├── 描述 / 分类 / 颜色
-│                           └── 地点 / 提醒 / 标签选择
+│           ├── /login → LoginPage
+│           │   └── 登录/注册表单 + 渐变背景 + 动效
+│           └── / → AuthGuard
+│               ├── AppShell
+│               │   ├── Sidebar
+│               │   │   ├── 应用标题 (CalendarDays)
+│               │   │   ├── 新建日程按钮
+│               │   │   ├── 分类筛选列表 + 内联创建
+│               │   │   └── 使用指南按钮 / 退出登录
+│               │   └── HomePage
+│               │       ├── CalendarView (react-big-calendar)
+│               │       │   └── 自定义 Toolbar + 中文 locale
+│               │       ├── EventModal (条件渲染)
+│               │       │   └── EventForm
+│               │       │       ├── 标题 / 全天开关
+│               │       │       ├── 开始/结束时间选择器
+│               │       │       ├── 描述 / 分类 / 颜色
+│               │       │       └── 地点 / 提醒 / 标签选择
+│               │       └── OnboardingGuide (引导教程)
+│               └── ErrorBoundary（错误边界）
 ```
 
 ## 路由
 
 | 路径 | 页面 | 说明 |
 |------|------|------|
-| `/` | HomePage | 主日历页面 |
+| `/login` | LoginPage | 登录/注册页面 |
+| `/` | HomePage | 主日历页面（需登录，AuthGuard 保护） |
 | `/settings` | (待实现) | 设置页面 |
 
 ## 状态管理
 
 | 工具 | 用途 | 存储内容 |
 |------|------|----------|
-| Zustand (`calendarStore`) | UI 状态 | 当前日期、视图类型、弹窗状态、编辑 ID、分类筛选 |
+| Zustand (`authStore`) | 认证状态 | token、userId、username、isAuthenticated，登录/登出 + localStorage |
+| Zustand (`calendarStore`) | UI 状态 | 当前日期、视图类型、弹窗状态、编辑 ID、分类筛选、引导教程 |
 | React Query | 服务端数据 | 事件列表(按范围缓存)、分类列表、标签列表 |
 
 ## 组件清单
@@ -47,9 +55,15 @@ App
 - **EventModal** (`components/event/EventModal.tsx`) — 创建/编辑弹窗，含删除确认
 - **EventForm** (`components/event/EventForm.tsx`) — 事件表单，含全天、时间、分类、颜色、提醒、标签
 
+### 认证模块
+- **LoginPage** (`pages/LoginPage.tsx`) — 登录/注册表单，渐变背景 + Framer Motion 入场动画
+- **AuthGuard** (`App.tsx`) — 路由守卫，未认证时重定向到 `/login`
+
 ### 布局模块
 - **AppShell** (`components/layout/AppShell.tsx`) — 侧边栏 + 内容区 flex 布局
-- **Sidebar** (`components/layout/Sidebar.tsx`) — 导航 + 新建按钮 + 分类筛选
+- **Sidebar** (`components/layout/Sidebar.tsx`) — 导航 + 新建按钮 + 分类筛选 + 使用指南 + 退出登录
+- **ErrorBoundary** (`components/layout/ErrorBoundary.tsx`) — React 错误边界，fallback UI + 重载按钮
+- **OnboardingGuide** (`components/layout/OnboardingGuide.tsx`) — 3 步引导教程（欢迎/新建日程/筛选），Framer Motion spring 动画，可通过侧边栏重新打开
 
 ### UI 基础（shadcn/ui）
 - **Button** (`components/ui/button.tsx`) — variant（default/destructive/outline/secondary/ghost/link）+ size（default/sm/lg/icon）

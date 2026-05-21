@@ -21,7 +21,7 @@
 ### Fixed
 - `EventResponse.tags` 此前只返回 `id`，现在完整返回 `name` / `color`
 - `GlobalExceptionHandler` 补全日志 + `MethodArgumentNotValidException` 处理
-- `ReminderScheduler` 窗口从 ±30s 扩展为 ±35s，间隔从 60s 缩短为 30s
+- `ReminderScheduler` 窗口 ±30s，间隔 30s，幂等改用 `last_reminded_at`
 
 ### Changed (BREAKING)
 - 所有 API 端点需 JWT 认证（请求头 `Authorization: Bearer <token>`）

@@ -87,8 +87,8 @@ Scheduler (30s fixedDelay, Clock-injected)
    ├─ 跳过：!withinWindow(remindAt)      ±30s 触发窗口
    ├─ 跳过：alreadyReminded()             last_reminded_at >= remindAt 则幂等跳过
    │
-   ├─ 分发：channels.forEach(send)      所有 NotificationChannel
-   └─ 幂等写回（去重 Set 定期清理）
+   ├─ 分发：channels.forEach(send)      所有 NotificationChannel（按 userId 路由）
+   └─ 标记已提醒：markReminded(id, now)  写入 last_reminded_at
 ```
 
 `BrowserNotificationService` 通过 `SseEmitterManager.sendToUser` 按 userId 推送 SSE，前端 `useSseNotifications` 通过 `?token=` 查询参数传递 JWT，指数退避自动重连。
