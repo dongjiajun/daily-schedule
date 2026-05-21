@@ -31,11 +31,11 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="w-60 bg-gradient-to-b from-white to-gray-50/80 border-r border-gray-100 flex flex-col">
+    <aside className="w-60 bg-gradient-to-b from-white via-white to-gray-50/70 border-r border-gray-100/80 flex flex-col relative z-10">
       {/* Header */}
-      <div className="px-5 py-5">
-        <h1 className="text-base font-bold text-gray-900 flex items-center gap-2.5 tracking-tight">
-          <div className="w-8 h-8 rounded-xl bg-gray-900 text-white flex items-center justify-center">
+      <div className="px-5 py-4 border-b border-gray-100/80">
+        <h1 className="text-[15px] font-bold text-gray-900 flex items-center gap-2.5 tracking-tight">
+          <div className="w-8 h-8 rounded-xl bg-gray-900 text-white flex items-center justify-center shadow-sm shadow-gray-900/15">
             <CalendarDays className="w-4 h-4" />
           </div>
           日程管理
@@ -43,10 +43,10 @@ export function Sidebar() {
       </div>
 
       {/* New event button */}
-      <div className="px-4 mb-4">
+      <div className="px-4 mt-4 mb-4">
         <Button
           onClick={() => openCreateModal()}
-          className="w-full rounded-xl h-10 shadow-sm shadow-gray-900/5"
+          className="w-full rounded-xl h-10 shadow-sm shadow-gray-900/8 font-medium transition-all duration-200 hover:shadow-md hover:shadow-gray-900/12"
         >
           <Plus className="w-4 h-4" />
           新建日程
@@ -62,7 +62,7 @@ export function Sidebar() {
             value={searchKeyword}
             onChange={(e) => setSearchKeyword(e.target.value)}
             placeholder="搜索日程..."
-            className="w-full rounded-xl border border-gray-200/80 bg-gray-50 pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-300 focus:bg-white transition-all"
+            className="w-full rounded-xl border border-gray-200/80 bg-gray-50/80 pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-300 focus:bg-white transition-all duration-200 placeholder:text-gray-400"
           />
         </div>
       </div>
@@ -117,9 +117,9 @@ export function Sidebar() {
           <button
             onClick={() => setFilterCategory(null)}
             className={cn(
-              'w-full flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-all',
+              'w-full flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-all duration-150',
               !filterCategoryId
-                ? 'bg-gray-900/5 text-gray-900 font-medium'
+                ? 'bg-gray-900/5 text-gray-900 font-medium shadow-sm'
                 : 'text-gray-600 hover:bg-gray-100/70'
             )}
           >
@@ -131,9 +131,9 @@ export function Sidebar() {
               key={cat.id}
               onClick={() => setFilterCategory(cat.id!)}
               className={cn(
-                'w-full flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-all',
+                'w-full flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-all duration-150',
                 filterCategoryId === cat.id
-                  ? 'bg-gray-900/5 text-gray-900 font-medium'
+                  ? 'bg-gray-900/5 text-gray-900 font-medium shadow-sm'
                   : 'text-gray-600 hover:bg-gray-100/70'
               )}
             >

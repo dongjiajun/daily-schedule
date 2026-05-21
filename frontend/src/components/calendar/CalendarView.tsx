@@ -95,9 +95,9 @@ export function CalendarView() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center h-full gap-3">
-        <div className="animate-pulse rounded-xl bg-gray-100 h-[60vh] w-[90%]" />
-        <div className="text-sm text-gray-400">加载中...</div>
+      <div className="flex flex-col items-center justify-center h-full gap-4">
+        <div className="animate-pulse rounded-2xl bg-gray-100/80 h-[65vh] w-[92%]" />
+        <p className="text-sm text-gray-400">加载中...</p>
       </div>
     )
   }
@@ -162,15 +162,15 @@ function CalendarToolbar({
     }
   }, [date, view])
 
-  const btnClass = 'px-3 py-1.5 text-[13px] font-medium rounded-lg transition-all'
-  const activeClass = 'bg-gray-900 text-white shadow-sm'
-  const inactiveClass = 'text-gray-400 hover:text-gray-700 hover:bg-gray-100'
+  const btnClass = 'px-3 py-1.5 text-[13px] font-medium rounded-lg transition-all duration-200'
+  const activeClass = 'bg-gray-900 text-white shadow-md shadow-gray-900/15'
+  const inactiveClass = 'text-gray-400 hover:text-gray-700 hover:bg-gray-100/80'
 
   const viewKeys = ['month', 'week', 'day', 'agenda'] as const
   const labels: Record<string, string> = { month: '月', week: '周', day: '日', agenda: '议程' }
 
   return (
-    <div className="flex items-center justify-between px-5 py-3 bg-white/90 backdrop-blur">
+    <div className="flex items-center justify-between px-5 py-3 bg-white/95 backdrop-blur border-b border-gray-100/80">
       <div className="flex items-center bg-gray-100/80 rounded-lg p-0.5 gap-0.5">
         {viewKeys.map((v) => (
           <button
@@ -183,16 +183,27 @@ function CalendarToolbar({
         ))}
       </div>
 
-      <h2 className="text-base font-semibold text-gray-800 tracking-tight">{label}</h2>
+      <h2 className="text-[15px] font-semibold text-gray-800 tracking-tight">{label}</h2>
 
-      <div className="flex items-center gap-0.5">
-        <button className={cn(btnClass, inactiveClass, 'text-base w-8 h-8 flex items-center justify-center')} onClick={() => onNavigate('PREV')}>
+      <div className="flex items-center gap-1">
+        <button
+          className={cn(btnClass, inactiveClass, 'text-base w-8 h-8 flex items-center justify-center')}
+          onClick={() => onNavigate('PREV')}
+          aria-label="上一页"
+        >
           ‹
         </button>
-        <button className={cn(btnClass, inactiveClass)} onClick={() => onNavigate('TODAY')}>
+        <button
+          className={cn(btnClass, inactiveClass, 'text-[12px]')}
+          onClick={() => onNavigate('TODAY')}
+        >
           今天
         </button>
-        <button className={cn(btnClass, inactiveClass, 'text-base w-8 h-8 flex items-center justify-center')} onClick={() => onNavigate('NEXT')}>
+        <button
+          className={cn(btnClass, inactiveClass, 'text-base w-8 h-8 flex items-center justify-center')}
+          onClick={() => onNavigate('NEXT')}
+          aria-label="下一页"
+        >
           ›
         </button>
       </div>
