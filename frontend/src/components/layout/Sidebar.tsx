@@ -12,7 +12,8 @@ const PRESET_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#
 export function Sidebar() {
   const { data: categories } = useCategories()
   const { filterCategoryId, searchKeyword, setFilterCategory, setSearchKeyword, openCreateModal, openOnboarding } = useCalendarStore()
-  const { username, logout } = useAuthStore()
+  const user = useAuthStore((s) => s.user)
+  const logout = useAuthStore((s) => s.logout)
   const createCategory = useCreateCategory()
 
   const [showForm, setShowForm] = useState(false)
@@ -168,7 +169,7 @@ export function Sidebar() {
           onClick={logout}
         >
           <span className="text-[13px] text-gray-400 truncate group-hover:text-gray-600 transition-colors">
-            {username}
+            {user?.displayName ?? user?.username ?? '未登录'}
           </span>
           <LogOut className="w-3.5 h-3.5 text-gray-300 group-hover:text-gray-500 transition-colors" />
         </div>

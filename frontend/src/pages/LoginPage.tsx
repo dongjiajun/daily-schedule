@@ -2,8 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { CalendarDays, Eye, EyeOff } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuthStore } from '../store/authStore'
-
-const API_BASE = '/api/v1/auth'
+import { login as loginApi, register as registerApi } from '../api/sdk.gen'
 
 const dots = [
   { color: '#3b82f6', size: 200, x: '12%', y: '18%', delay: 0, duration: 6 },
@@ -16,28 +15,39 @@ const dots = [
 export function LoginPage() {
   const [isRegister, setIsRegister] = useState(false)
   const [username, setUsername] = useState('')
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const login = useAuthStore((s) => s.login)
+  const loginFromResponse = useAuthStore((s) => s.loginFromResponse)
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setError('')
     setLoading(true)
     try {
-      const res = await fetch(`${API_BASE}/${isRegister ? 'register' : 'login'}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
-      })
-      if (!res.ok) {
-        const data = await res.json()
-        throw new Error(data.message || '请求失败')
+      if (isRegister) {
+        const resp = await registerApi({
+          body: {
+            username,
+            email,
+            password,
+            displayName: username,
+          },
+        })
+        if (resp.error) throw new Error(extractMessage(resp.error) ?? '注册失败')
+        if (resp.data) loginFromResponse(resp.data)
+      } else {
+        const resp = await loginApi({
+          body: {
+            usernameOrEmail: username,
+            password,
+          },
+        })
+        if (resp.error) throw new Error(extractMessage(resp.error) ?? '登录失败')
+        if (resp.data) loginFromResponse(resp.data)
       }
-      const data = await res.json()
-      login(data.token, data.userId, data.username)
     } catch (err) {
       setError(err instanceof Error ? err.message : '操作失败')
     } finally {
@@ -142,18 +152,34 @@ export function LoginPage() {
 
           <div>
             <label className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wider">
-              用户名
+              {isRegister ? '用户名' : '用户名 / 邮箱'}
             </label>
             <input
               type="text"
               className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm bg-gray-50/80 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400 transition-all duration-200"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="输入用户名"
+              placeholder={isRegister ? '3-50 位字母/数字/下划线' : '输入用户名或邮箱'}
               required
               autoFocus
             />
           </div>
+
+          {isRegister && (
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wider">
+                邮箱
+              </label>
+              <input
+                type="email"
+                className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm bg-gray-50/80 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400 transition-all duration-200"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                required
+              />
+            </div>
+          )}
 
           <div>
             <label className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wider">
@@ -165,9 +191,10 @@ export function LoginPage() {
                 className="w-full rounded-xl border border-gray-200 px-4 py-3 pr-11 text-sm bg-gray-50/80 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400 transition-all duration-200"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="输入密码"
+                placeholder={isRegister ? '至少 8 位' : '输入密码'}
                 required
                 onKeyDown={(e) => e.key === 'Enter' && handleSubmit(e)}
+                minLength={isRegister ? 8 : undefined}
               />
               <button
                 type="button"
@@ -210,4 +237,12 @@ export function LoginPage() {
       </motion.div>
     </div>
   )
+}
+
+function extractMessage(err: unknown): string | null {
+  if (typeof err === 'object' && err !== null && 'message' in err) {
+    const m = (err as { message?: unknown }).message
+    return typeof m === 'string' ? m : null
+  }
+  return null
 }

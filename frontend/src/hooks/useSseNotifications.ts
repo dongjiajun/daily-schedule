@@ -3,18 +3,28 @@ import type { ReminderEvent } from '../api/types.gen'
 import { useNotification } from './useNotification'
 import { useAuthStore } from '../store/authStore'
 
+/**
+ * 订阅 /api/v1/sse/notifications。
+ *
+ * v3.0 起鉴权通过登录时下发的 `dsa_sse_session` HttpOnly Cookie 完成；
+ * `EventSource` 自动携带 same-origin cookie，因此 URL 不再带 token。
+ *
+ * 跨域开发场景：vite proxy 已把请求转发到后端同 origin，cookie 同样生效。
+ */
 export function useSseNotifications() {
   const { notify } = useNotification()
-  const token = useAuthStore((s) => s.token)
+  const accessToken = useAuthStore((s) => s.accessToken)
   const esRef = useRef<EventSource | null>(null)
   const reconnectTimeoutRef = useRef<number | null>(null)
   const retryCountRef = useRef(0)
 
   useEffect(() => {
-    if (!token) return
+    if (!accessToken) return
 
     function connect(): EventSource {
-      const es = new EventSource(`/api/v1/sse/notifications?token=${encodeURIComponent(token!)}`)
+      const es = new EventSource('/api/v1/sse/notifications', {
+        withCredentials: true,
+      })
 
       es.addEventListener('reminder', (e: MessageEvent) => {
         try {
@@ -25,7 +35,7 @@ export function useSseNotifications() {
             `即将在 ${new Date(payload.startTime).toLocaleTimeString('zh-CN')} 开始`
           )
         } catch {
-          // 忽略解析失败
+          // ignore parse failure
         }
       })
 
@@ -52,5 +62,5 @@ export function useSseNotifications() {
         clearTimeout(reconnectTimeoutRef.current)
       }
     }
-  }, [notify, token])
+  }, [notify, accessToken])
 }
