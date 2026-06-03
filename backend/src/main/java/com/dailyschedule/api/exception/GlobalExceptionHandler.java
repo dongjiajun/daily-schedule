@@ -1,8 +1,11 @@
 package com.dailyschedule.api.exception;
 
 import com.dailyschedule.api.generated.dto.ModelApiResponse;
+import com.dailyschedule.application.auth.AuthApplicationService.DuplicateAccountException;
+import com.dailyschedule.application.auth.AuthApplicationService.InvalidCredentialsException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -24,6 +27,27 @@ public class GlobalExceptionHandler {
         ModelApiResponse resp = new ModelApiResponse();
         resp.setCode(404);
         resp.setMessage(ex.getMessage());
+        return resp;
+    }
+
+    @ExceptionHandler(InvalidCredentialsException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public ModelApiResponse handleInvalidCredentials(InvalidCredentialsException ex) {
+        log.warn("认证失败: {}", ex.getMessage());
+        ModelApiResponse resp = new ModelApiResponse();
+        resp.setCode(401);
+        resp.setMessage(ex.getMessage());
+        return resp;
+    }
+
+    @ExceptionHandler({DuplicateAccountException.class, DuplicateKeyException.class})
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ModelApiResponse handleConflict(Exception ex) {
+        String msg = ex instanceof DuplicateAccountException ? ex.getMessage() : "资源已存在";
+        log.warn("资源冲突: {}", msg);
+        ModelApiResponse resp = new ModelApiResponse();
+        resp.setCode(409);
+        resp.setMessage(msg);
         return resp;
     }
 

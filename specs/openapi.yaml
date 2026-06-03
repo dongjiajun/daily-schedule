@@ -1,20 +1,142 @@
 openapi: 3.0.3
 info:
   title: 日程管理系统 API
-  version: 1.1.0
-  description: v1.1 接口定义 — 前后端契约唯一真相源
+  version: 3.0.0
+  description: |
+    v3.0 接口定义 — 前后端契约唯一真相源。
 
     **响应约定**：
     - 成功响应直接返回业务数据：单条返回对象，列表返回数组。
-    - HTTP 状态码承载语义（200 / 201 / 204 / 400 / 404 / 500）。
+    - HTTP 状态码承载语义（200 / 201 / 204 / 400 / 401 / 403 / 404 / 409 / 500）。
     - 异常响应统一为 `ApiResponse`：`{ code, message }`。
+
+    **认证（v3.0）**：
+    - 除 `/auth/register` / `/auth/login` / `/auth/refresh` / `/sse/notifications` 外，
+      所有端点要求 `Authorization: Bearer <accessToken>`。
+    - `/sse/notifications` 不走 Bearer（EventSource 不支持自定义 header），
+      改用登录时下发的 `dsa_sse_session` HttpOnly Cookie 鉴权。
+    - 用户数据相互隔离：所有 event / category / tag 操作以当前用户为范围。
 
     变更历史见 `specs/CHANGELOG.md`。
 
 servers:
   - url: /api/v1
 
+security:
+  - bearerAuth: []
+
 paths:
+  /auth/register:
+    post:
+      operationId: register
+      tags: [Auth]
+      summary: 注册新用户（自动登录）
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: 注册成功
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: dsa_sse_session=<jwt>; HttpOnly; SameSite=Lax; Path=/api/v1/sse
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [Auth]
+      summary: 登录获取 token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: 登录成功
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: dsa_sse_session=<jwt>; HttpOnly; SameSite=Lax; Path=/api/v1/sse
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/refresh:
+    post:
+      operationId: refreshToken
+      tags: [Auth]
+      summary: 使用 refresh token 换取新 access token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      responses:
+        '200':
+          description: 续签成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [Auth]
+      summary: 注销当前会话（清除 SSE Cookie）
+      responses:
+        '204':
+          description: 注销成功
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: dsa_sse_session=; Max-Age=0
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/me:
+    get:
+      operationId: currentUser
+      tags: [Auth]
+      summary: 获取当前登录用户信息
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
   /events:
     get:
       operationId: listEvents
@@ -68,6 +190,8 @@ paths:
                   $ref: '#/components/schemas/EventResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
     post:
       operationId: createEvent
       tags: [Event]
@@ -87,6 +211,8 @@ paths:
                 $ref: '#/components/schemas/EventResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
 
   /events/{id}:
     get:
@@ -107,6 +233,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/EventResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
     put:
@@ -135,6 +263,8 @@ paths:
                 $ref: '#/components/schemas/EventResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
     delete:
@@ -151,6 +281,8 @@ paths:
       responses:
         '204':
           description: 删除成功
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
 
@@ -158,7 +290,7 @@ paths:
     get:
       operationId: listCategories
       tags: [Category]
-      summary: 获取所有分类
+      summary: 获取当前用户的所有分类
       responses:
         '200':
           description: 成功
@@ -168,6 +300,8 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/CategoryResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
     post:
       operationId: createCategory
       tags: [Category]
@@ -187,6 +321,10 @@ paths:
                 $ref: '#/components/schemas/CategoryResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
 
   /categories/{id}:
     put:
@@ -213,8 +351,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CategoryResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
     delete:
       operationId: deleteCategory
       tags: [Category]
@@ -229,6 +371,8 @@ paths:
       responses:
         '204':
           description: 删除成功
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
 
@@ -236,7 +380,7 @@ paths:
     get:
       operationId: listTags
       tags: [Tag]
-      summary: 获取所有标签
+      summary: 获取当前用户的所有标签
       responses:
         '200':
           description: 成功
@@ -246,6 +390,8 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/TagResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
     post:
       operationId: createTag
       tags: [Tag]
@@ -265,6 +411,10 @@ paths:
                 $ref: '#/components/schemas/TagResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
 
   /tags/{id}:
     put:
@@ -291,8 +441,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TagResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
     delete:
       operationId: deleteTag
       tags: [Tag]
@@ -307,6 +461,8 @@ paths:
       responses:
         '204':
           description: 删除成功
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
 
@@ -315,14 +471,18 @@ paths:
       operationId: subscribeNotifications
       tags: [Notification]
       summary: 订阅实时通知（SSE）
+      security: []
       description: |
-        Server-Sent Events 长连接，服务端会推送以下命名事件：
+        Server-Sent Events 长连接。**鉴权**：通过登录时下发的
+        `dsa_sse_session` HttpOnly Cookie（EventSource 不支持自定义 header，
+        因此不复用 Authorization Bearer）。
 
+        服务端会推送以下命名事件：
         - `connect`：连接建立成功，data 为字符串 `"connected"`。
-        - `reminder`：日程提醒，data 为 `ReminderEvent` 的 JSON 序列化字符串。
+        - `reminder`：日程提醒，data 为 `ReminderEvent` JSON。
         - `heartbeat`：心跳保活，data 为字符串 `"ping"`。
 
-        前端应使用浏览器原生 `EventSource` 订阅，并通过 `addEventListener('reminder', handler)` 监听具体事件类型。
+        每条 reminder 仅推送给该 event 所属用户的连接。
       responses:
         '200':
           description: SSE 流建立成功
@@ -330,9 +490,19 @@ paths:
             text/event-stream:
               schema:
                 type: string
-                description: SSE 事件流；reminder 事件的 data 字段结构见 `ReminderEvent`。
+        '401':
+          $ref: '#/components/responses/Unauthorized'
 
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        登录后将 `LoginResponse.accessToken` 放入 `Authorization: Bearer <token>` 头。
+        access token 默认有效期 15 分钟；过期后用 refresh token 调 `/auth/refresh` 续签。
+
   responses:
     BadRequest:
       description: 请求参数不合法
@@ -340,14 +510,95 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ApiResponse'
+    Unauthorized:
+      description: 未认证或 token 失效
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiResponse'
     NotFound:
-      description: 资源不存在
+      description: 资源不存在或无权访问
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiResponse'
+    Conflict:
+      description: 资源冲突（用户名/邮箱/分类名/标签名重复）
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/ApiResponse'
 
   schemas:
+    RegisterRequest:
+      type: object
+      required: [username, email, password]
+      properties:
+        username:
+          type: string
+          minLength: 3
+          maxLength: 50
+          pattern: '^[a-zA-Z0-9_]+$'
+        email:
+          type: string
+          format: email
+          maxLength: 120
+        password:
+          type: string
+          minLength: 8
+          maxLength: 100
+        displayName:
+          type: string
+          maxLength: 50
+
+    LoginRequest:
+      type: object
+      required: [usernameOrEmail, password]
+      properties:
+        usernameOrEmail:
+          type: string
+        password:
+          type: string
+
+    RefreshRequest:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken:
+          type: string
+
+    LoginResponse:
+      type: object
+      required: [accessToken, refreshToken, expiresIn, user]
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        expiresIn:
+          type: integer
+          description: access token 有效期（秒）
+        user:
+          $ref: '#/components/schemas/UserResponse'
+
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        username:
+          type: string
+        email:
+          type: string
+        displayName:
+          type: string
+        avatarUrl:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
     EventCreateRequest:
       type: object
       required: [title, startTime, endTime]
@@ -475,26 +726,22 @@ components:
 
     ReminderEvent:
       type: object
-      description: SSE `reminder` 事件的 data JSON 反序列化结构
+      description: SSE `reminder` 事件 data 的反序列化结构
       properties:
         id:
           type: integer
           format: int64
-          description: 日程 ID
         title:
           type: string
-          description: 日程标题
         startTime:
           type: string
           format: date-time
-          description: 日程开始时间
         reminderMinutes:
           type: integer
-          description: 提前提醒分钟数
 
     ApiResponse:
       type: object
-      description: 统一错误响应包装
+      description: 错误响应包装
       properties:
         code:
           type: integer

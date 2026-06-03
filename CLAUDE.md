@@ -29,6 +29,8 @@
 - 开发库 daily_schedule_dev，测试库 daily_schedule_test
 - JDK 21
 
-## 当前版本: v2.0
+## 当前版本: v3.0
+
+v3.0 完成多用户认证契约闭环 + Auth 端点入约 + SSE Cookie 鉴权 + AuthApplicationService 重构。
 
 API 契约变更必须同步更新 `specs/CHANGELOG.md` 与三处版本号（`specs/openapi.yaml`、`backend/pom.xml`、`frontend/package.json`）。
