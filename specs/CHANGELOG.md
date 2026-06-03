@@ -8,25 +8,85 @@
 
 ---
 
-## [1.1.0] — Unreleased
+## [3.0.0] — 2026-06-03
 
-### Added
-- `GET /events` 新增 `keyword`（搜索标题/描述/地点）、`page`、`size` 查询参数
-- `EventListResponse` 新增 `total`、`page`、`size` 字段
-- `POST /api/v1/auth/register` 注册端点
-- `POST /api/v1/auth/login` 登录端点，返回 JWT token
-- 所有端点（除 `/auth/**` 外）需 JWT Bearer 认证
-- `POST /tags` 返回 `TagResponse`（此前为 void）
+把 v1.1 内部实现的多用户能力对齐到 v3.0 设计文档（`docs/design/multi-user-auth.md`），
+**契约层闭环 + 安全收口 + 测试补齐**。
 
-### Fixed
-- `EventResponse.tags` 此前只返回 `id`，现在完整返回 `name` / `color`
-- `GlobalExceptionHandler` 补全日志 + `MethodArgumentNotValidException` 处理
-- `ReminderScheduler` 窗口 ±30s，间隔 30s，幂等改用 `last_reminded_at`
+> 版本号说明：v1.1 是上一个 release 的内部代号；从契约 SemVer 视角，
+> 多用户认证是 BREAKING（所有端点新增 401），按 SemVer 应升至下一个 MAJOR。
+> 跳过 v2.x 直接到 v3.0.0，与设计文档命名一致。
 
-### Changed (BREAKING)
-- 所有 API 端点需 JWT 认证（请求头 `Authorization: Bearer <token>`）
-- 所有业务数据按 `user_id` 隔离，数据库新增 `user` 表 + `user_id` 外键
-- `EventRepository` 接口方法签名变更（增加 userId/keyword/page/size 参数）
+### Added — Auth 端点正式入约
+- `POST /auth/register`：注册返回 `LoginResponse`（access + refresh + user）
+- `POST /auth/login`：登录返回 `LoginResponse`，同时下发 `dsa_sse_session` Cookie
+- `POST /auth/refresh`：用 refresh token 换发新 access token
+- `POST /auth/logout`：注销并清除 SSE Cookie
+- `GET  /auth/me`：当前用户信息
+- 顶层 `security: [bearerAuth]` + `securitySchemes.bearerAuth` JWT 声明
+- 全部业务端点声明 `401 Unauthorized`、写场景端点声明 `409 Conflict`
+- 新增 `RegisterRequest` / `LoginRequest` / `RefreshRequest` / `LoginResponse` / `UserResponse` schema
+- 注册接口要求 `email`、`displayName` 字段（与 v1.1 仅 username/password 不兼容）
+
+### Added — 安全 / 行为收紧
+- SSE 鉴权改用 `dsa_sse_session` HttpOnly Cookie（v1.1 是 `?token=` 查询参数，
+  会出现在 URL / 日志 / 浏览器历史）；EventSource 自动携带 same-origin cookie。
+- 注册流程新增 `email` 与可选 `displayName`；username/email/password 走 `User.validateXxx` 强校验。
+- `AuthApplicationService.DuplicateAccountException` → HTTP 409；
+  `InvalidCredentialsException` → HTTP 401（取代 v1.1 用 IllegalArgumentException 返回 400 的简陋方案）。
+- 移除 `SecurityConfig.ensureDefaultAdmin()`：不再自动创建 admin/admin123 默认账号。
+- access token 默认 15min（v1.1 是 24h），新增 refresh token 7d。
+
+### Changed
+- `AuthController` 从 `infrastructure/security/` 迁移到 `api/controller/`，
+  实现生成的 `AuthApi`，使用 OpenAPI 生成的 DTO 替代 `Map<String, String>` 弱类型。
+- 提取 `application/auth/AuthApplicationService`，把业务逻辑从 Controller 解耦；
+  提取 `RegisterCommand` / `Tokens` 值对象。
+- `JwtUtil` 拆分 access / refresh token，引入 `typ` claim + `parse(token, expectedType)`，
+  保留 v1.1 兼容入口 `generateToken` / `validateToken` / `jwt.expiration-ms`。
+- `JwtAuthFilter` 支持 Bearer header + `dsa_sse_session` Cookie 两路 token 来源（Bearer 优先）。
+- `User` 实体补齐 `email` / `displayName` / `avatarUrl` / `status` / `lastLoginAt` 字段；
+  新增静态校验方法 `validateUsername` / `validateEmail` / `validatePassword` / `validateDisplayName`。
+- 默认分类预置（工作/个人/学习/健康/社交/旅行）从 Controller 移到 ApplicationService。
+
+### Database (V3 migration)
+- `V3__multi_user.sql`：在 V2 创建的 `user` 表基础上补 `email` / `display_name` / `avatar_url` /
+  `status` / `last_login_at` 列；建 `(user_id, name)` 唯一约束（category / tag）；
+  `event` 索引升级为 `(user_id, start_time, end_time)` 复合索引。
+- 旧 admin 账号迁移：补一个占位邮箱 `admin@local` 满足新 NOT NULL + UNIQUE 约束。
+
+### Tests
+- 47 个新单测：`UserTest`、`JwtUtilTest`、`JwtAuthFilterTest`、`CurrentUserServiceTest`、
+  `PasswordHasherImplTest`、`AuthApplicationServiceTest`。总规模 81 → **128** 用例。
+
+### Frontend
+- 重新生成 SDK，含 `register` / `login` / `refreshToken` / `logout` / `currentUser` 客户端。
+- `authStore` 持久化结构升级为 `{accessToken, refreshToken, user}`，兼容旧 `auth` localStorage 数据。
+- `LoginPage` 切换到 typed SDK，注册增加邮箱字段，登录支持用户名 / 邮箱二选一。
+- `useSseNotifications` 移除 `?token=` query 参数，依赖 cookie 自动认证。
+- 把 Authorization Bearer 注入逻辑从被覆盖的 `client.gen.ts` 抽离到 `api/authInterceptor.ts`，
+  在 `main.tsx` 启动期注册到 hey-api 客户端的 request interceptor 上，规避 SDK 重生覆盖问题。
+
+### Migration（v1.1 → v3.0）
+
+| 关注点 | 行动 |
+|--------|------|
+| 数据库 | 应用 `V3__multi_user.sql`（仅 ALTER，不会丢数据；admin 用户邮箱自动写为 `admin@local`） |
+| `JWT_SECRET` | 生产必须配置 ≥ 256bit 密钥；新增 `jwt.access-ttl-seconds` / `jwt.refresh-ttl-seconds`；保留旧 `jwt.expiration-ms` 兼容 |
+| 客户端 | 重新生成 SDK；`auth/login` body 字段从 `{username, password}` 改为 `{usernameOrEmail, password}`；响应字段从 `{token, userId, username}` 改为 `{accessToken, refreshToken, expiresIn, user}` |
+| SSE | 客户端不再传 `?token=`；浏览器自动携带 `dsa_sse_session` Cookie |
+| 用户行为 | 注册需提供邮箱；旧 admin/admin123 仍可登录但不再被自动创建 |
+
+---
+
+## [2.0.0] — 2026-05-15（合并到 main 前的早期"v2"标记，未独立发布）
+
+> 此版本作为 changelog 历史记录保留，对应 `pom.xml 2.0.0-SNAPSHOT` 时期；
+> 真正向公网发布的是 v3.0.0。
+
+- 列表端点改为直接返回数组；错误响应统一为 `ApiResponse`
+- SSE `/sse/notifications` 纳入 OpenAPI 契约
+- shadcn/ui 组件补全；后端测试覆盖扩展到 81 例
 
 ---
 
