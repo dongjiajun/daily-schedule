@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { EventForm, type EventFormValues } from './EventForm'
-import { useCreateEvent, useUpdateEvent, useDeleteEvent, useEvents } from '../../hooks/useEvents'
+import { useCreateEvent, useUpdateEvent, useDeleteEvent, useEvents, useToggleEventStatus } from '../../hooks/useEvents'
 import { useCategories } from '../../hooks/useCategories'
 import { useTags } from '../../hooks/useTags'
 import { useCalendarStore } from '../../store/calendarStore'
@@ -11,7 +11,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Trash2 } from 'lucide-react'
+import { Check, RotateCcw, Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface EventModalProps {
@@ -28,9 +28,11 @@ export function EventModal({ open, eventId, onClose }: EventModalProps) {
   const createMutation = useCreateEvent()
   const updateMutation = useUpdateEvent()
   const deleteMutation = useDeleteEvent()
+  const toggleStatus = useToggleEventStatus()
   const [showDelete, setShowDelete] = useState(false)
 
   const existingEvent = eventId ? events?.find((e) => e.id === eventId) : undefined
+  const isCompleted = existingEvent?.status === 'COMPLETED'
 
   const handleSubmit = (values: EventFormValues) => {
     if (eventId) {
@@ -63,21 +65,44 @@ export function EventModal({ open, eventId, onClose }: EventModalProps) {
     >
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{eventId ? '编辑日程' : '新建日程'}</DialogTitle>
-          {eventId && (
-            <button
-              type="button"
-              onClick={() => setShowDelete(!showDelete)}
-              className={cn(
-                'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all mr-8',
-                showDelete
-                  ? 'bg-red-50 text-red-600'
-                  : 'text-gray-400 hover:text-red-500 hover:bg-red-50'
-              )}
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-              删除
-            </button>
+          <DialogTitle className="flex items-center gap-2">
+            {eventId ? '编辑日程' : '新建日程'}
+            {isCompleted && (
+              <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100">
+                已完成
+              </span>
+            )}
+          </DialogTitle>
+          {eventId && existingEvent && (
+            <div className="flex items-center gap-1 mr-8">
+              <button
+                type="button"
+                onClick={() => toggleStatus.mutate(existingEvent)}
+                disabled={toggleStatus.isPending}
+                className={cn(
+                  'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all',
+                  isCompleted
+                    ? 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
+                    : 'text-emerald-600 hover:bg-emerald-50'
+                )}
+              >
+                {isCompleted ? <RotateCcw className="w-3.5 h-3.5" /> : <Check className="w-3.5 h-3.5" />}
+                {isCompleted ? '恢复计划' : '标记完成'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowDelete(!showDelete)}
+                className={cn(
+                  'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all',
+                  showDelete
+                    ? 'bg-red-50 text-red-600'
+                    : 'text-gray-400 hover:text-red-500 hover:bg-red-50'
+                )}
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                删除
+              </button>
+            </div>
           )}
         </DialogHeader>
 

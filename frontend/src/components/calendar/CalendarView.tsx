@@ -1,16 +1,22 @@
-import { useMemo, useCallback, useEffect } from 'react'
+import { useMemo, useCallback } from 'react'
 import { Calendar, dayjsLocalizer, type ToolbarProps, type View } from 'react-big-calendar'
+import withDragAndDrop, { type withDragAndDropProps } from 'react-big-calendar/lib/addons/dragAndDrop'
 import dayjs from 'dayjs'
+import 'dayjs/locale/zh-cn'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus } from 'lucide-react'
+import { toast } from 'sonner'
+import { Plus, Check, RotateCcw } from 'lucide-react'
 import { useCalendarStore, type CalendarView } from '../../store/calendarStore'
-import { useEvents } from '../../hooks/useEvents'
+import { useSettingsStore } from '../../store/settingsStore'
+import { useEvents, useUpdateEvent, useToggleEventStatus } from '../../hooks/useEvents'
 import { cn } from '../../lib/utils'
 import type { EventResponse } from '../../api/types.gen'
 
 import 'react-big-calendar/lib/css/react-big-calendar.css'
+import 'react-big-calendar/lib/addons/dragAndDrop/styles.css'
 import './calendar.css'
 
+dayjs.locale('zh-cn') // 周一作为一周起始，中文星期/月份
 const localizer = dayjsLocalizer(dayjs)
 
 interface CalendarEvent {
@@ -22,22 +28,54 @@ interface CalendarEvent {
   resource: EventResponse
 }
 
+const DnDCalendar = withDragAndDrop<CalendarEvent>(Calendar<CalendarEvent>)
+
+const TIME_FMT = 'YYYY-MM-DDTHH:mm:ss'
+
+function toUpdateBody(resource: EventResponse, start: Date, end: Date, allDay: boolean) {
+  return {
+    title: resource.title!,
+    description: resource.description,
+    startTime: dayjs(start).format(TIME_FMT),
+    endTime: dayjs(end).format(TIME_FMT),
+    allDay,
+    location: resource.location,
+    color: resource.color,
+    reminderMinutes: resource.reminderMinutes,
+    status: resource.status,
+    categoryId: resource.categoryId,
+    tagIds: resource.tags?.map((t) => t.id!).filter(Boolean),
+  }
+}
+
 export function CalendarView() {
-  const { currentDate, view, setCurrentDate, setView, filterCategoryId, searchKeyword, openCreateModal, openEditModal } =
-    useCalendarStore()
-  const { data: events, isLoading } = useEvents(currentDate, view, filterCategoryId, searchKeyword)
+  const {
+    currentDate, view, setCurrentDate, setView,
+    filterCategoryId, filterTagId, searchKeyword,
+    openCreateModal, openEditModal,
+  } = useCalendarStore()
+  const showCompleted = useSettingsStore((s) => s.showCompleted)
+  const { data: events, isLoading } = useEvents(currentDate, view, {
+    categoryId: filterCategoryId,
+    tagId: filterTagId,
+    keyword: searchKeyword,
+  })
+  const updateMutation = useUpdateEvent({ silent: true })
+  const toggleStatus = useToggleEventStatus()
 
   const calendarEvents: CalendarEvent[] = useMemo(
     () =>
-      (events ?? []).map((e: EventResponse) => ({
-        id: e.id!,
-        title: e.title ?? '',
-        start: new Date(e.startTime! + '+08:00'),
-        end: new Date(e.endTime! + '+08:00'),
-        allDay: e.allDay ?? false,
-        resource: e,
-      })),
-    [events]
+      (events ?? [])
+        .filter((e) => showCompleted || e.status === 'PLANNED' || !e.status)
+        .map((e: EventResponse) => ({
+          id: e.id!,
+          title: e.title ?? '',
+          start: new Date(e.startTime! + '+08:00'),
+          end: new Date(e.endTime! + '+08:00'),
+          allDay: e.allDay ?? false,
+          resource: e,
+        })),
+    [events, showCompleted]
   )
 
   const handleSelectEvent = useCallback(
@@ -55,18 +93,41 @@ export function CalendarView() {
     [openCreateModal]
   )
 
+  const handleEventDrop: withDragAndDropProps<CalendarEvent>['onEventDrop'] = useCallback(
+    ({ event, start, end, isAllDay }: Parameters<NonNullable<withDragAndDropProps<CalendarEvent>['onEventDrop']>>[0]) => {
+      const allDay = isAllDay ?? event.resource.allDay ?? false
+      updateMutation.mutate(
+        { id: event.id, data: toUpdateBody(event.resource, new Date(start), new Date(end), allDay) },
+        { onSuccess: () => toast.success('日程时间已调整') }
+      )
+    },
+    [updateMutation]
+  )
+
+  const handleEventResize: withDragAndDropProps<CalendarEvent>['onEventResize'] = useCallback(
+    ({ event, start, end }: Parameters<NonNullable<withDragAndDropProps<CalendarEvent>['onEventResize']>>[0]) => {
+      updateMutation.mutate(
+        { id: event.id, data: toUpdateBody(event.resource, new Date(start), new Date(end), event.resource.allDay ?? false) },
+        { onSuccess: () => toast.success('日程时长已调整') }
+      )
+    },
+    [updateMutation]
+  )
+
   const eventStyleGetter = useCallback((event: CalendarEvent) => {
     const color = event.resource.categoryColor ?? event.resource.color ?? '#3b82f6'
+    const done = event.resource.status === 'COMPLETED' || event.resource.status === 'CANCELLED'
     return {
       style: {
-        backgroundColor: color + '22',
+        backgroundColor: color + (done ? '12' : '22'),
         borderRadius: '6px',
         border: 'none',
-        borderLeft: `3px solid ${color}`,
-        color: '#1e293b',
+        borderLeft: `3px solid ${done ? color + '66' : color}`,
+        color: done ? '#94a3b8' : '#1e293b',
         fontSize: '12px',
         fontWeight: 500,
         padding: '2px 8px',
+        opacity: done ? 0.75 : 1,
       },
     }
   }, [])
@@ -84,34 +145,45 @@ export function CalendarView() {
     []
   )
 
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if ((e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'TEXTAREA') return
-      if (e.key === 'n' || e.key === 'N') {
-        e.preventDefault()
-        openCreateModal()
-      }
-    }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [openCreateModal])
-
-  const MonthEvent = useCallback(({ event, title }: { event: CalendarEvent; title: string }) => {
+  const EventItem = useCallback(({ event, title }: { event: CalendarEvent; title: string }) => {
     const { resource } = event
     const start = dayjs(resource.startTime!)
     const end = dayjs(resource.endTime!)
     const duration = end.diff(start, 'minute')
     const isLong = duration >= 120
+    const done = resource.status === 'COMPLETED'
     let label = title
     if (!resource.allDay && duration > 0) {
       label = `${start.format('HH:mm')} ${label}`
     }
     return (
-      <span className={cn('block truncate', isLong && 'font-semibold')}>
-        {label}
+      <span className="group/event flex items-center gap-1 min-w-0">
+        <button
+          type="button"
+          tabIndex={-1}
+          title={done ? '恢复为计划中' : '标记完成'}
+          onClick={(e) => {
+            e.stopPropagation()
+            toggleStatus.mutate(resource)
+          }}
+          className={cn(
+            'flex-shrink-0 w-3.5 h-3.5 rounded-full border flex items-center justify-center transition-all',
+            done
+              ? 'bg-emerald-500 border-emerald-500 text-white'
+              : 'border-gray-300 bg-white/70 text-transparent opacity-0 group-hover/event:opacity-100 hover:border-emerald-400 hover:text-emerald-400'
+          )}
+        >
+          {done ? <Check className="w-2.5 h-2.5" /> : <Check className="w-2.5 h-2.5" />}
+        </button>
+        <span className={cn('block truncate', isLong && 'font-semibold', done && 'line-through')}>
+          {label}
+        </span>
+        {resource.status === 'CANCELLED' && (
+          <RotateCcw className="w-2.5 h-2.5 flex-shrink-0 text-gray-400" />
+        )}
       </span>
     )
-  }, [])
+  }, [toggleStatus])
 
   if (isLoading) {
     return (
@@ -135,7 +207,7 @@ export function CalendarView() {
           exit={{ opacity: 0 }}
           transition={{ duration: 0.15, ease: 'easeOut' }}
         >
-          <Calendar<CalendarEvent>
+          <DnDCalendar
             localizer={localizer}
             events={calendarEvents}
             startAccessor="start"
@@ -147,6 +219,9 @@ export function CalendarView() {
             onNavigate={(d) => setCurrentDate(dayjs(d))}
             onSelectEvent={handleSelectEvent}
             onSelectSlot={handleSelectSlot}
+            onEventDrop={handleEventDrop}
+            onEventResize={handleEventResize}
+            resizable
             selectable
             popup
             eventPropGetter={eventStyleGetter}
@@ -167,7 +242,7 @@ export function CalendarView() {
             }}
             components={{
               toolbar: CalendarToolbar,
-              event: MonthEvent,
+              event: EventItem,
             }}
           />
         </motion.div>
@@ -237,11 +312,12 @@ function CalendarToolbar({
   return (
     <div className="flex items-center justify-between px-5 py-3 bg-white/95 backdrop-blur border-b border-gray-100/80">
       <div className="flex items-center bg-gray-100/80 rounded-lg p-0.5 gap-0.5">
-        {viewKeys.map((v) => (
+        {viewKeys.map((v, i) => (
           <button
             key={v}
             className={cn(btnClass, view === v ? activeClass : inactiveClass)}
             onClick={() => onView(v)}
+            title={`${labels[v]}视图（${i + 1}）`}
           >
             {labels[v]}
           </button>
@@ -255,12 +331,14 @@ function CalendarToolbar({
           className={cn(btnClass, inactiveClass, 'text-base w-8 h-8 flex items-center justify-center')}
           onClick={() => onNavigate('PREV')}
           aria-label="上一页"
+          title="上一页（←）"
         >
           ‹
         </button>
         <button
           className={cn(btnClass, inactiveClass, 'text-[12px]')}
           onClick={() => onNavigate('TODAY')}
+          title="回到今天（T）"
         >
           今天
         </button>
@@ -268,6 +346,7 @@ function CalendarToolbar({
           className={cn(btnClass, inactiveClass, 'text-base w-8 h-8 flex items-center justify-center')}
           onClick={() => onNavigate('NEXT')}
           aria-label="下一页"
+          title="下一页（→）"
         >
           ›
         </button>

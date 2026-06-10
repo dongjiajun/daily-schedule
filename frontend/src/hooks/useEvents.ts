@@ -2,15 +2,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import dayjs from 'dayjs'
 import { toast } from 'sonner'
 import { listEvents, createEvent, updateEvent, deleteEvent } from '../api/sdk.gen'
+import { unwrap } from '../api/unwrap'
 import type { EventCreateRequest, EventResponse } from '../api/types.gen'
 
 function getViewRange(date: dayjs.Dayjs, view: string) {
   switch (view) {
-    case 'month':
-      return {
-        start: date.startOf('month').subtract(7, 'day').toISOString(),
-        end: date.endOf('month').add(7, 'day').toISOString(),
-      }
     case 'week':
       return {
         start: date.startOf('week').toISOString(),
@@ -21,6 +17,7 @@ function getViewRange(date: dayjs.Dayjs, view: string) {
         start: date.startOf('day').toISOString(),
         end: date.endOf('day').toISOString(),
       }
+    case 'month':
     default:
       return {
         start: date.startOf('month').subtract(7, 'day').toISOString(),
@@ -29,21 +26,30 @@ function getViewRange(date: dayjs.Dayjs, view: string) {
   }
 }
 
-export function useEvents(date: dayjs.Dayjs, view: string, categoryId?: number | null, keyword?: string) {
+export interface EventQueryFilter {
+  categoryId?: number | null
+  tagId?: number | null
+  keyword?: string
+}
+
+export function useEvents(date: dayjs.Dayjs, view: string, filter: EventQueryFilter = {}) {
   const { start, end } = getViewRange(date, view)
+  const { categoryId, tagId, keyword } = filter
 
   return useQuery<EventResponse[]>({
-    queryKey: ['events', start, end, categoryId, keyword],
+    queryKey: ['events', start, end, categoryId ?? null, tagId ?? null, keyword || ''],
     queryFn: async () => {
       const resp = await listEvents({
         query: {
           start,
           end,
           categoryId: categoryId ?? undefined,
+          tagId: tagId ?? undefined,
           keyword: keyword || undefined,
+          size: 500,
         },
       })
-      return (resp.data ?? []) as EventResponse[]
+      return unwrap(resp) ?? []
     },
     staleTime: 30_000,
     placeholderData: (prev) => prev,
@@ -52,42 +58,68 @@ export function useEvents(date: dayjs.Dayjs, view: string, categoryId?: number |
 
 export function useCreateEvent() {
   const queryClient = useQueryClient()
-  return useMutation<EventResponse | undefined, Error, EventCreateRequest>({
-    mutationFn: async (data) => {
-      const r = await createEvent({ body: data })
-      return r.data as EventResponse | undefined
-    },
+  return useMutation<EventResponse, Error, EventCreateRequest>({
+    mutationFn: async (data) => unwrap(await createEvent({ body: data })),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['events'] })
       toast.success('日程创建成功')
     },
-    onError: (err) => { toast.error(`创建失败: ${err.message}`) },
+    onError: (err) => { toast.error(err.message) },
   })
 }
 
-export function useUpdateEvent() {
+export function useUpdateEvent(options?: { silent?: boolean }) {
   const queryClient = useQueryClient()
-  return useMutation<EventResponse | undefined, Error, { id: number; data: EventCreateRequest }>({
-    mutationFn: async ({ id, data }) => {
-      const r = await updateEvent({ path: { id }, body: data })
-      return r.data as EventResponse | undefined
-    },
+  return useMutation<EventResponse, Error, { id: number; data: EventCreateRequest }>({
+    mutationFn: async ({ id, data }) => unwrap(await updateEvent({ path: { id }, body: data })),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['events'] })
-      toast.success('日程已更新')
+      if (!options?.silent) toast.success('日程已更新')
     },
-    onError: (err) => { toast.error(`更新失败: ${err.message}`) },
+    onError: (err) => { toast.error(err.message) },
   })
 }
 
 export function useDeleteEvent() {
   const queryClient = useQueryClient()
   return useMutation<void, Error, number>({
-    mutationFn: async (id) => { await deleteEvent({ path: { id } }) },
+    mutationFn: async (id) => { unwrap(await deleteEvent({ path: { id } })) },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['events'] })
       toast.success('日程已删除')
     },
-    onError: (err) => { toast.error(`删除失败: ${err.message}`) },
+    onError: (err) => { toast.error(err.message) },
+  })
+}
+
+/**
+ * 快速切换日程完成状态：把现有事件全量字段 + 新状态 PUT 回去
+ * （契约要求 update 携带 title/startTime/endTime）。
+ */
+export function useToggleEventStatus() {
+  const queryClient = useQueryClient()
+  return useMutation<EventResponse, Error, EventResponse>({
+    mutationFn: async (event) => {
+      const nextStatus = event.status === 'COMPLETED' ? 'PLANNED' : 'COMPLETED'
+      const body: EventCreateRequest = {
+        title: event.title!,
+        description: event.description,
+        startTime: event.startTime!,
+        endTime: event.endTime!,
+        allDay: event.allDay,
+        location: event.location,
+        color: event.color,
+        reminderMinutes: event.reminderMinutes,
+        status: nextStatus,
+        categoryId: event.categoryId,
+        tagIds: event.tags?.map((t) => t.id!).filter(Boolean),
+      }
+      return unwrap(await updateEvent({ path: { id: event.id! }, body }))
+    },
+    onSuccess: (updated) => {
+      queryClient.invalidateQueries({ queryKey: ['events'] })
+      toast.success(updated.status === 'COMPLETED' ? '已标记完成' : '已恢复为计划中')
+    },
+    onError: (err) => { toast.error(err.message) },
   })
 }
