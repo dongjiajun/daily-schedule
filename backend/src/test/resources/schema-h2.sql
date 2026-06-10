@@ -35,6 +35,7 @@ CREATE TABLE IF NOT EXISTS event (
     location VARCHAR(255),
     color VARCHAR(50),
     reminder_minutes INT,
+    status VARCHAR(20) NOT NULL DEFAULT 'PLANNED',
     category_id BIGINT,
     last_reminded_at TIMESTAMP NULL,
     user_id BIGINT NOT NULL,

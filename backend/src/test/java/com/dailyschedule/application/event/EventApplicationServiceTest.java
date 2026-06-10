@@ -3,7 +3,9 @@ package com.dailyschedule.application.event;
 import com.dailyschedule.api.exception.ResourceNotFoundException;
 import com.dailyschedule.domain.event.Event;
 import com.dailyschedule.domain.event.EventDomainService;
+import com.dailyschedule.domain.event.EventFilter;
 import com.dailyschedule.domain.event.EventRepository;
+import com.dailyschedule.domain.event.EventStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -89,12 +91,50 @@ class EventApplicationServiceTest {
         LocalDateTime start = LocalDateTime.of(2026, 5, 1, 0, 0);
         LocalDateTime end = LocalDateTime.of(2026, 5, 31, 23, 59);
         Event event = new Event("五月日程", start, end);
-        when(eventRepository.findByRange(eq(start), eq(end), eq(1L), eq(null), eq(1), eq(50))).thenReturn(List.of(event));
-        when(eventRepository.countByRange(eq(start), eq(end), eq(1L), eq(null))).thenReturn(1L);
+        when(eventRepository.findByRange(eq(start), eq(end), eq(1L), eq(EventFilter.NONE), eq(1), eq(50))).thenReturn(List.of(event));
+        when(eventRepository.countByRange(eq(start), eq(end), eq(1L), eq(EventFilter.NONE))).thenReturn(1L);
 
-        var result = appService.listByRange(start, end, null, 1L, null, 1, 50);
+        var result = appService.listByRange(start, end, 1L, EventFilter.NONE, 1, 50);
         assertThat(result.events()).hasSize(1);
         assertThat(result.total()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("按范围查询 → 标签/状态过滤条件应原样传给仓储")
+    void listByRange_passesFilterThrough() {
+        LocalDateTime start = LocalDateTime.of(2026, 5, 1, 0, 0);
+        LocalDateTime end = LocalDateTime.of(2026, 5, 31, 23, 59);
+        EventFilter filter = new EventFilter(2L, 7L, EventStatus.COMPLETED, "复盘");
+        when(eventRepository.findByRange(eq(start), eq(end), eq(1L), eq(filter), eq(1), eq(50))).thenReturn(List.of());
+        when(eventRepository.countByRange(eq(start), eq(end), eq(1L), eq(filter))).thenReturn(0L);
+
+        var result = appService.listByRange(start, end, 1L, filter, 1, 50);
+        assertThat(result.total()).isZero();
+        verify(eventRepository).findByRange(eq(start), eq(end), eq(1L), eq(filter), eq(1), eq(50));
+    }
+
+    @Test
+    @DisplayName("创建日程 → 与已完成日程时间重叠不算冲突")
+    void create_overlapWithCompleted_shouldNotConflict() {
+        Event completed = new Event("已完成日程",
+            LocalDateTime.of(2026, 5, 10, 9, 0),
+            LocalDateTime.of(2026, 5, 10, 10, 0));
+        completed.setId(1L);
+        completed.setStatus(EventStatus.COMPLETED);
+        when(eventRepository.findByRange(any(), any(), any(), any(), any(Integer.class), any(Integer.class)))
+            .thenReturn(List.of(completed));
+        when(eventRepository.save(any())).thenAnswer(inv -> {
+            Event e = inv.getArgument(0);
+            e.setId(2L);
+            return e;
+        });
+
+        Event newEvent = new Event("新日程",
+            LocalDateTime.of(2026, 5, 10, 9, 30),
+            LocalDateTime.of(2026, 5, 10, 10, 30));
+
+        Event saved = appService.create(newEvent);
+        assertThat(saved.getId()).isEqualTo(2L);
     }
 
     @Test

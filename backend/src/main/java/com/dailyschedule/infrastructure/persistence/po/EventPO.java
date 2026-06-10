@@ -25,6 +25,8 @@ public class EventPO {
     @TableField("reminder_minutes")
     private Integer reminderMinutes;
 
+    private String status;
+
     @TableField("category_id")
     private Long categoryId;
 
@@ -65,6 +67,8 @@ public class EventPO {
     public void setColor(String color) { this.color = color; }
     public Integer getReminderMinutes() { return reminderMinutes; }
     public void setReminderMinutes(Integer reminderMinutes) { this.reminderMinutes = reminderMinutes; }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
     public Long getCategoryId() { return categoryId; }
     public void setCategoryId(Long categoryId) { this.categoryId = categoryId; }
     public Long getUserId() { return userId; }

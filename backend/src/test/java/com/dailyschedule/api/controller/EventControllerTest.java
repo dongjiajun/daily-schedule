@@ -3,6 +3,8 @@ package com.dailyschedule.api.controller;
 import com.dailyschedule.api.exception.ResourceNotFoundException;
 import com.dailyschedule.application.event.EventApplicationService;
 import com.dailyschedule.domain.event.Event;
+import com.dailyschedule.domain.event.EventFilter;
+import com.dailyschedule.domain.event.EventStatus;
 import com.dailyschedule.infrastructure.security.CurrentUserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
@@ -21,6 +23,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -45,7 +48,7 @@ class EventControllerTest {
     @DisplayName("GET /api/v1/events → 参数合法返回 200")
     void listEvents_shouldReturn200() throws Exception {
         when(currentUserService.getCurrentUserId()).thenReturn(1L);
-        when(appService.listByRange(any(), any(), any(), any(), any(), anyInt(), anyInt()))
+        when(appService.listByRange(any(), any(), any(), any(), anyInt(), anyInt()))
             .thenReturn(new EventApplicationService.PagedEvents(List.of(), 0, 1, 50));
 
         mockMvc.perform(get("/api/v1/events")
@@ -53,6 +56,34 @@ class EventControllerTest {
                 .param("end", "2026-05-31T23:59:59"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$").isArray());
+    }
+
+    @Test
+    @DisplayName("GET /api/v1/events?tagId&status → 过滤条件应组装进 EventFilter")
+    void listEvents_withTagAndStatus_buildsFilter() throws Exception {
+        when(currentUserService.getCurrentUserId()).thenReturn(1L);
+        when(appService.listByRange(any(), any(), any(), any(), anyInt(), anyInt()))
+            .thenReturn(new EventApplicationService.PagedEvents(List.of(), 0, 1, 50));
+
+        mockMvc.perform(get("/api/v1/events")
+                .param("start", "2026-05-01T00:00:00")
+                .param("end", "2026-05-31T23:59:59")
+                .param("tagId", "9")
+                .param("status", "COMPLETED"))
+            .andExpect(status().isOk());
+
+        verify(appService).listByRange(any(), any(), eq(1L),
+            eq(new EventFilter(null, 9L, EventStatus.COMPLETED, null)), anyInt(), anyInt());
+    }
+
+    @Test
+    @DisplayName("GET /api/v1/events → 非法 status 返回 400")
+    void listEvents_invalidStatus_shouldReturn400() throws Exception {
+        mockMvc.perform(get("/api/v1/events")
+                .param("start", "2026-05-01T00:00:00")
+                .param("end", "2026-05-31T23:59:59")
+                .param("status", "NOT_A_STATUS"))
+            .andExpect(status().isBadRequest());
     }
 
     @Test

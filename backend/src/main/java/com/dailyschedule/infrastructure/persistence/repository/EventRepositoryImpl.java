@@ -1,7 +1,9 @@
 package com.dailyschedule.infrastructure.persistence.repository;
 
 import com.dailyschedule.domain.event.Event;
+import com.dailyschedule.domain.event.EventFilter;
 import com.dailyschedule.domain.event.EventRepository;
+import com.dailyschedule.domain.event.EventStatus;
 import com.dailyschedule.domain.tag.Tag;
 import com.dailyschedule.infrastructure.persistence.mapper.EventMapper;
 import com.dailyschedule.infrastructure.persistence.mapper.EventTagMapper;
@@ -30,25 +32,19 @@ public class EventRepositoryImpl implements EventRepository {
     }
 
     @Override
-    public List<Event> findByRange(LocalDateTime start, LocalDateTime end, Long userId, String keyword, int page, int size) {
+    public List<Event> findByRange(LocalDateTime start, LocalDateTime end, Long userId, EventFilter filter, int page, int size) {
+        EventFilter f = filter == null ? EventFilter.NONE : filter;
         int offset = (page - 1) * size;
-        return loadWithTags(eventMapper.selectByRange(start, end, userId, keyword, offset, size));
+        return loadWithTags(eventMapper.selectByRange(start, end, userId,
+            f.categoryId(), f.tagId(), f.status() == null ? null : f.status().name(), f.keyword(),
+            offset, size));
     }
 
     @Override
-    public List<Event> findByRangeAndCategory(LocalDateTime start, LocalDateTime end, Long categoryId, Long userId, String keyword, int page, int size) {
-        int offset = (page - 1) * size;
-        return loadWithTags(eventMapper.selectByRangeAndCategory(start, end, categoryId, userId, keyword, offset, size));
-    }
-
-    @Override
-    public long countByRange(LocalDateTime start, LocalDateTime end, Long userId, String keyword) {
-        return eventMapper.countByRange(start, end, userId, keyword);
-    }
-
-    @Override
-    public long countByRangeAndCategory(LocalDateTime start, LocalDateTime end, Long categoryId, Long userId, String keyword) {
-        return eventMapper.countByRangeAndCategory(start, end, categoryId, userId, keyword);
+    public long countByRange(LocalDateTime start, LocalDateTime end, Long userId, EventFilter filter) {
+        EventFilter f = filter == null ? EventFilter.NONE : filter;
+        return eventMapper.countByRange(start, end, userId,
+            f.categoryId(), f.tagId(), f.status() == null ? null : f.status().name(), f.keyword());
     }
 
     @Override
@@ -138,6 +134,7 @@ public class EventRepositoryImpl implements EventRepository {
         e.setLocation(po.getLocation());
         e.setColor(po.getColor());
         e.setReminderMinutes(po.getReminderMinutes());
+        e.setStatus(EventStatus.fromString(po.getStatus()));
         e.setCategoryId(po.getCategoryId());
         e.setCategoryName(po.getCategoryName());
         e.setCategoryColor(po.getCategoryColor());
@@ -159,6 +156,7 @@ public class EventRepositoryImpl implements EventRepository {
         po.setLocation(event.getLocation());
         po.setColor(event.getColor());
         po.setReminderMinutes(event.getReminderMinutes());
+        po.setStatus(event.getStatus() == null ? EventStatus.PLANNED.name() : event.getStatus().name());
         po.setCategoryId(event.getCategoryId());
         po.setUserId(event.getUserId());
         po.setLastRemindedAt(event.getLastRemindedAt());

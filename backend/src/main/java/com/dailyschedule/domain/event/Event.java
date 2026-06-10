@@ -18,6 +18,8 @@ public class Event {
     private String location;
     private String color;
     private Integer reminderMinutes;
+    /** null 表示"未指定"——创建时落库为 PLANNED，更新时保留原值。 */
+    private EventStatus status;
     private Long categoryId;
     private String categoryName;
     private String categoryColor;
@@ -47,6 +49,11 @@ public class Event {
         return this.startTime.isBefore(other.endTime) && this.endTime.isAfter(other.startTime);
     }
 
+    /** 计划中的日程才参与提醒和冲突检测。 */
+    public boolean isActive() {
+        return status == null || status == EventStatus.PLANNED;
+    }
+
     public void update(Event data) {
         if (data.title != null) this.title = data.title;
         if (data.description != null) this.description = data.description;
@@ -56,6 +63,7 @@ public class Event {
         if (data.location != null) this.location = data.location;
         if (data.color != null) this.color = data.color;
         if (data.reminderMinutes != null) this.reminderMinutes = data.reminderMinutes;
+        if (data.status != null) this.status = data.status;
         if (data.categoryId != null) this.categoryId = data.categoryId;
         if (data.tagIds != null) this.tagIds = data.tagIds;
     }
@@ -78,6 +86,8 @@ public class Event {
     public void setColor(String color) { this.color = color; }
     public Integer getReminderMinutes() { return reminderMinutes; }
     public void setReminderMinutes(Integer reminderMinutes) { this.reminderMinutes = reminderMinutes; }
+    public EventStatus getStatus() { return status; }
+    public void setStatus(EventStatus status) { this.status = status; }
     public Long getCategoryId() { return categoryId; }
     public void setCategoryId(Long categoryId) { this.categoryId = categoryId; }
     public String getCategoryName() { return categoryName; }
