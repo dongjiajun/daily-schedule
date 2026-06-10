@@ -1,6 +1,8 @@
 import { useState, type FormEvent } from 'react'
+import dayjs from 'dayjs'
 import type { EventResponse, CategoryResponse, TagResponse } from '../../api/types.gen'
 import { useCalendarStore } from '../../store/calendarStore'
+import { useSettingsStore } from '../../store/settingsStore'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -60,9 +62,25 @@ function toSubmitTime(value: string, allDay: boolean): string {
   return allDay ? `${value}T00:00:00` : `${value}:00`
 }
 
+/** 未框选时段时的兜底：下一个整点/半点开始，时长取用户偏好。 */
+function smartDefaults(durationMinutes: number) {
+  const now = dayjs()
+  const start = now.minute() < 30 ? now.minute(30).second(0) : now.add(1, 'hour').minute(0).second(0)
+  return {
+    start: start.format('YYYY-MM-DDTHH:mm'),
+    end: start.add(durationMinutes, 'minute').format('YYYY-MM-DDTHH:mm'),
+  }
+}
+
 export function EventForm({ initialValues, categories, tags, onSubmit, loading }: EventFormProps) {
-  const defaultStart = useCalendarStore((s) => s.defaultStart)
-  const defaultEnd = useCalendarStore((s) => s.defaultEnd)
+  const storeStart = useCalendarStore((s) => s.defaultStart)
+  const storeEnd = useCalendarStore((s) => s.defaultEnd)
+  const defaultReminder = useSettingsStore((s) => s.defaultReminderMinutes)
+  const defaultDuration = useSettingsStore((s) => s.defaultDurationMinutes)
+
+  const [smart] = useState(() => smartDefaults(defaultDuration))
+  const defaultStart = storeStart ?? (initialValues ? null : smart.start)
+  const defaultEnd = storeEnd ?? (initialValues ? null : smart.end)
 
   const [title, setTitle] = useState(initialValues?.title ?? '')
   const [description, setDescription] = useState(initialValues?.description ?? '')
@@ -81,7 +99,7 @@ export function EventForm({ initialValues, categories, tags, onSubmit, loading }
     initialValues?.categoryId ?? undefined
   )
   const [reminderMinutes, setReminderMinutes] = useState<number | undefined>(
-    initialValues?.reminderMinutes ?? 15
+    initialValues ? (initialValues.reminderMinutes ?? undefined) : (defaultReminder ?? undefined)
   )
   const [tagIds, setTagIds] = useState<number[]>(
     initialValues?.tags?.map((t) => t.id!).filter(Boolean) ?? []
