@@ -48,6 +48,7 @@ export type EventCreateRequest = {
     location?: string;
     color?: string;
     reminderMinutes?: number;
+    status?: EventStatus;
     categoryId?: number;
     tagIds?: Array<number>;
 };
@@ -64,6 +65,7 @@ export type EventResponse = {
     location?: string;
     color?: string;
     reminderMinutes?: number;
+    status?: EventStatus;
     categoryId?: number;
     categoryName?: string;
     categoryColor?: string;
@@ -71,6 +73,14 @@ export type EventResponse = {
     createdAt?: string;
     updatedAt?: string;
 };
+
+/**
+ * 日程状态。PLANNED=计划中，COMPLETED=已完成，CANCELLED=已取消。
+ * 创建时缺省按 PLANNED 处理（由服务端保障，不在 schema 声明 default，
+ * 避免代码生成器把 default 套用到查询过滤参数上）。
+ *
+ */
+export type EventStatus = 'PLANNED' | 'COMPLETED' | 'CANCELLED';
 
 export type CategoryCreateRequest = {
     name: string;
@@ -254,6 +264,14 @@ export type ListEventsData = {
         start: string;
         end: string;
         categoryId?: number;
+        /**
+         * 按标签过滤（事件含有该标签即命中）
+         */
+        tagId?: number;
+        /**
+         * 按状态过滤
+         */
+        status?: EventStatus;
         /**
          * 按标题、描述、地点搜索
          */
