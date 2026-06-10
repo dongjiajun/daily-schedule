@@ -29,7 +29,14 @@
 - 开发库 daily_schedule_dev，测试库 daily_schedule_test
 - JDK 21
 
-## 当前版本: v3.0
+## 当前版本: v3.1
+
+v3.1 围绕用户体验闭环演进：
+- Event 新增 status（PLANNED/COMPLETED/CANCELLED），支持一键标记完成；已完成不提醒、不参与冲突检测
+- `GET /events` 新增 tagId / status 过滤；仓储层重构为 EventFilter 模式便于扩展
+- 前端：日历拖拽改期/拉伸时长、标签筛选、分类/标签管理弹窗、偏好设置（默认视图/提醒/时长）、
+  键盘快捷键（N/T/←→/1-4//?）、周统计、ICS 导出、移动端抽屉侧栏、zh-cn 周一起始
+- 认证体验：access token 过期前自动续签（不再 15 分钟掉线）、401 强制登出、logout 调服务端清 SSE Cookie
 
 v3.0 完成多用户认证契约闭环 + Auth 端点入约 + SSE Cookie 鉴权 + AuthApplicationService 重构。
 

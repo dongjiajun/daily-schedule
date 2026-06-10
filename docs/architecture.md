@@ -110,7 +110,7 @@ Scheduler (30s fixedDelay, Clock-injected)
 ## 测试
 - 本地: 需要 MySQL 8.0（dev/test 库）
 - CI: 使用 H2 内存数据库（MySQL 兼容模式），无需外部数据库
-- 测试总数: 81 用例，11 个测试类
+- 测试总数: 134 用例，17 个测试类
 - 运行: `cd backend && mvn test`
 
 ## 测试矩阵

@@ -95,6 +95,7 @@
 | location | VARCHAR(255) | | |
 | color | VARCHAR(50) | | #1890ff |
 | reminder_minutes | INT | | NULL |
+| status | VARCHAR(20) | NOT NULL | 'PLANNED' |
 | category_id | BIGINT | FK → category | NULL |
 | user_id | BIGINT | NOT NULL, FK → user | |
 | last_reminded_at | DATETIME | | NULL |
@@ -115,3 +116,5 @@
 |------|------|------|
 | V1 | `V1__init_schema.sql` | 初始表结构 |
 | V2 | `V2__add_user_support.sql` | 新增 user 表 + 所有表加 user_id |
+| V3 | `V3__multi_user.sql` | user 表补字段 + 唯一索引 + 复合查询索引 |
+| V4 | `V4__event_status.sql` | event 表加 status 列（PLANNED/COMPLETED/CANCELLED） |
