@@ -1,6 +1,8 @@
 package com.dailyschedule.infrastructure.persistence.repository;
 
 import com.dailyschedule.domain.event.Event;
+import com.dailyschedule.domain.event.EventFilter;
+import com.dailyschedule.domain.event.EventStatus;
 import com.dailyschedule.infrastructure.persistence.mapper.EventMapper;
 import com.dailyschedule.infrastructure.persistence.mapper.EventTagMapper;
 import com.dailyschedule.infrastructure.persistence.mapper.EventTagMapper.EventTagJoinRow;
@@ -47,7 +49,7 @@ class EventRepositoryImplTest {
     @DisplayName("PO → Domain：allDay=1 应转换为 Boolean.TRUE")
     void findByRange_convertsAllDayIntToBoolean_true() {
         EventPO po = sampleEventPO(1L, 1);
-        when(eventMapper.selectByRange(any(), any(), anyLong(), any(), anyInt(), anyInt()))
+        when(eventMapper.selectByRange(any(), any(), anyLong(), any(), any(), any(), any(), anyInt(), anyInt()))
             .thenReturn(List.of(po));
         when(eventTagMapper.selectTagsByEventIds(anyCollection())).thenReturn(List.of());
 
@@ -68,7 +70,7 @@ class EventRepositoryImplTest {
     @DisplayName("PO → Domain：allDay=0 应转换为 Boolean.FALSE")
     void findByRange_convertsAllDayIntToBoolean_false() {
         EventPO po = sampleEventPO(1L, 0);
-        when(eventMapper.selectByRange(any(), any(), anyLong(), any(), anyInt(), anyInt()))
+        when(eventMapper.selectByRange(any(), any(), anyLong(), any(), any(), any(), any(), anyInt(), anyInt()))
             .thenReturn(List.of(po));
         when(eventTagMapper.selectTagsByEventIds(anyCollection())).thenReturn(List.of());
 
@@ -85,7 +87,7 @@ class EventRepositoryImplTest {
     void findByRange_passesLastRemindedAt() {
         EventPO po = sampleEventPO(1L, 0);
         po.setLastRemindedAt(LocalDateTime.of(2026, 5, 9, 9, 45));
-        when(eventMapper.selectByRange(any(), any(), anyLong(), any(), anyInt(), anyInt()))
+        when(eventMapper.selectByRange(any(), any(), anyLong(), any(), any(), any(), any(), anyInt(), anyInt()))
             .thenReturn(List.of(po));
         when(eventTagMapper.selectTagsByEventIds(anyCollection())).thenReturn(List.of());
 
@@ -129,7 +131,7 @@ class EventRepositoryImplTest {
     void findByRange_groupsTagsByEvent() {
         EventPO a = sampleEventPO(1L, 0);
         EventPO b = sampleEventPO(2L, 0);
-        when(eventMapper.selectByRange(any(), any(), anyLong(), any(), anyInt(), anyInt()))
+        when(eventMapper.selectByRange(any(), any(), anyLong(), any(), any(), any(), any(), anyInt(), anyInt()))
             .thenReturn(List.of(a, b));
         when(eventTagMapper.selectTagsByEventIds(anyCollection())).thenReturn(List.of(
             joinRow(1L, 100L, "T1", "#fff"),
@@ -225,20 +227,52 @@ class EventRepositoryImplTest {
     }
 
     @Test
-    @DisplayName("findByRangeAndCategory：应使用分类过滤的 mapper 方法")
-    void findByRangeAndCategory_usesCategoryFilter() {
-        when(eventMapper.selectByRangeAndCategory(any(), any(), eq(3L), anyLong(), any(), anyInt(), anyInt()))
+    @DisplayName("findByRange + EventFilter：分类/标签/状态/关键词应透传到 mapper")
+    void findByRange_passesFilterToMapper() {
+        when(eventMapper.selectByRange(any(), any(), anyLong(), eq(3L), eq(9L), eq("COMPLETED"), eq("会议"), anyInt(), anyInt()))
             .thenReturn(List.of(sampleEventPO(1L, 0)));
         when(eventTagMapper.selectTagsByEventIds(anyCollection())).thenReturn(List.of());
 
-        List<Event> events = repository.findByRangeAndCategory(
+        List<Event> events = repository.findByRange(
             LocalDateTime.of(2026, 5, 1, 0, 0),
             LocalDateTime.of(2026, 5, 31, 23, 59),
-            3L, 1L, null, 1, 50);
+            1L, new EventFilter(3L, 9L, EventStatus.COMPLETED, "会议"), 1, 50);
 
         assertThat(events).hasSize(1);
-        verify(eventMapper).selectByRangeAndCategory(any(), any(), eq(3L), anyLong(), any(), anyInt(), anyInt());
-        verify(eventMapper, never()).selectByRange(any(), any(), anyLong(), any(), anyInt(), anyInt());
+        verify(eventMapper).selectByRange(any(), any(), anyLong(), eq(3L), eq(9L), eq("COMPLETED"), eq("会议"), anyInt(), anyInt());
+    }
+
+    @Test
+    @DisplayName("PO → Domain：status 字段应转换为枚举；空值回退 PLANNED")
+    void findByRange_mapsStatus() {
+        EventPO done = sampleEventPO(1L, 0);
+        done.setStatus("COMPLETED");
+        EventPO legacy = sampleEventPO(2L, 0);
+        legacy.setStatus(null);
+        when(eventMapper.selectByRange(any(), any(), anyLong(), any(), any(), any(), any(), anyInt(), anyInt()))
+            .thenReturn(List.of(done, legacy));
+        when(eventTagMapper.selectTagsByEventIds(anyCollection())).thenReturn(List.of());
+
+        List<Event> events = repository.findByRange(
+            LocalDateTime.MIN, LocalDateTime.MAX, 1L, null, 1, 50);
+
+        assertThat(events.get(0).getStatus()).isEqualTo(EventStatus.COMPLETED);
+        assertThat(events.get(1).getStatus()).isEqualTo(EventStatus.PLANNED);
+    }
+
+    @Test
+    @DisplayName("Domain → PO：status 为 null 时落库为 PLANNED")
+    void save_nullStatus_persistsPlanned() {
+        Event event = new Event("会议",
+            LocalDateTime.of(2026, 5, 9, 10, 0),
+            LocalDateTime.of(2026, 5, 9, 11, 0));
+        event.setId(50L);
+
+        repository.save(event);
+
+        ArgumentCaptor<EventPO> captor = ArgumentCaptor.forClass(EventPO.class);
+        verify(eventMapper).updateById(captor.capture());
+        assertThat(captor.getValue().getStatus()).isEqualTo("PLANNED");
     }
 
     @Test
@@ -254,7 +288,7 @@ class EventRepositoryImplTest {
     @Test
     @DisplayName("空列表：不发起 JOIN 查询")
     void emptyResult_skipsTagJoin() {
-        when(eventMapper.selectByRange(any(), any(), anyLong(), any(), anyInt(), anyInt()))
+        when(eventMapper.selectByRange(any(), any(), anyLong(), any(), any(), any(), any(), anyInt(), anyInt()))
             .thenReturn(List.of());
 
         List<Event> events = repository.findByRange(

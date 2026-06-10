@@ -4,9 +4,11 @@ import com.dailyschedule.api.assembler.EventAssembler;
 import com.dailyschedule.api.generated.api.EventsApi;
 import com.dailyschedule.api.generated.dto.EventCreateRequest;
 import com.dailyschedule.api.generated.dto.EventResponse;
+import com.dailyschedule.api.generated.dto.EventStatus;
 import com.dailyschedule.api.generated.dto.EventUpdateRequest;
 import com.dailyschedule.application.event.EventApplicationService;
 import com.dailyschedule.domain.event.Event;
+import com.dailyschedule.domain.event.EventFilter;
 import com.dailyschedule.infrastructure.security.CurrentUserService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -50,11 +52,13 @@ public class EventController implements EventsApi {
 
     @Override
     public List<EventResponse> listEvents(LocalDateTime start, LocalDateTime end, Long categoryId,
+                                          Long tagId, EventStatus status,
                                           String keyword, Integer page, Integer size) {
         Long userId = currentUserService.getCurrentUserId();
         int p = page != null && page > 0 ? page : 1;
         int s = size != null && size > 0 ? size : 50;
-        var result = eventAppService.listByRange(start, end, categoryId, userId, keyword, p, s);
+        EventFilter filter = new EventFilter(categoryId, tagId, EventAssembler.toDomainStatus(status), keyword);
+        var result = eventAppService.listByRange(start, end, userId, filter, p, s);
         return EventAssembler.toResponseList(result.events());
     }
 

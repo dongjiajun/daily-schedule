@@ -1,9 +1,14 @@
 openapi: 3.0.3
 info:
   title: 日程管理系统 API
-  version: 3.0.0
+  version: 3.1.0
   description: |
-    v3.0 接口定义 — 前后端契约唯一真相源。
+    v3.1 接口定义 — 前后端契约唯一真相源。
+
+    **v3.1 变更**：
+    - Event 新增 `status` 字段（PLANNED / COMPLETED / CANCELLED），支持"标记完成"。
+    - `GET /events` 新增 `tagId`、`status` 过滤参数。
+    - 已完成/已取消的日程不再触发提醒，也不参与时间冲突检测。
 
     **响应约定**：
     - 成功响应直接返回业务数据：单条返回对象，列表返回数组。
@@ -161,6 +166,19 @@ paths:
           schema:
             type: integer
             format: int64
+        - name: tagId
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int64
+          description: 按标签过滤（事件含有该标签即命中）
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/EventStatus'
+          description: 按状态过滤
         - name: keyword
           in: query
           required: false
@@ -623,6 +641,8 @@ components:
           type: string
         reminderMinutes:
           type: integer
+        status:
+          $ref: '#/components/schemas/EventStatus'
         categoryId:
           type: integer
           format: int64
@@ -660,6 +680,8 @@ components:
           type: string
         reminderMinutes:
           type: integer
+        status:
+          $ref: '#/components/schemas/EventStatus'
         categoryId:
           type: integer
           format: int64
@@ -677,6 +699,14 @@ components:
         updatedAt:
           type: string
           format: date-time
+
+    EventStatus:
+      type: string
+      description: |
+        日程状态。PLANNED=计划中，COMPLETED=已完成，CANCELLED=已取消。
+        创建时缺省按 PLANNED 处理（由服务端保障，不在 schema 声明 default，
+        避免代码生成器把 default 套用到查询过滤参数上）。
+      enum: [PLANNED, COMPLETED, CANCELLED]
 
     CategoryCreateRequest:
       type: object

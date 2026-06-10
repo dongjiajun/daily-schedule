@@ -5,13 +5,13 @@ import java.util.List;
 import java.util.Optional;
 
 public interface EventRepository {
-    List<Event> findByRange(LocalDateTime start, LocalDateTime end, Long userId, String keyword, int page, int size);
-    List<Event> findByRangeAndCategory(LocalDateTime start, LocalDateTime end, Long categoryId, Long userId, String keyword, int page, int size);
-    long countByRange(LocalDateTime start, LocalDateTime end, Long userId, String keyword);
-    long countByRangeAndCategory(LocalDateTime start, LocalDateTime end, Long categoryId, Long userId, String keyword);
+    List<Event> findByRange(LocalDateTime start, LocalDateTime end, Long userId, EventFilter filter, int page, int size);
+    long countByRange(LocalDateTime start, LocalDateTime end, Long userId, EventFilter filter);
     Optional<Event> findById(Long id);
     Event save(Event event);
     void delete(Long id);
+
+    /** 查询 [now, threshold] 内开始、设置了提醒且仍处于 PLANNED 状态的日程。 */
     List<Event> findUpcoming(LocalDateTime now, LocalDateTime threshold);
 
     /**

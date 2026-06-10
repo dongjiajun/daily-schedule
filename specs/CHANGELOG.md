@@ -8,6 +8,26 @@
 
 ---
 
+## [3.1.0] — 2026-06-09
+
+围绕「日程完成闭环 + 标签过滤」的向后兼容增量（MINOR）。
+
+### Added — Event 状态
+- 新增 `EventStatus` schema：`PLANNED`（默认）/ `COMPLETED` / `CANCELLED`。
+- `EventCreateRequest` / `EventUpdateRequest` 新增可选 `status` 字段；
+  `EventResponse` 返回 `status`。
+- 行为约定：`COMPLETED` / `CANCELLED` 的日程**不再触发提醒**，
+  也**不参与创建时的时间冲突检测**。
+
+### Added — 查询过滤
+- `GET /events` 新增可选 `tagId` 参数：事件含有该标签即命中。
+- `GET /events` 新增可选 `status` 参数：按状态过滤。
+
+### 数据库
+- 后端新增 Flyway `V4__event_status.sql`：`event` 表加 `status VARCHAR(20) NOT NULL DEFAULT 'PLANNED'`。
+
+---
+
 ## [3.0.0] — 2026-06-03
 
 把 v1.1 内部实现的多用户能力对齐到 v3.0 设计文档（`docs/design/multi-user-auth.md`），

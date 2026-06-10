@@ -17,40 +17,34 @@ public interface EventMapper extends BaseMapper<EventPO> {
         "SELECT e.*, c.name AS category_name, c.color AS category_color FROM event e" +
         " LEFT JOIN category c ON e.category_id = c.id";
 
-    @Select("<script>" + SELECT_WITH_CATEGORY +
+    String RANGE_FILTERS =
         " WHERE e.user_id = #{userId} AND e.start_time &lt; #{end} AND e.end_time &gt; #{start}" +
-        "<if test='keyword != null and keyword != \"\"'> AND (e.title LIKE CONCAT('%',#{keyword},'%') OR e.description LIKE CONCAT('%',#{keyword},'%') OR e.location LIKE CONCAT('%',#{keyword},'%'))</if>" +
+        "<if test='categoryId != null'> AND e.category_id = #{categoryId}</if>" +
+        "<if test='tagId != null'> AND EXISTS (SELECT 1 FROM event_tag et WHERE et.event_id = e.id AND et.tag_id = #{tagId})</if>" +
+        "<if test='status != null and status != \"\"'> AND e.status = #{status}</if>" +
+        "<if test='keyword != null and keyword != \"\"'> AND (e.title LIKE CONCAT('%',#{keyword},'%') OR e.description LIKE CONCAT('%',#{keyword},'%') OR e.location LIKE CONCAT('%',#{keyword},'%'))</if>";
+
+    @Select("<script>" + SELECT_WITH_CATEGORY + RANGE_FILTERS +
         " ORDER BY e.start_time LIMIT #{offset}, #{limit}</script>")
     List<EventPO> selectByRange(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end,
                                 @Param("userId") Long userId,
+                                @Param("categoryId") Long categoryId,
+                                @Param("tagId") Long tagId,
+                                @Param("status") String status,
                                 @Param("keyword") String keyword,
                                 @Param("offset") int offset, @Param("limit") int limit);
 
-    @Select("<script>" + SELECT_WITH_CATEGORY +
-        " WHERE e.user_id = #{userId} AND e.start_time &lt; #{end} AND e.end_time &gt; #{start} AND e.category_id = #{categoryId}" +
-        "<if test='keyword != null and keyword != \"\"'> AND (e.title LIKE CONCAT('%',#{keyword},'%') OR e.description LIKE CONCAT('%',#{keyword},'%') OR e.location LIKE CONCAT('%',#{keyword},'%'))</if>" +
-        " ORDER BY e.start_time LIMIT #{offset}, #{limit}</script>")
-    List<EventPO> selectByRangeAndCategory(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end,
-                                           @Param("categoryId") Long categoryId,
-                                           @Param("userId") Long userId,
-                                           @Param("keyword") String keyword,
-                                           @Param("offset") int offset, @Param("limit") int limit);
-
-    @Select("<script>SELECT COUNT(*) FROM event WHERE user_id = #{userId} AND start_time &lt; #{end} AND end_time &gt; #{start}" +
-        "<if test='keyword != null and keyword != \"\"'> AND (title LIKE CONCAT('%',#{keyword},'%') OR description LIKE CONCAT('%',#{keyword},'%') OR location LIKE CONCAT('%',#{keyword},'%'))</if></script>")
+    @Select("<script>SELECT COUNT(*) FROM event e" + RANGE_FILTERS + "</script>")
     long countByRange(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end,
                       @Param("userId") Long userId,
+                      @Param("categoryId") Long categoryId,
+                      @Param("tagId") Long tagId,
+                      @Param("status") String status,
                       @Param("keyword") String keyword);
 
-    @Select("<script>SELECT COUNT(*) FROM event WHERE user_id = #{userId} AND start_time &lt; #{end} AND end_time &gt; #{start} AND category_id = #{categoryId}" +
-        "<if test='keyword != null and keyword != \"\"'> AND (title LIKE CONCAT('%',#{keyword},'%') OR description LIKE CONCAT('%',#{keyword},'%') OR location LIKE CONCAT('%',#{keyword},'%'))</if></script>")
-    long countByRangeAndCategory(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end,
-                                 @Param("categoryId") Long categoryId,
-                                 @Param("userId") Long userId,
-                                 @Param("keyword") String keyword);
-
     @Select(SELECT_WITH_CATEGORY +
-        " WHERE e.start_time BETWEEN #{now} AND #{threshold} AND e.reminder_minutes IS NOT NULL ORDER BY e.start_time")
+        " WHERE e.start_time BETWEEN #{now} AND #{threshold} AND e.reminder_minutes IS NOT NULL" +
+        " AND e.status = 'PLANNED' ORDER BY e.start_time")
     List<EventPO> selectUpcoming(@Param("now") LocalDateTime now, @Param("threshold") LocalDateTime threshold);
 
     @Update("UPDATE event SET last_reminded_at = #{remindedAt} WHERE id = #{id}")

@@ -1,6 +1,7 @@
 package com.dailyschedule.api.assembler;
 
 import com.dailyschedule.api.generated.dto.EventCreateRequest;
+import com.dailyschedule.api.generated.dto.EventStatus;
 import com.dailyschedule.api.generated.dto.EventUpdateRequest;
 import com.dailyschedule.api.generated.dto.EventResponse;
 import com.dailyschedule.api.generated.dto.TagResponse;
@@ -23,6 +24,7 @@ public class EventAssembler {
         e.setLocation(dto.getLocation());
         e.setColor(dto.getColor());
         e.setReminderMinutes(dto.getReminderMinutes());
+        e.setStatus(toDomainStatus(dto.getStatus()));
         e.setCategoryId(dto.getCategoryId());
         if (dto.getTagIds() != null) {
             e.setTagIds(Set.copyOf(dto.getTagIds()));
@@ -40,6 +42,7 @@ public class EventAssembler {
         e.setLocation(dto.getLocation());
         e.setColor(dto.getColor());
         e.setReminderMinutes(dto.getReminderMinutes());
+        e.setStatus(toDomainStatus(dto.getStatus()));
         e.setCategoryId(dto.getCategoryId());
         if (dto.getTagIds() != null) {
             e.setTagIds(Set.copyOf(dto.getTagIds()));
@@ -58,6 +61,7 @@ public class EventAssembler {
         resp.setLocation(event.getLocation());
         resp.setColor(event.getColor());
         resp.setReminderMinutes(event.getReminderMinutes());
+        resp.setStatus(toDtoStatus(event.getStatus()));
         resp.setCategoryId(event.getCategoryId());
         resp.setCategoryName(event.getCategoryName());
         resp.setCategoryColor(event.getCategoryColor());
@@ -85,5 +89,14 @@ public class EventAssembler {
 
     public static List<EventResponse> toResponseList(List<Event> events) {
         return events.stream().map(EventAssembler::toResponse).collect(Collectors.toList());
+    }
+
+    /** DTO 枚举 → 领域枚举；null 透传（创建默认 / 更新保留由领域与持久层处理）。 */
+    public static com.dailyschedule.domain.event.EventStatus toDomainStatus(EventStatus dto) {
+        return dto == null ? null : com.dailyschedule.domain.event.EventStatus.valueOf(dto.getValue());
+    }
+
+    private static EventStatus toDtoStatus(com.dailyschedule.domain.event.EventStatus status) {
+        return status == null ? EventStatus.PLANNED : EventStatus.fromValue(status.name());
     }
 }

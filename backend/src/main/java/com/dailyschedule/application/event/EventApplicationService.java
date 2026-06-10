@@ -3,6 +3,7 @@ package com.dailyschedule.application.event;
 import com.dailyschedule.api.exception.ResourceNotFoundException;
 import com.dailyschedule.domain.event.Event;
 import com.dailyschedule.domain.event.EventDomainService;
+import com.dailyschedule.domain.event.EventFilter;
 import com.dailyschedule.domain.event.EventRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,17 +22,10 @@ public class EventApplicationService {
         this.domainService = domainService;
     }
 
-    public PagedEvents listByRange(LocalDateTime start, LocalDateTime end, Long categoryId,
-                                   Long userId, String keyword, int page, int size) {
-        List<Event> events;
-        long total;
-        if (categoryId != null) {
-            events = eventRepository.findByRangeAndCategory(start, end, categoryId, userId, keyword, page, size);
-            total = eventRepository.countByRangeAndCategory(start, end, categoryId, userId, keyword);
-        } else {
-            events = eventRepository.findByRange(start, end, userId, keyword, page, size);
-            total = eventRepository.countByRange(start, end, userId, keyword);
-        }
+    public PagedEvents listByRange(LocalDateTime start, LocalDateTime end, Long userId,
+                                   EventFilter filter, int page, int size) {
+        List<Event> events = eventRepository.findByRange(start, end, userId, filter, page, size);
+        long total = eventRepository.countByRange(start, end, userId, filter);
         return new PagedEvents(events, total, page, size);
     }
 
@@ -51,7 +45,7 @@ public class EventApplicationService {
         }
         List<Event> existing = eventRepository.findByRange(
             event.getStartTime().minusMinutes(1), event.getEndTime().plusMinutes(1),
-            event.getUserId(), null, 1, 1000);
+            event.getUserId(), EventFilter.NONE, 1, 1000);
         if (domainService.hasTimeConflict(event, existing)) {
             throw new IllegalArgumentException("该时段已有其他日程，请调整时间");
         }
