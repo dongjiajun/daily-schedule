@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "generate:api": "openapi-ts"
+    "generate:api": "openapi-ts",
+    "verify": "npm run lint && npm run build"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.15",

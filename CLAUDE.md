@@ -41,6 +41,25 @@ npm run generate:api                 # 从 ../specs/openapi.yaml 生成 SDK（@h
 docker-compose up -d                 # MySQL + 后端 :8080 + 前端 :5173（Nginx 静态服务）
 ```
 
+## 提交前验证（CI 门禁对齐）
+
+提交代码前**必须**通过以下验证，与 GitHub Actions CI 的三层门禁一致：
+
+```bash
+# 前端: lint + TypeScript 检查 + 构建
+cd frontend && npm run verify       # 等价于 npm run lint && npm run build
+
+# 后端: 编译 + 单元测试
+cd backend && mvn test              # 使用 H2 内存数据库，无需 MySQL
+```
+
+**CI 失败常见原因：**
+- `npm run lint` 报错（`@typescript-eslint/no-explicit-any` 等）
+- `tsc -b` 类型检查未通过
+- `mvn test` 后端单测失败
+
+所有通过后方可提交 push。
+
 ## 关键文档
 - 架构说明: docs/architecture.md
 - API 契约: specs/openapi.yaml（**唯一真相源**）
