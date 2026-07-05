@@ -1,0 +1,65 @@
+schema: spec-driven-custom
+
+context: |
+  ## 项目概要
+  日程管理系统（Spring Boot 3.4 + React 19 + MySQL 8.0），v3.1。
+
+  ## 技术栈
+  - 后端: Java 21, Spring Boot 3.4, MyBatis-Plus 3.5, Flyway, Spring Security + JWT, Caffeine Cache, Maven
+  - 前端: React 19, TypeScript 6, Tailwind CSS 4, Vite 8, react-big-calendar + dayjs,
+    Zustand (UI 状态), TanStack React Query (服务端数据), Framer Motion, sonner Toast
+  - 数据库: MySQL 8.0 生产 / H2 测试
+  - API 契约: specs/openapi.yaml 是唯一真相源, Maven 插件生成 Java 接口+DTO,
+    @hey-api/openapi-ts 生成前端 SDK (openapi-ts.config.ts)
+
+  ## 后端架构: DDD 四层
+  API 层 (controller/assembler/exception) → 应用层 (application/*/ApplicationService)
+  → 领域层 (domain/*/Entity + DomainService + Repository 接口)
+  ← 基础设施层 (infrastructure/persistence/security/config/scheduled/notification)
+
+  关键约定:
+  - Controller 必须实现 generated/api/ 下的接口, 编译期契约同步
+  - domain 定义 Repository 接口, infrastructure 用 MyBatis-Plus (PO + Mapper) 实现
+  - 所有业务表含 user_id, 通过 CurrentUserService 强制多用户数据隔离
+  - Flyway 迁移: src/main/resources/db/migration/V*__*.sql, 启动自动执行
+
+  ## API 契约驱动
+  任何 API 变更都从 specs/openapi.yaml 开始:
+  - 后端: mvn compile 触发 openapi-generator-maven-plugin → target/generated-sources/
+  - 前端: npm run generate:api → src/api/ (sdk.gen.ts + types.gen.ts + client.gen.ts)
+  - client.gen.ts 会被生成覆盖, 自定义逻辑必须在 api/authInterceptor.ts 中
+  - 变更后同步更新 specs/CHANGELOG.md + 三处版本号
+
+  ## 认证
+  JWT 无状态 (access 15min + refresh 7d), BCrypt 加密, SSE Cookie 鉴权 (dsa_sse_session)
+  前端 authInterceptor: 请求注入 Bearer + 过期预刷新 + 401 强制登出
+
+  ## 前端状态管理
+  - Zustand stores: authStore (认证), calendarStore (视图), settingsStore (偏好)
+  - React Query hooks: useEvents, useCategories, useTags
+  - 路由: LoginPage + HomePage, shadcn/ui 风格组件 (components/ui/)
+
+  ## 测试
+  - 后端: JUnit 5 + H2 内存数据库 (test profile), 17 类 134 用例
+  - 前端: TypeScript 严格模式 + ESLint
+
+  ## 版本号位置
+  specs/openapi.yaml (version), backend/pom.xml (version), frontend/package.json (version)
+
+rules:
+  proposal:
+    - 必须评估 API 契约影响——是否需要修改 specs/openapi.yaml
+    - 必须标注对 DDD 各层的影响 (API/应用/领域/基础设施)
+    - 涉及数据库变更时必须标注 Flyway 迁移版本号 (V5, V6...)
+    - 标记是否为 BREAKING 变更 (影响契约兼容性)
+  specs:
+    - 新增 API 端点时必须引用 OpenAPI schema 中的字段名和类型
+    - 数据库变更必须列出表名、列名、类型、约束
+  design:
+    - 必须明确改动涉及的后端包路径 (api/controller, application, domain, infrastructure)
+    - 涉及新依赖时必须说明选型理由
+    - 涉及认证/权限时必须说明安全影响
+  tasks:
+    - 按 DDD 分层编排任务顺序: 数据库迁移 → 领域层 → 基础设施层 → 应用层 → API 层 → 前端
+    - API 契约变更后必须包含 "重新生成 SDK" 任务
+    - 每个后端任务完成后应包含对应的测试任务

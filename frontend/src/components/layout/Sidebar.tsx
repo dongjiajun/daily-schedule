@@ -20,17 +20,17 @@ function WeekStats() {
   const rate = events.length > 0 ? Math.round((completed.length / events.length) * 100) : 0
 
   return (
-    <div className="mx-4 mb-3 rounded-xl border border-gray-100/80 bg-white/70 p-3 space-y-2">
-      <div className="flex items-center justify-between text-[12px] text-gray-500">
-        <span>今日 <span className="font-semibold text-gray-800">{today.length}</span> 项</span>
-        <span>本周 <span className="font-semibold text-gray-800">{events.length}</span> 项</span>
+    <div className="mx-4 mb-3 rounded-xl border border-border-subtle bg-surface/70 p-3 space-y-2">
+      <div className="flex items-center justify-between text-[12px] text-foreground-muted">
+        <span>今日 <span className="font-semibold text-foreground">{today.length}</span> 项</span>
+        <span>本周 <span className="font-semibold text-foreground">{events.length}</span> 项</span>
       </div>
       <div className="space-y-1">
-        <div className="flex items-center justify-between text-[11px] text-gray-400">
+        <div className="flex items-center justify-between text-[11px] text-foreground-muted">
           <span>本周完成率</span>
-          <span className="font-medium text-gray-600">{rate}%</span>
+          <span className="font-medium text-foreground-secondary">{rate}%</span>
         </div>
-        <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden">
+        <div className="h-1.5 rounded-full bg-hover overflow-hidden">
           <div
             className="h-full rounded-full bg-emerald-500/80 transition-all duration-500"
             style={{ width: `${rate}%` }}
@@ -69,11 +69,11 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   }
 
   return (
-    <aside className="w-60 h-full bg-gradient-to-b from-white via-white to-gray-50/70 border-r border-gray-100/80 flex flex-col relative z-10">
+    <aside className="w-60 h-full bg-gradient-to-b from-surface via-surface to-sidebar-muted border-r border-border-subtle flex flex-col relative z-10">
       {/* Header */}
-      <div className="px-5 py-4 border-b border-gray-100/80 flex items-center justify-between">
-        <h1 className="text-[15px] font-bold text-gray-900 flex items-center gap-2.5 tracking-tight">
-          <div className="w-8 h-8 rounded-xl bg-gray-900 text-white flex items-center justify-center shadow-sm shadow-gray-900/15">
+      <div className="px-5 py-4 border-b border-border-subtle flex items-center justify-between">
+        <h1 className="text-[15px] font-bold text-foreground flex items-center gap-2.5 tracking-tight">
+          <div className="w-8 h-8 rounded-xl bg-accent text-accent-fg flex items-center justify-center shadow-sm">
             <CalendarDays className="w-4 h-4" />
           </div>
           日程管理
@@ -81,7 +81,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         {onNavigate && (
           <button
             onClick={onNavigate}
-            className="md:hidden p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+            className="md:hidden p-1.5 rounded-lg text-foreground-muted hover:text-foreground-secondary hover:bg-hover transition-colors"
             aria-label="关闭侧边栏"
           >
             <X className="w-4 h-4" />
@@ -93,7 +93,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       <div className="px-4 mt-4 mb-4">
         <Button
           onClick={() => { openCreateModal(); onNavigate?.() }}
-          className="w-full rounded-xl h-10 shadow-sm shadow-gray-900/8 font-medium transition-all duration-200 hover:shadow-md hover:shadow-gray-900/12"
+          className="w-full rounded-xl h-10 shadow-sm font-medium transition-all duration-200 hover:shadow-md"
           title="新建日程（N）"
         >
           <Plus className="w-4 h-4" />
@@ -104,14 +104,14 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       {/* Search */}
       <div className="px-4 mb-2">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground-muted" />
           <input
             id="sidebar-search"
             type="text"
             value={searchKeyword}
             onChange={(e) => setSearchKeyword(e.target.value)}
             placeholder="搜索日程...（/）"
-            className="w-full rounded-xl border border-gray-200/80 bg-gray-50/80 pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-300 focus:bg-white transition-all duration-200 placeholder:text-gray-400"
+            className="w-full rounded-xl border border-border bg-sidebar-muted pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-focus-strong/10 focus:border-border focus:bg-surface transition-all duration-200 placeholder:text-foreground-muted"
           />
         </div>
       </div>
@@ -120,10 +120,10 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       <nav className="flex-1 overflow-y-auto px-3 pb-2">
         {/* Categories */}
         <div className="flex items-center justify-between px-3 py-2">
-          <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest">分类</p>
+          <p className="text-[11px] font-semibold text-foreground-muted uppercase tracking-widest">分类</p>
           <button
             onClick={() => openManage('categories')}
-            className="w-5 h-5 rounded-md flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all"
+            className="w-5 h-5 rounded-md flex items-center justify-center text-foreground-muted hover:text-foreground-secondary hover:bg-hover transition-all"
             title="管理分类"
           >
             <Plus className="w-3 h-3" />
@@ -136,8 +136,8 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
             className={cn(
               'w-full flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-all duration-150',
               !filterCategoryId
-                ? 'bg-gray-900/5 text-gray-900 font-medium shadow-sm'
-                : 'text-gray-600 hover:bg-gray-100/70'
+                ? 'bg-accent/5 text-foreground font-medium shadow-sm'
+                : 'text-foreground-secondary hover:bg-hover'
             )}
           >
             <Layers className="w-3.5 h-3.5" />
@@ -151,30 +151,30 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                 className={cn(
                   'w-full flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-all duration-150',
                   filterCategoryId === cat.id
-                    ? 'bg-gray-900/5 text-gray-900 font-medium shadow-sm'
-                    : 'text-gray-600 hover:bg-gray-100/70'
+                    ? 'bg-accent/5 text-foreground font-medium shadow-sm'
+                    : 'text-foreground-secondary hover:bg-hover'
                 )}
               >
                 <span
-                  className="w-2 h-2 rounded-full flex-shrink-0 ring-2 ring-offset-1 ring-gray-200/50"
+                  className="w-2 h-2 rounded-full flex-shrink-0 ring-2 ring-offset-1 ring-border/50"
                   style={{ backgroundColor: cat.color ?? '#3b82f6' }}
                 />
                 <span className="truncate">{cat.name}</span>
               </button>
             ))
           ) : (
-            <p className="text-xs text-gray-400 px-3 py-3 text-center">
-              暂无分类，点击上方 <span className="text-gray-500 font-medium">+</span> 创建
+            <p className="text-xs text-foreground-muted px-3 py-3 text-center">
+              暂无分类，点击上方 <span className="text-foreground-muted font-medium">+</span> 创建
             </p>
           )}
         </div>
 
         {/* Tags */}
         <div className="flex items-center justify-between px-3 py-2 mt-3">
-          <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest">标签</p>
+          <p className="text-[11px] font-semibold text-foreground-muted uppercase tracking-widest">标签</p>
           <button
             onClick={() => openManage('tags')}
-            className="w-5 h-5 rounded-md flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all"
+            className="w-5 h-5 rounded-md flex items-center justify-center text-foreground-muted hover:text-foreground-secondary hover:bg-hover transition-all"
             title="管理标签"
           >
             <Plus className="w-3 h-3" />
@@ -193,9 +193,9 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                     active ? 'shadow-sm font-medium' : 'opacity-75 hover:opacity-100'
                   )}
                   style={{
-                    backgroundColor: active ? (tag.color ?? '#3b82f6') + '22' : '#f8fafc',
-                    borderColor: active ? (tag.color ?? '#3b82f6') : '#e2e8f0',
-                    color: '#334155',
+                    backgroundColor: active ? (tag.color ?? '#3b82f6') + '22' : 'var(--color-sidebar-muted)',
+                    borderColor: active ? (tag.color ?? '#3b82f6') : 'var(--color-border)',
+                    color: 'var(--color-foreground-secondary)',
                   }}
                 >
                   <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: tag.color ?? '#3b82f6' }} />
@@ -205,7 +205,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
             })}
           </div>
         ) : (
-          <p className="text-xs text-gray-400 px-3 pb-3 flex items-center gap-1.5">
+          <p className="text-xs text-foreground-muted px-3 pb-3 flex items-center gap-1.5">
             <TagIcon className="w-3 h-3" />
             暂无标签
           </p>
@@ -216,11 +216,11 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       <WeekStats />
 
       {/* Footer */}
-      <div className="px-4 py-3.5 border-t border-gray-100/80 space-y-1">
+      <div className="px-4 py-3.5 border-t border-border-subtle space-y-1">
         <div className="grid grid-cols-2 gap-x-2 gap-y-1">
           <button
             onClick={() => openManage('preferences')}
-            className="flex items-center gap-2 text-[13px] text-gray-400 hover:text-gray-600 transition-colors py-1"
+            className="flex items-center gap-2 text-[13px] text-foreground-muted hover:text-foreground-secondary transition-colors py-1"
             title="偏好设置"
           >
             <Settings className="w-3.5 h-3.5" />
@@ -228,7 +228,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
           </button>
           <button
             onClick={handleExport}
-            className="flex items-center gap-2 text-[13px] text-gray-400 hover:text-gray-600 transition-colors py-1"
+            className="flex items-center gap-2 text-[13px] text-foreground-muted hover:text-foreground-secondary transition-colors py-1"
             title="把当前视图的日程导出为 .ics 文件"
           >
             <Download className="w-3.5 h-3.5" />
@@ -236,7 +236,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
           </button>
           <button
             onClick={() => setShowShortcuts(true)}
-            className="flex items-center gap-2 text-[13px] text-gray-400 hover:text-gray-600 transition-colors py-1"
+            className="flex items-center gap-2 text-[13px] text-foreground-muted hover:text-foreground-secondary transition-colors py-1"
             title="键盘快捷键（?）"
           >
             <Keyboard className="w-3.5 h-3.5" />
@@ -244,7 +244,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
           </button>
           <button
             onClick={openOnboarding}
-            className="flex items-center gap-2 text-[13px] text-gray-400 hover:text-gray-600 transition-colors py-1"
+            className="flex items-center gap-2 text-[13px] text-foreground-muted hover:text-foreground-secondary transition-colors py-1"
             title="查看使用指南"
           >
             <HelpCircle className="w-3.5 h-3.5" />
@@ -256,10 +256,10 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
           onClick={logout}
           title="退出登录"
         >
-          <span className="text-[13px] text-gray-400 truncate group-hover:text-gray-600 transition-colors">
+          <span className="text-[13px] text-foreground-muted truncate group-hover:text-foreground-secondary transition-colors">
             {user?.displayName ?? user?.username ?? '未登录'}
           </span>
-          <LogOut className="w-3.5 h-3.5 text-gray-300 group-hover:text-gray-500 transition-colors" />
+          <LogOut className="w-3.5 h-3.5 text-foreground-muted group-hover:text-foreground-secondary transition-colors" />
         </div>
       </div>
     </aside>

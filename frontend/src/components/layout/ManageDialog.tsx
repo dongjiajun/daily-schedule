@@ -14,14 +14,13 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useCalendarStore, type CalendarView } from '../../store/calendarStore'
-import { useSettingsStore } from '../../store/settingsStore'
+import { useSettingsStore, type ThemePreset, THEME_LABELS, THEME_COLORS } from '../../store/settingsStore'
 import {
   useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory,
 } from '../../hooks/useCategories'
 import { useTags, useCreateTag, useUpdateTag, useDeleteTag } from '../../hooks/useTags'
 import { cn } from '@/lib/utils'
-
-const PRESET_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#6366f1', '#84cc16']
+import { PRESET_COLORS } from '@/lib/colors'
 
 const VIEW_LABELS: Record<CalendarView, string> = { month: '月', week: '周', day: '日', agenda: '议程' }
 
@@ -63,7 +62,7 @@ function ColorPicker({ value, onChange }: { value: string; onChange: (c: string)
           onClick={() => onChange(color)}
           className={cn(
             'w-5 h-5 rounded-full transition-all',
-            value === color && 'ring-2 ring-offset-1 ring-gray-400 scale-110'
+            value === color && 'ring-2 ring-offset-1 ring-focus scale-110'
           )}
           style={{ backgroundColor: color }}
         />
@@ -103,7 +102,7 @@ function ItemList({ items, emptyText, placeholder, maxLength, pendingCreate, onC
   return (
     <div className="space-y-3">
       {/* 新建 */}
-      <div className="rounded-xl border border-gray-100 bg-gray-50/60 p-3 space-y-2">
+      <div className="rounded-xl border border-border-subtle bg-sidebar-muted p-3 space-y-2">
         <div className="flex gap-2">
           <Input
             value={newName}
@@ -124,11 +123,11 @@ function ItemList({ items, emptyText, placeholder, maxLength, pendingCreate, onC
       {/* 列表 */}
       <div className="space-y-1 max-h-[40vh] overflow-y-auto pr-1">
         {items.length === 0 && (
-          <p className="text-xs text-gray-400 text-center py-6">{emptyText}</p>
+          <p className="text-xs text-foreground-muted text-center py-6">{emptyText}</p>
         )}
         {items.map((item) =>
           editingId === item.id ? (
-            <div key={item.id} className="rounded-lg border border-gray-200 p-2.5 space-y-2 bg-white">
+            <div key={item.id} className="rounded-lg border border-border p-2.5 space-y-2 bg-surface">
               <div className="flex gap-2">
                 <Input
                   value={editName}
@@ -150,10 +149,10 @@ function ItemList({ items, emptyText, placeholder, maxLength, pendingCreate, onC
           ) : (
             <div
               key={item.id}
-              className="group flex items-center gap-2.5 rounded-lg px-2.5 py-2 hover:bg-gray-50 transition-colors"
+              className="group flex items-center gap-2.5 rounded-lg px-2.5 py-2 hover:bg-hover transition-colors"
             >
               <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: item.color ?? '#3b82f6' }} />
-              <span className="flex-1 text-sm text-gray-700 truncate">{item.name}</span>
+              <span className="flex-1 text-sm text-foreground-secondary truncate">{item.name}</span>
               {deletingId === item.id ? (
                 <span className="flex items-center gap-1.5">
                   <span className="text-[11px] text-red-500">确认删除？</span>
@@ -167,14 +166,14 @@ function ItemList({ items, emptyText, placeholder, maxLength, pendingCreate, onC
               ) : (
                 <span className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
-                    className="p-1.5 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                    className="p-1.5 rounded-md text-foreground-muted hover:text-foreground-secondary hover:bg-hover transition-colors"
                     onClick={() => startEdit(item)}
                     title="编辑"
                   >
                     <Pencil className="w-3.5 h-3.5" />
                   </button>
                   <button
-                    className="p-1.5 rounded-md text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                    className="p-1.5 rounded-md text-foreground-muted hover:text-red-500 hover:bg-red-50 transition-colors"
                     onClick={() => { setDeletingId(item.id!); setEditingId(null) }}
                     title="删除"
                   >
@@ -261,7 +260,7 @@ export function ManageDialog() {
                     ))}
                   </SelectContent>
                 </Select>
-                <p className="text-[11px] text-gray-400">下次打开应用时生效</p>
+                <p className="text-[11px] text-foreground-muted">下次打开应用时生效</p>
               </div>
 
               <div className="space-y-1.5">
@@ -301,13 +300,33 @@ export function ManageDialog() {
               <div className="flex items-center justify-between pt-1">
                 <div>
                   <Label className="cursor-pointer" htmlFor="show-completed">显示已完成日程</Label>
-                  <p className="text-[11px] text-gray-400 mt-0.5">关闭后日历上隐藏已完成/已取消的日程</p>
+                  <p className="text-[11px] text-foreground-muted mt-0.5">关闭后日历上隐藏已完成/已取消的日程</p>
                 </div>
                 <Switch
                   id="show-completed"
                   checked={settings.showCompleted}
                   onCheckedChange={settings.setShowCompleted}
                 />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label>主题配色</Label>
+                <Select value={settings.theme} onValueChange={(v) => settings.setTheme(v as ThemePreset)}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(Object.keys(THEME_LABELS) as ThemePreset[]).map((t) => (
+                      <SelectItem key={t} value={t}>
+                        <span className="flex items-center gap-2">
+                          <span className="w-3 h-3 rounded-full border border-border" style={{ backgroundColor: THEME_COLORS[t] }} />
+                          {THEME_LABELS[t]}
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-[11px] text-foreground-muted">切换后即时生效，自动保存</p>
               </div>
             </TabsContent>
           </Tabs>

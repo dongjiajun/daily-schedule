@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
+import { PRESET_COLORS } from '@/lib/colors'
 import { ChevronDown } from 'lucide-react'
 
 export interface EventFormValues {
@@ -41,8 +42,6 @@ interface EventFormProps {
 
 const NO_CATEGORY = '__none__'
 const NO_REMINDER = '__none__'
-const PRESET_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#6366f1', '#84cc16']
-
 const REMINDER_OPTIONS: Array<{ value: string; label: string }> = [
   { value: NO_REMINDER, label: '不提醒' },
   { value: '0', label: '事件开始时' },
@@ -166,7 +165,7 @@ export function EventForm({ initialValues, categories, tags, onSubmit, loading }
             setEndTime(v ? endTime.slice(0, 10) : (endTime || defaultEnd || ''))
           }}
         />
-        <Label htmlFor="event-all-day" className="text-gray-600 cursor-pointer">全天事件</Label>
+        <Label htmlFor="event-all-day" className="text-foreground-secondary cursor-pointer">全天事件</Label>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
@@ -239,7 +238,7 @@ export function EventForm({ initialValues, categories, tags, onSubmit, loading }
                 onClick={() => setColor(c)}
                 className={cn(
                   'w-7 h-7 rounded-full transition-all',
-                  color === c && 'ring-2 ring-offset-1 ring-gray-400 scale-110'
+                  color === c && 'ring-2 ring-offset-1 ring-focus scale-110'
                 )}
                 style={{ backgroundColor: c }}
                 disabled={categoryId !== undefined}
@@ -285,10 +284,10 @@ export function EventForm({ initialValues, categories, tags, onSubmit, loading }
                   }
                   className={cn(
                     'flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs border transition-colors',
-                    'focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-400'
+                    'focus:outline-none focus-visible:ring-2 focus-visible:ring-focus'
                   )}
                   style={{
-                    backgroundColor: active ? (tag.color ?? '#3b82f6') + '20' : '#f3f4f6',
+                    backgroundColor: active ? (tag.color ?? '#3b82f6') + '20' : 'var(--color-hover)',
                     borderColor: tag.color ?? '#3b82f6',
                   }}
                 >
@@ -302,11 +301,11 @@ export function EventForm({ initialValues, categories, tags, onSubmit, loading }
       )}
 
       {/* 更多详情折叠 */}
-      <div className="border-t border-gray-100 pt-1">
+      <div className="border-t border-border-subtle pt-1">
         <button
           type="button"
           onClick={() => setShowMore(!showMore)}
-          className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 transition-colors py-1"
+          className="flex items-center gap-1.5 text-xs text-foreground-muted hover:text-foreground-secondary transition-colors py-1"
         >
           <ChevronDown className={cn('w-3.5 h-3.5 transition-transform', showMore && 'rotate-180')} />
           更多详情

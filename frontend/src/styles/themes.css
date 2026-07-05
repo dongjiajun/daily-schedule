@@ -1,0 +1,166 @@
+/* ===== 主题预设 ===== */
+/* 切换 <html data-theme="..."> 即可换肤 */
+
+/* ---- default：冷灰蓝（当前视觉，零回归） ---- */
+:root[data-theme="default"] {
+  --color-bg: #f5f6f8;
+  --color-surface: #ffffff;
+  --color-surface-elevated: #fafbfc;
+  --color-sidebar: #ffffff;
+  --color-sidebar-muted: #f9fafb;
+  --color-foreground: #111827;
+  --color-foreground-secondary: #4b5563;
+  --color-foreground-muted: #9ca3af;
+  --color-border: #e5e7eb;
+  --color-border-subtle: #f3f4f6;
+  --color-accent: #111827;
+  --color-accent-fg: #ffffff;
+  --color-accent-hover: #1f2937;
+  --color-focus: #9ca3af;
+  --color-focus-strong: #111827;
+  --color-hover: #f3f4f6;
+  --color-overlay: rgba(0, 0, 0, 0.2);
+  --color-cal-bg: #ffffff;
+  --color-cal-border: #f1f5f9;
+  --color-cal-today-bg: #f0f7ff;
+  --color-cal-today-ring: #3b82f6;
+  --color-event-done-text: #94a3b8;
+  --color-event-text: #1e293b;
+  --color-grid-dot: #0f172a;
+  --color-gradient-from: #f4f6f9;
+  --color-gradient-via: #eceff3;
+  --color-gradient-to: #f3f5f8;
+}
+
+/* ---- warm：暖琥珀 ---- */
+:root[data-theme="warm"] {
+  --color-bg: #fef7f2;
+  --color-surface: #fffbf7;
+  --color-surface-elevated: #fdf6f0;
+  --color-sidebar: #fffbf7;
+  --color-sidebar-muted: #fdf5ed;
+  --color-foreground: #431407;
+  --color-foreground-secondary: #78350f;
+  --color-foreground-muted: #a16207;
+  --color-border: #fde68a;
+  --color-border-subtle: #fef3c7;
+  --color-accent: #92400e;
+  --color-accent-fg: #ffffff;
+  --color-accent-hover: #78350f;
+  --color-focus: #d97706;
+  --color-focus-strong: #92400e;
+  --color-hover: #fef3c7;
+  --color-overlay: rgba(0, 0, 0, 0.2);
+  --color-cal-bg: #fffbf7;
+  --color-cal-border: #fef3c7;
+  --color-cal-today-bg: #fffbeb;
+  --color-cal-today-ring: #d97706;
+  --color-event-done-text: #a16207;
+  --color-event-text: #431407;
+  --color-grid-dot: #78350f;
+  --color-gradient-from: #fef7f2;
+  --color-gradient-via: #fdf2e8;
+  --color-gradient-to: #fef5ee;
+}
+
+/* ---- nature：森林绿 ---- */
+:root[data-theme="nature"] {
+  --color-bg: #f4f7f4;
+  --color-surface: #fafcfa;
+  --color-surface-elevated: #f5f9f5;
+  --color-sidebar: #fafcfa;
+  --color-sidebar-muted: #f2f6f2;
+  --color-foreground: #14532d;
+  --color-foreground-secondary: #166534;
+  --color-foreground-muted: #4d7c0f;
+  --color-border: #bbf7d0;
+  --color-border-subtle: #dcfce7;
+  --color-accent: #166534;
+  --color-accent-fg: #ffffff;
+  --color-accent-hover: #14532d;
+  --color-focus: #22c55e;
+  --color-focus-strong: #166534;
+  --color-hover: #dcfce7;
+  --color-overlay: rgba(0, 0, 0, 0.2);
+  --color-cal-bg: #fafcfa;
+  --color-cal-border: #dcfce7;
+  --color-cal-today-bg: #f0fdf4;
+  --color-cal-today-ring: #22c55e;
+  --color-event-done-text: #4d7c0f;
+  --color-event-text: #14532d;
+  --color-grid-dot: #166534;
+  --color-gradient-from: #f4f7f4;
+  --color-gradient-via: #eef3ee;
+  --color-gradient-to: #f2f6f2;
+}
+
+/* ---- dark：深色模式 ---- */
+:root[data-theme="dark"] {
+  --color-bg: #0f172a;
+  --color-surface: #1e293b;
+  --color-surface-elevated: #334155;
+  --color-sidebar: #1e293b;
+  --color-sidebar-muted: #0f172a;
+  --color-foreground: #f1f5f9;
+  --color-foreground-secondary: #94a3b8;
+  --color-foreground-muted: #64748b;
+  --color-border: #334155;
+  --color-border-subtle: #1e293b;
+  --color-accent: #e2e8f0;
+  --color-accent-fg: #0f172a;
+  --color-accent-hover: #f8fafc;
+  --color-focus: #64748b;
+  --color-focus-strong: #94a3b8;
+  --color-hover: #334155;
+  --color-overlay: rgba(0, 0, 0, 0.5);
+  --color-cal-bg: #1e293b;
+  --color-cal-border: #334155;
+  --color-cal-today-bg: #1e293b;
+  --color-cal-today-ring: #60a5fa;
+  --color-event-done-text: #64748b;
+  --color-event-text: #e2e8f0;
+  --color-grid-dot: #475569;
+  --color-gradient-from: #0f172a;
+  --color-gradient-via: #1a2744;
+  --color-gradient-to: #16213e;
+}
+
+/* ---- lavender：薰衣草紫 ---- */
+:root[data-theme="lavender"] {
+  --color-bg: #f8f6fb;
+  --color-surface: #fdfbff;
+  --color-surface-elevated: #f9f6fd;
+  --color-sidebar: #fdfbff;
+  --color-sidebar-muted: #f7f4fa;
+  --color-foreground: #3b0764;
+  --color-foreground-secondary: #6b21a8;
+  --color-foreground-muted: #7c3aed;
+  --color-border: #ddd6fe;
+  --color-border-subtle: #ede9fe;
+  --color-accent: #6b21a8;
+  --color-accent-fg: #ffffff;
+  --color-accent-hover: #581c87;
+  --color-focus: #8b5cf6;
+  --color-focus-strong: #6b21a8;
+  --color-hover: #ede9fe;
+  --color-overlay: rgba(0, 0, 0, 0.2);
+  --color-cal-bg: #fdfbff;
+  --color-cal-border: #ede9fe;
+  --color-cal-today-bg: #faf5ff;
+  --color-cal-today-ring: #8b5cf6;
+  --color-event-done-text: #7c3aed;
+  --color-event-text: #3b0764;
+  --color-grid-dot: #6b21a8;
+  --color-gradient-from: #f8f6fb;
+  --color-gradient-via: #f3eff9;
+  --color-gradient-to: #f6f4fa;
+}
+
+/* ===== 语义色（不随主题变化） ===== */
+:root {
+  --color-success: #10b981;
+  --color-success-bg: #ecfdf5;
+  --color-error: #ef4444;
+  --color-error-bg: #fef2f2;
+  --color-warning: #f59e0b;
+}

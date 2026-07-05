@@ -12,12 +12,12 @@ export function AppShell() {
 
   return (
     <div className="flex h-screen relative"
-      style={{ background: 'linear-gradient(145deg, #f4f6f9 0%, #eceff3 50%, #f3f5f8 100%)' }}>
+      style={{ background: 'linear-gradient(145deg, var(--color-gradient-from) 0%, var(--color-gradient-via) 50%, var(--color-gradient-to) 100%)' }}>
       {/* 微妙网格纹理 */}
       <div
         className="absolute inset-0 pointer-events-none opacity-[0.025]"
         style={{
-          backgroundImage: 'radial-gradient(circle, #0f172a 1px, transparent 1px)',
+          backgroundImage: 'radial-gradient(circle, var(--color-grid-dot) 1px, transparent 1px)',
           backgroundSize: '28px 28px',
         }}
       />
@@ -32,7 +32,7 @@ export function AppShell() {
         {sidebarOpen && (
           <>
             <motion.div
-              className="fixed inset-0 z-30 bg-black/30 backdrop-blur-sm md:hidden"
+              className="fixed inset-0 z-30 bg-overlay backdrop-blur-sm md:hidden"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -52,11 +52,11 @@ export function AppShell() {
       </AnimatePresence>
 
       <main className="flex-1 overflow-hidden p-4 relative z-0">
-        <div className="h-full bg-white/90 backdrop-blur rounded-2xl shadow-lg shadow-gray-200/50 border border-gray-100/80 overflow-hidden relative">
+        <div className="h-full bg-surface/90 backdrop-blur rounded-2xl shadow-lg border border-border-subtle overflow-hidden relative">
           {/* 移动端打开侧边栏按钮 */}
           <button
             onClick={() => setSidebarOpen(true)}
-            className="md:hidden absolute left-3 bottom-3 z-20 w-11 h-11 rounded-full bg-gray-900 text-white shadow-lg shadow-gray-900/25 flex items-center justify-center"
+            className="md:hidden absolute left-3 bottom-3 z-20 w-11 h-11 rounded-full bg-accent text-accent-fg shadow-lg flex items-center justify-center"
             aria-label="打开侧边栏"
           >
             <Menu className="w-5 h-5" />

@@ -36,14 +36,14 @@ export function OnboardingGuide({ onClose }: { onClose: () => void }) {
   return (
     <AnimatePresence>
       <motion.div
-        className="fixed inset-0 z-[60] flex items-center justify-center bg-black/30 backdrop-blur-sm"
+        className="fixed inset-0 z-[60] flex items-center justify-center bg-overlay backdrop-blur-sm"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={next}
       >
         <motion.div
-          className="bg-white rounded-3xl shadow-2xl p-10 max-w-md mx-4 text-center relative"
+          className="bg-surface rounded-3xl shadow-2xl p-10 max-w-md mx-4 text-center relative"
           initial={{ opacity: 0, scale: 0.9, y: 24 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 24 }}
@@ -52,7 +52,7 @@ export function OnboardingGuide({ onClose }: { onClose: () => void }) {
         >
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 p-1.5 rounded-full hover:bg-gray-100 text-gray-300 hover:text-gray-500 transition-colors"
+            className="absolute top-4 right-4 p-1.5 rounded-full hover:bg-hover text-foreground-muted hover:text-foreground-secondary transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -70,10 +70,10 @@ export function OnboardingGuide({ onClose }: { onClose: () => void }) {
               <current.icon className="w-8 h-8" />
             </div>
 
-            <h2 className="text-xl font-bold text-gray-900 mb-2 tracking-tight">
+            <h2 className="text-xl font-bold text-foreground mb-2 tracking-tight">
               {current.title}
             </h2>
-            <p className="text-sm text-gray-500 leading-relaxed mb-8">
+            <p className="text-sm text-foreground-muted leading-relaxed mb-8">
               {current.desc}
             </p>
           </motion.div>
@@ -85,7 +85,7 @@ export function OnboardingGuide({ onClose }: { onClose: () => void }) {
                 key={i}
                 onClick={() => setStep(i)}
                 className={`rounded-full transition-all ${
-                  i === step ? 'w-6 h-2 bg-gray-900' : 'w-2 h-2 bg-gray-200 hover:bg-gray-300'
+                  i === step ? 'w-6 h-2 bg-accent' : 'w-2 h-2 bg-border hover:bg-focus'
                 }`}
               />
             ))}
@@ -93,7 +93,7 @@ export function OnboardingGuide({ onClose }: { onClose: () => void }) {
 
           <button
             onClick={next}
-            className="w-full py-3 rounded-xl bg-gray-900 text-white text-sm font-semibold hover:bg-gray-800 transition-all shadow-sm"
+            className="w-full py-3 rounded-xl bg-accent text-accent-fg text-sm font-semibold hover:bg-accent-hover transition-all shadow-sm"
           >
             {step < STEPS.length - 1 ? '下一步' : '开始使用'}
           </button>

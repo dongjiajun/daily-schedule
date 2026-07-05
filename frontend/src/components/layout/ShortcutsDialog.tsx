@@ -24,12 +24,12 @@ export function ShortcutsDialog() {
         <div className="px-6 py-4 space-y-2.5">
           {SHORTCUTS.map(({ keys, desc }) => (
             <div key={desc} className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">{desc}</span>
+              <span className="text-sm text-foreground-secondary">{desc}</span>
               <span className="flex items-center gap-1">
                 {keys.map((k) => (
                   <kbd
                     key={k}
-                    className="min-w-[24px] px-1.5 py-1 text-[11px] font-mono text-center bg-gray-100 border border-gray-200 rounded-md text-gray-600 shadow-sm"
+                    className="min-w-[24px] px-1.5 py-1 text-[11px] font-mono text-center bg-hover border border-border rounded-md text-foreground-secondary shadow-sm"
                   >
                     {k}
                   </kbd>

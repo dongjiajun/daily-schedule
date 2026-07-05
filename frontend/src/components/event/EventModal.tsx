@@ -82,7 +82,7 @@ export function EventModal({ open, eventId, onClose }: EventModalProps) {
                 className={cn(
                   'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all',
                   isCompleted
-                    ? 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
+                    ? 'text-foreground-muted hover:text-foreground-secondary hover:bg-hover'
                     : 'text-emerald-600 hover:bg-emerald-50'
                 )}
               >
@@ -96,7 +96,7 @@ export function EventModal({ open, eventId, onClose }: EventModalProps) {
                   'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all',
                   showDelete
                     ? 'bg-red-50 text-red-600'
-                    : 'text-gray-400 hover:text-red-500 hover:bg-red-50'
+                    : 'text-foreground-muted hover:text-red-500 hover:bg-red-50'
                 )}
               >
                 <Trash2 className="w-3.5 h-3.5" />

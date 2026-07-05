@@ -9,6 +9,7 @@ import { LoginPage } from './pages/LoginPage'
 import { OnboardingGuide } from './components/layout/OnboardingGuide'
 import { useAuthStore } from './store/authStore'
 import { useCalendarStore } from './store/calendarStore'
+import { useTheme } from './hooks/useTheme'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -44,6 +45,8 @@ function OnboardingOverlay() {
 }
 
 export default function App() {
+  useTheme()
+
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>

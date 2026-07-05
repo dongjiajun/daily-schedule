@@ -1,0 +1,127 @@
+name: spec-driven-custom
+version: 1
+description: 日程管理系统定制工作流 — 契约驱动 + DDD 四层 + 前后端分离
+artifacts:
+  - id: proposal
+    generates: proposal.md
+    description: 提案文档，阐明变更动机与影响范围
+    template: proposal.md
+    instruction: |
+      创建 proposal，阐明此变更的动机与范围。
+
+      本项目是日程管理系统，采用 DDD 四层架构（API→应用→领域←基础设施）+ React 19 前端。
+      API 契约驱动：specs/openapi.yaml 是唯一真相源。
+
+      必填章节：
+      - **Why**: 问题/机会（1-2 句）
+      - **What Changes**: 变更清单，标记 **BREAKING**
+      - **Capabilities**:
+        - New: kebab-case 名称 + 简述（每个将生成 specs/<name>/spec.md）
+        - Modified: 仅在需求级变更时列出现有 capability 名称
+      - **API Contract Impact**: 是否需要改 specs/openapi.yaml？新增/修改哪些端点？
+      - **DDD Layer Impact**: 标注受影响的层（API / 应用 / 领域 / 基础设施）
+      - **Database Impact**: 是否需要新 Flyway 迁移？涉及哪些表/列？
+      - **Impact**: 受影响的代码、前端组件、依赖
+
+      保持 1-2 页，聚焦 "why" 而非 "how"。
+    requires: []
+
+  - id: specs
+    generates: "specs/**/*.md"
+    description: 详细规格，定义系统行为
+    template: spec.md
+    instruction: |
+      为 proposal 中每个 capability 创建一份 spec 文件。
+
+      本项目规格要点：
+      - API 端点变更必须引用 OpenAPI schema（字段名、类型、必填/可选）
+      - 数据库变更必须列明表名、列名、类型、约束、默认值、索引
+      - 前端行为规格应涵盖状态管理（Zustand store / React Query cache）、UI 交互、错误处理
+
+      Delta 操作（## 标题）：
+      - **ADDED Requirements**: 新增能力
+      - **MODIFIED Requirements**: 变更行为 — 必须包含完整内容（非片段）
+      - **REMOVED Requirements**: 废弃 — 必须含 **Reason** + **Migration**
+      - **RENAMED Requirements**: 仅改名 — 用 FROM:/TO: 格式
+
+      格式规范：
+      - 每条需求: `### Requirement: <名称>` + 描述（用 SHALL/MUST）
+      - 每个场景: `#### Scenario: <名称>` + WHEN/THEN（严格 4 个 #）
+      - 每条需求至少一个场景
+    requires:
+      - proposal
+
+  - id: design
+    generates: design.md
+    description: 技术设计文档，阐明实现方案
+    template: design.md
+    instruction: |
+      创建设计文档，阐明如何实现变更。仅在以下情况需要：
+      - 跨模块变更 / 新架构模式 / 外部依赖 / 安全/性能/迁移复杂度
+
+      本项目设计要点：
+      - **DDD 分层方案**: 明确变动涉及的后端包路径
+        (api/controller, application, domain, infrastructure)
+      - **API 设计**: 引用 OpenAPI schema 路径与字段，注明限流/分页/错误码
+      - **数据库设计**: 表名/列名/类型/约束/索引/迁移脚本名
+      - **前端设计**: 组件树 (components/*)、状态管理 (Zustand store / React Query)、路由
+      - **安全考量**: 认证 (JWT/Cookie)、授权、数据隔离 (user_id)
+
+      章节：
+      - **Context**: 背景、当前状态、约束
+      - **Goals / Non-Goals**
+      - **Decisions**: 每个技术决策含选型理由 + 被否决的备选方案
+      - **Risks / Trade-offs**: [风险] → 缓解措施
+      - **Migration Plan**: 部署步骤、回滚策略
+      - **Open Questions**
+
+      重点在架构与方案，非逐行实现。
+    requires:
+      - proposal
+
+  - id: tasks
+    generates: tasks.md
+    description: 实现任务清单，可追踪的 checkbox 格式
+    template: tasks.md
+    instruction: |
+      拆分实现任务，按本项目 DDD 分层顺序排列：
+
+      **推荐编排**: 数据库迁移 → 领域层 → 基础设施层 → 应用层 → API 层 → 前端
+      - 涉及 API 契约变更时，确保 "重新生成 SDK" 作为独立任务
+      - 后端任务后紧跟对应测试任务
+      - 前端任务包含 SDK 重新生成、组件开发、状态管理、样式
+
+      格式：
+      - 每个任务: `- [ ] X.Y 任务描述`
+      - 分组在 `## N. 分组名` 下
+      - 任务粒度：一次会话内可完成
+      - 按依赖排序
+
+      示例分组：
+      ```
+      ## 1. 数据库迁移
+      - [ ] 1.1 编写 V5__xxx.sql
+      ## 2. 领域层
+      - [ ] 2.1 新增 Entity / Enum / Repository 接口
+      ## 3. 基础设施层
+      - [ ] 3.1 实现 Repository + 编写单测
+      ## 4. 应用层
+      - [ ] 4.1 ApplicationService + 单测
+      ## 5. API 层
+      - [ ] 5.1 Controller 实现 generated 接口 + 单测
+      ## 6. 契约同步
+      - [ ] 6.1 更新 specs/openapi.yaml + CHANGELOG
+      - [ ] 6.2 重新生成后端接口 + 前端 SDK
+      ## 7. 前端
+      - [ ] 7.1 SDK 类型 + Hook/Store + 组件 + 样式
+      ```
+    requires:
+      - specs
+      - design
+
+apply:
+  requires: [tasks]
+  tracks: tasks.md
+  instruction: |
+    按 tasks.md 顺序实现，完成一项标记一项。遇到阻塞或需澄清时暂停。
+    实现过程中务必遵循 CLAUDE.md 中的技术约定（DDD 分层、契约驱动、前后端分离）。

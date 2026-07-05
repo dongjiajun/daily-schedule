@@ -1,6 +1,12 @@
 import { useMemo, useCallback } from 'react'
 import { Calendar, dayjsLocalizer, type ToolbarProps, type View } from 'react-big-calendar'
-import withDragAndDrop, { type withDragAndDropProps } from 'react-big-calendar/lib/addons/dragAndDrop'
+import _withDragAndDrop, { type withDragAndDropProps } from 'react-big-calendar/lib/addons/dragAndDrop'
+
+// Vite CJS 预打包将 exports.default 包装为 ESM default，导致拿到的是
+// { default: fn, __esModule: true } 而非函数本身，此处手动解包
+const withDragAndDrop = (
+  typeof _withDragAndDrop === 'function' ? _withDragAndDrop : (_withDragAndDrop as any).default
+) as typeof _withDragAndDrop
 import dayjs from 'dayjs'
 import 'dayjs/locale/zh-cn'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -115,7 +121,7 @@ export function CalendarView() {
   )
 
   const eventStyleGetter = useCallback((event: CalendarEvent) => {
-    const color = event.resource.categoryColor ?? event.resource.color ?? '#3b82f6'
+    const color = event.resource.categoryColor ?? event.resource.color ?? 'var(--color-cal-today-ring)'
     const done = event.resource.status === 'COMPLETED' || event.resource.status === 'CANCELLED'
     return {
       style: {
@@ -123,7 +129,7 @@ export function CalendarView() {
         borderRadius: '6px',
         border: 'none',
         borderLeft: `3px solid ${done ? color + '66' : color}`,
-        color: done ? '#94a3b8' : '#1e293b',
+        color: done ? 'var(--color-event-done-text)' : 'var(--color-event-text)',
         fontSize: '12px',
         fontWeight: 500,
         padding: '2px 8px',
@@ -137,7 +143,7 @@ export function CalendarView() {
       const d = dayjs(date)
       if (d.isSame(dayjs(), 'day')) {
         return {
-          style: { backgroundColor: '#f0f7ff' },
+          style: { backgroundColor: 'var(--color-cal-today-bg)' },
         }
       }
       return {}
@@ -170,7 +176,7 @@ export function CalendarView() {
             'flex-shrink-0 w-3.5 h-3.5 rounded-full border flex items-center justify-center transition-all',
             done
               ? 'bg-emerald-500 border-emerald-500 text-white'
-              : 'border-gray-300 bg-white/70 text-transparent opacity-0 group-hover/event:opacity-100 hover:border-emerald-400 hover:text-emerald-400'
+              : 'border-border bg-surface/70 text-transparent opacity-0 group-hover/event:opacity-100 hover:border-emerald-400 hover:text-emerald-400'
           )}
         >
           {done ? <Check className="w-2.5 h-2.5" /> : <Check className="w-2.5 h-2.5" />}
@@ -179,7 +185,7 @@ export function CalendarView() {
           {label}
         </span>
         {resource.status === 'CANCELLED' && (
-          <RotateCcw className="w-2.5 h-2.5 flex-shrink-0 text-gray-400" />
+          <RotateCcw className="w-2.5 h-2.5 flex-shrink-0 text-foreground-muted" />
         )}
       </span>
     )
@@ -188,8 +194,8 @@ export function CalendarView() {
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-4">
-        <div className="animate-pulse rounded-2xl bg-gray-100/80 h-[65vh] w-[92%]" />
-        <p className="text-sm text-gray-400">加载中...</p>
+        <div className="animate-pulse rounded-2xl bg-hover h-[65vh] w-[92%]" />
+        <p className="text-sm text-foreground-muted">加载中...</p>
       </div>
     )
   }
@@ -259,20 +265,20 @@ export function CalendarView() {
           >
             <div className="text-center">
               <motion.div
-                className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gray-100/80 mb-4"
+                className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-hover mb-4"
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ delay: 0.2, duration: 0.4 }}
               >
-                <Plus className="w-7 h-7 text-gray-400" />
+                <Plus className="w-7 h-7 text-foreground-muted" />
               </motion.div>
               <motion.p
-                className="text-sm text-gray-400 font-medium"
+                className="text-sm text-foreground-muted font-medium"
                 initial={{ y: 8, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.35, duration: 0.3 }}
               >
-                暂无日程，点击空白区域或按 <kbd className="px-1.5 py-0.5 text-[11px] font-mono bg-gray-100 rounded text-gray-500">N</kbd> 键创建
+                暂无日程，点击空白区域或按 <kbd className="px-1.5 py-0.5 text-[11px] font-mono bg-hover rounded text-foreground-muted">N</kbd> 键创建
               </motion.p>
             </div>
           </motion.div>
@@ -303,15 +309,15 @@ function CalendarToolbar({
   }, [date, view])
 
   const btnClass = 'px-3 py-1.5 text-[13px] font-medium rounded-lg transition-all duration-200'
-  const activeClass = 'bg-gray-900 text-white shadow-md shadow-gray-900/15'
-  const inactiveClass = 'text-gray-400 hover:text-gray-700 hover:bg-gray-100/80'
+  const activeClass = 'bg-accent text-accent-fg shadow-md'
+  const inactiveClass = 'text-foreground-muted hover:text-foreground-secondary hover:bg-hover'
 
   const viewKeys = ['month', 'week', 'day', 'agenda'] as const
   const labels: Record<string, string> = { month: '月', week: '周', day: '日', agenda: '议程' }
 
   return (
-    <div className="flex items-center justify-between px-5 py-3 bg-white/95 backdrop-blur border-b border-gray-100/80">
-      <div className="flex items-center bg-gray-100/80 rounded-lg p-0.5 gap-0.5">
+    <div className="flex items-center justify-between px-5 py-3 bg-surface/95 backdrop-blur border-b border-border-subtle">
+      <div className="flex items-center bg-hover rounded-lg p-0.5 gap-0.5">
         {viewKeys.map((v, i) => (
           <button
             key={v}
@@ -324,7 +330,7 @@ function CalendarToolbar({
         ))}
       </div>
 
-      <h2 className="text-[15px] font-semibold text-gray-800 tracking-tight">{label}</h2>
+      <h2 className="text-[15px] font-semibold text-foreground tracking-tight">{label}</h2>
 
       <div className="flex items-center gap-1">
         <button
