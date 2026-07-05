@@ -3,9 +3,9 @@ import { Calendar, dayjsLocalizer, type ToolbarProps, type View } from 'react-bi
 import _withDragAndDrop, { type withDragAndDropProps } from 'react-big-calendar/lib/addons/dragAndDrop'
 
 // Vite CJS 预打包将 exports.default 包装为 ESM default，导致拿到的是
-// { default: fn, __esModule: true } 而非函数本身，此处手动解包
+/* { default: fn, __esModule: true } 而非函数本身，此处手动解包 */
 const withDragAndDrop = (
-  typeof _withDragAndDrop === 'function' ? _withDragAndDrop : (_withDragAndDrop as any).default
+  typeof _withDragAndDrop === 'function' ? _withDragAndDrop : (_withDragAndDrop as any).default // eslint-disable-line @typescript-eslint/no-explicit-any
 ) as typeof _withDragAndDrop
 import dayjs from 'dayjs'
 import 'dayjs/locale/zh-cn'
