@@ -8,7 +8,12 @@
 ├──────────────────────────────────────────────────┤
 │ + id: Long                                       │
 │ + username: String                               │
+│ + email: String                                  │
 │ + passwordHash: String                           │
+│ + displayName: String                            │
+│ + avatarUrl: String                              │
+│ + status: UserStatus (ACTIVE/INACTIVE)           │
+│ + lastLoginAt: LocalDateTime                     │
 │ + createdAt: LocalDateTime                       │
 │ + updatedAt: LocalDateTime                       │
 └──────────────┬───────────────────────────────────┘
@@ -25,6 +30,7 @@
 │ + location: String                               │
 │ + color: String                                  │
 │ + reminderMinutes: Integer                       │
+│ + status: EventStatus (PLANNED/COMPLETED/CANCELLED) │
 │ + categoryId: Long                               │
 │ + userId: Long                                   │
 │ + tagIds: Set<Long>           ── 写路径          │
@@ -38,6 +44,10 @@
 │ + isValid(): boolean                             │
 │ + isOverlapping(Event): boolean                  │
 │ + update(Event): void                            │
+│                                                   │
+│ EventFilter（仓储层查询值对象，非实体）            │
+│  + startTime / endTime / categoryId /            │
+│    tagId / status / keyword / page / size        │
 └──────────────┬───────────────────────────────────┘
                │ belongs to (category_id)
 ┌──────────────▼───────────────────┐

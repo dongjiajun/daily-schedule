@@ -3,36 +3,36 @@
 ## 组件树
 
 ```
-App
-├── QueryClientProvider (React Query)
-│   └── BrowserRouter
-│       └── Routes
-│           └── /* → AuthGuard（未认证内联渲染 LoginPage）
-│               ├── AppShell
-│               │   ├── Sidebar（桌面常驻 / 移动端抽屉）
-│               │   │   ├── 应用标题 (CalendarDays)
-│               │   │   ├── 新建日程按钮（N）
-│               │   │   ├── 搜索框（/ 聚焦）
-│               │   │   ├── 分类筛选列表（再点取消筛选）
-│               │   │   ├── 标签筛选 chips
-│               │   │   ├── WeekStats（今日/本周/完成率）
-│               │   │   └── 设置 / 导出 ICS / 快捷键 / 指南 / 退出
-│               │   ├── ManageDialog（分类 · 标签 · 偏好设置三页签）
-│               │   ├── ShortcutsDialog（键盘快捷键帮助）
-│               │   └── HomePage
-│               │       ├── CalendarView (react-big-calendar + DnD addon)
-│               │       │   ├── 自定义 Toolbar + 中文 locale（周一起始）
-│               │       │   ├── 拖拽改期 / 拉伸调时长
-│               │       │   └── 事件悬停一键标记完成
-│               │       ├── EventModal (条件渲染)
-│               │       │   ├── 标记完成 / 恢复计划 + 删除确认
-│               │       │   └── EventForm
-│               │       │       ├── 标题 / 全天开关
-│               │       │       ├── 开始/结束时间（智能默认值）
-│               │       │       ├── 描述 / 分类 / 颜色
-│               │       │       └── 地点 / 提醒（偏好默认） / 标签选择
-│               │       └── OnboardingGuide (引导教程)
-│               └── ErrorBoundary（错误边界）
+ErrorBoundary（最外层错误捕获）
+└── QueryClientProvider (React Query)
+    └── BrowserRouter
+        └── Routes
+            └── /* → AuthGuard（未认证内联渲染 LoginPage）
+                └── AppShell
+                    ├── Sidebar（桌面常驻 / 移动端抽屉）
+                    │   ├── 应用标题 (CalendarDays)
+                    │   ├── 新建日程按钮（N）
+                    │   ├── 搜索框（/ 聚焦）
+                    │   ├── 分类筛选列表（再点取消筛选）
+                    │   ├── 标签筛选 chips
+                    │   ├── WeekStats（今日/本周/完成率）
+                    │   └── 设置 / 导出 ICS / 快捷键 / 指南 / 退出
+                    ├── ManageDialog（分类 · 标签 · 偏好设置 · 主题配色四页签）
+                    ├── ShortcutsDialog（键盘快捷键帮助）
+                    └── HomePage
+                        ├── CalendarView (react-big-calendar + DnD addon)
+                        │   ├── 自定义 Toolbar + 中文 locale（周一起始）
+                        │   ├── 拖拽改期 / 拉伸调时长
+                        │   └── 事件悬停一键标记完成
+                        └── EventModal (条件渲染)
+                            ├── 标记完成 / 恢复计划 + 删除确认
+                            └── EventForm
+                                ├── 标题 / 全天开关
+                                ├── 开始/结束时间（智能默认值）
+                                ├── 描述 / 分类 / 颜色
+                                └── 地点 / 提醒（偏好默认） / 标签选择
+    └── OnboardingOverlay → OnboardingGuide（引导教程，App 层）
+    └── Toaster（sonner Toast 通知）
 ```
 
 ## 路由
@@ -47,7 +47,7 @@ App
 |------|------|----------|
 | Zustand (`authStore`) | 认证状态 | accessToken、refreshToken、expiresAt、user；localStorage `auth.v3`；logout 调用 `/auth/logout` |
 | Zustand (`calendarStore`) | UI 状态 | 当前日期、视图、弹窗状态、分类/标签筛选、搜索词、管理弹窗、快捷键帮助、移动端侧栏 |
-| Zustand (`settingsStore`) | 用户偏好（persist） | 默认视图、默认提醒、快速新建时长、是否显示已完成；localStorage `settings.v1` |
+| Zustand (`settingsStore`) | 用户偏好（persist） | 默认视图、默认提醒、快速新建时长、是否显示已完成、主题预设（5 套）+ 主题标签/颜色映射；localStorage `settings.v1` |
 | React Query | 服务端数据 | 事件列表(按范围+筛选缓存)、分类列表、标签列表 |
 
 ## 组件清单
@@ -94,12 +94,15 @@ App
 | useKeyboardShortcuts | hooks/useKeyboardShortcuts.ts | 全局快捷键：N/T/←→/1-4//?/Esc |
 | useNotification | hooks/useNotification.ts | 浏览器 Notification API |
 | useSseNotifications | hooks/useSseNotifications.ts | SSE 实时通知订阅 |
+| useTheme | hooks/useTheme.ts | 读取 settingsStore.theme → 设置 `document.documentElement.dataset.theme` |
 
 ## 工具库
 
 | 文件 | 说明 |
 |------|------|
 | lib/ics.ts | iCalendar (.ics) 导出：当前视图日程一键导出，可导入系统日历 |
+| lib/colors.ts | PRESET_COLORS 共享常量（9 个色板预设值） |
+| styles/themes.css | 主题 Token 定义：5 套预设 × 27 个 CSS 自定义属性 |
 | api/unwrap.ts | hey-api 响应错误统一抛出（带后端 message），修复"失败也弹成功"的问题 |
 
 ## 自动生成代码

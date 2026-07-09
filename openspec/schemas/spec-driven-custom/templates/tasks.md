@@ -37,7 +37,10 @@
 - [ ] 7.3 <!-- 页面集成 (pages/) -->
 - [ ] 7.4 <!-- 样式与动画 -->
 
-## 8. 文档与收尾
-- [ ] 8.1 更新 CLAUDE.md / docs/architecture.md（如有架构变动）
-- [ ] 8.2 更新 docs/frontend/component-catalog.md（如有新组件）
-- [ ] 8.3 全量测试: mvn test && npm run build
+## 8. 文档同步（必须检查）
+<!-- 每次变更必须逐项确认，无变更则打勾通过 -->
+- [ ] 8.1 是否有新前端组件？→ 更新 `docs/frontend/component-catalog.md`
+- [ ] 8.2 是否有新实体/表/字段？→ 更新 `docs/database/schema.md` + `docs/uml/README.md`
+- [ ] 8.3 是否有新 API 端点？→ 更新 `docs/api/overview.md`
+- [ ] 8.4 是否有架构/模块变动？→ 更新 `docs/architecture.md` + `CLAUDE.md`
+- [ ] 8.5 全量验证: `npm run verify` + `mvn test`

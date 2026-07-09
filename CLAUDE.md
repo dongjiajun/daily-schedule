@@ -58,6 +58,12 @@ cd backend && mvn test              # 使用 H2 内存数据库，无需 MySQL
 - `tsc -b` 类型检查未通过
 - `mvn test` 后端单测失败
 
+**文档检查**（每次变更后必须确认）：
+- 新前端组件 → `docs/frontend/component-catalog.md`
+- 新实体/表/字段 → `docs/database/schema.md` + `docs/uml/README.md`
+- 新 API 端点 → `docs/api/overview.md`
+- 架构/模块变动 → `docs/architecture.md` + `CLAUDE.md`
+
 所有通过后方可提交 push。
 
 ## 关键文档

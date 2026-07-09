@@ -63,3 +63,6 @@ rules:
     - 按 DDD 分层编排任务顺序: 数据库迁移 → 领域层 → 基础设施层 → 应用层 → API 层 → 前端
     - API 契约变更后必须包含 "重新生成 SDK" 任务
     - 每个后端任务完成后应包含对应的测试任务
+    - 涉及新前端组件时必须在 tasks 中包含 component-catalog.md 更新
+    - 涉及新实体/数据库表/字段时必须在 tasks 中包含 schema.md + uml/README.md 更新
+    - 涉及新 API 端点时必须在 tasks 中包含 api/overview.md 更新

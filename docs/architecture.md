@@ -117,11 +117,11 @@ Scheduler (30s fixedDelay, Clock-injected)
 
 | 层 | 测试类 | 用例数 |
 |---|--------|------|
-| 领域 | `EventDomainServiceTest` | 13 |
-| 应用 | `EventApplicationServiceTest` / `CategoryApplicationServiceTest` / `TagApplicationServiceTest` | 5 / 9 / 8 |
-| 基础设施 | `EventRepositoryImplTest` / `SseEmitterManagerTest` / `BrowserNotificationServiceTest` / `ReminderSchedulerTest` | 13 / 5 / 5 / 7 |
+| 领域 | `EventDomainServiceTest` / `UserTest` | 13 / 7 |
+| 应用 | `EventApplicationServiceTest` / `CategoryApplicationServiceTest` / `TagApplicationServiceTest` / `AuthApplicationServiceTest` | 5 / 9 / 8 / 6 |
+| 基础设施 | `EventRepositoryImplTest` / `SseEmitterManagerTest` / `BrowserNotificationServiceTest` / `ReminderSchedulerTest` / `JwtUtilTest` / `JwtAuthFilterTest` / `CurrentUserServiceTest` / `PasswordHasherImplTest` | 13 / 5 / 5 / 7 / 8 / 6 / 4 / 5 |
 | API | `EventControllerTest` / `CategoryControllerTest` / `EventAssemblerTest` | 5 / 4 / 7 |
-| **合计** | 11 类 | **81** |
+| **合计** | 17 类 | **134** |
 
 ## 容器化部署
 
