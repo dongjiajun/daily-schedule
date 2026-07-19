@@ -45,9 +45,22 @@ jobs:
         working-directory: frontend
         run: npm ci
 
+      - name: Check SDK freshness (spec → generate → diff)
+        working-directory: frontend
+        run: |
+          npm run generate:api
+          git diff --exit-code src/api/ || {
+            echo "❌ 前端 SDK 已过期！请本地运行 npm run generate:api 并提交生成的文件。"
+            exit 1
+          }
+
       - name: Lint
         working-directory: frontend
         run: npm run lint
+
+      - name: Test
+        working-directory: frontend
+        run: npm run test
 
       - name: Type check + build
         working-directory: frontend

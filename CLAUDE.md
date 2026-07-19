@@ -5,158 +5,168 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## 项目概述
 日程管理系统 — Spring Boot 3.4 + React 19 + MySQL 8.0
 
+## 开发工作流（OpenSpec）
+
+本项目使用 **OpenSpec** 进行 artifact-driven 开发，schema 为 `spec-driven-custom`。
+**所有变更都走这个流程**，不直接在代码库中"裸写"代码。
+
+### Artifact 序列
+
+```
+/opsx:new <name> → proposal → design → spec → tasks → /opsx:apply → /opsx:verify → /opsx:archive
+```
+
+### 常用 Slash 命令
+
+| 命令 | 用途 |
+|------|------|
+| `/opsx:new <kebab-case-name>` | 创建新变更，生成目录骨架 |
+| `/opsx:continue` | 继续下一步 artifact（proposal → design → spec → tasks） |
+| `/opsx:ff` | 一次性生成全部 artifacts（快速通道） |
+| `/opsx:apply` | 按 tasks.md 逐项实施 |
+| `/opsx:verify` | 验证实现与 artifacts 一致 |
+| `/opsx:archive` | 归档已完成的变更 |
+| `/opsx:sync` | 将 delta specs 同步到 `openspec/specs/` 主目录 |
+| `/opsx:explore` | 进入探索模式，梳理需求 |
+| `/opsx:update` | 修订已有 artifacts |
+
+### 关键路径
+- **变更目录**: `openspec/changes/archive/<date>-<name>/`（proposal / design / spec / tasks）
+- **主 specs**: `openspec/specs/<capability>/spec.md`
+- **模板**: `openspec/schemas/spec-driven-custom/templates/`
+
 ## 常用命令
 
-### 后端（backend/）
-
+### 首次设置
 ```bash
-# 编译 + 运行测试（无 Maven Wrapper，需系统安装 Maven）
-cd backend && mvn clean test
+cd backend && mvn compile      # 确认 JDK 21 + Maven 就绪
+cd frontend && npm install      # Node 22 + npm
+docker-compose up -d            # 或 Docker 一键启动全部服务
+```
 
-# 运行单个测试类
-mvn test -Dtest="EventApplicationServiceTest"
-
-# 跳过测试编译
-mvn compile -DskipTests
-
-# 启动应用（dev 环境，需要本地 MySQL）
-mvn spring-boot:run -Dspring-boot.run.profiles=dev
-
-# 启动应用（test 环境，使用 H2 内存数据库，无需外部 MySQL）
-mvn spring-boot:run -Dspring-boot.run.profiles=test
+### 后端（backend/）
+```bash
+mvn clean test                                   # 编译 + 全部测试
+mvn test -Dtest="EventApplicationServiceTest"    # 单个测试类
+mvn spring-boot:run -Dspring-boot.run.profiles=dev   # 启动（需本地 MySQL）
+mvn spring-boot:run -Dspring-boot.run.profiles=test  # 启动（H2 内存库，无需 MySQL）
 ```
 
 ### 前端（frontend/）
-
 ```bash
-cd frontend && npm run dev          # 开发服务器 :5173，API 代理到 localhost:8080
-npm run build                        # TypeScript 检查 + Vite 构建
-npm run lint                         # ESLint 检查
-npm run generate:api                 # 从 ../specs/openapi.yaml 生成 SDK（@hey-api/openapi-ts）
-```
-
-### Docker 一键启动
-
-```bash
-docker-compose up -d                 # MySQL + 后端 :8080 + 前端 :5173（Nginx 静态服务）
+npm run dev          # :5173，API 代理到 localhost:8080
+npm run build        # tsc + vite build
+npm run lint         # ESLint
+npm run test         # vitest 单元测试
+npm run test:watch   # vitest 监视模式
+npm run generate:api # 从 ../specs/openapi.yaml 生成 SDK
+npm run verify       # lint + build + test（提交前必须通过）
 ```
 
 ## 提交前验证（CI 门禁对齐）
 
-提交代码前**必须**通过以下验证，与 GitHub Actions CI 的三层门禁一致：
-
 ```bash
-# 前端: lint + TypeScript 检查 + 构建
-cd frontend && npm run verify       # 等价于 npm run lint && npm run build
-
-# 后端: 编译 + 单元测试
-cd backend && mvn test              # 使用 H2 内存数据库，无需 MySQL
+cd frontend && npm run verify   # lint + TypeScript 检查 + 构建 + 测试
+cd backend && mvn test          # 编译 + 单元测试（H2 内存库）
 ```
 
-**CI 失败常见原因：**
-- `npm run lint` 报错（`@typescript-eslint/no-explicit-any` 等）
-- `tsc -b` 类型检查未通过
-- `mvn test` 后端单测失败
+**CI 四层门禁**: 后端 `mvn test` + 前端 `npm run lint` + 前端 `npm run test` + 前端 `npm run build`（含 SDK freshness check）
+**常见失败**: `@typescript-eslint/no-explicit-any` / `tsc -b` 类型错误 / 后端单测失败
 
-**文档检查**（每次变更后必须确认）：
+**文档检查**（每次变更后逐项确认）：
 - 新前端组件 → `docs/frontend/component-catalog.md`
 - 新实体/表/字段 → `docs/database/schema.md` + `docs/uml/README.md`
 - 新 API 端点 → `docs/api/overview.md`
 - 架构/模块变动 → `docs/architecture.md` + `CLAUDE.md`
 
-所有通过后方可提交 push。
-
 ## 关键文档
-- 架构说明: docs/architecture.md
-- API 契约: specs/openapi.yaml（**唯一真相源**）
-- 契约变更日志: specs/CHANGELOG.md
-- API 规范: docs/api/overview.md
-- UML 设计图: docs/uml/README.md
-- 组件清单: docs/frontend/component-catalog.md
-- 数据库: docs/database/schema.md
+- API 契约: `specs/openapi.yaml`（**唯一真相源**）
+- 变更日志: `specs/CHANGELOG.md`
+- 架构说明: `docs/architecture.md`
+- API 规范: `docs/api/overview.md`
+- 数据库: `docs/database/schema.md`
+- UML: `docs/uml/README.md`
+- 组件清单: `docs/frontend/component-catalog.md`
 
 ## 契约驱动的 API 开发管道
-
-这是本项目最核心的工作流，**所有 API 变更都从 `specs/openapi.yaml` 开始**：
 
 ```
 specs/openapi.yaml
     │
-    ├─→ 后端: Maven openapi-generator-maven-plugin
-    │        生成 target/generated-sources/openapi/
-    │        ├── com/dailyschedule/api/generated/api/*.java   (接口，Controller 必须实现)
-    │        └── com/dailyschedule/api/generated/dto/*.java   (DTO)
+    ├─→ 后端: openapi-generator-maven-plugin
+    │    → target/generated-sources/openapi/
+    │       ├── api/*.java    (接口，Controller 必须实现)
+    │       └── dto/*.java    (DTO)
     │
     └─→ 前端: npm run generate:api (@hey-api/openapi-ts)
-            生成 frontend/src/api/
-            ├── sdk.gen.ts      (API 客户端函数，如 eventsControllerCreate)
-            ├── types.gen.ts    (TypeScript 类型，如 EventCreateRequest)
-            └── client.gen.ts   (fetch 客户端实例)
+         → src/api/
+            ├── sdk.gen.ts / types.gen.ts / client.gen.ts
 ```
 
 **关键约定：**
-- Controller 放在 `api/controller/`，**必须实现**生成的 `api/generated/api/` 下的接口，编译期强制契约同步
-- 前端 SDK 中 `client.gen.ts` **会被生成覆盖**——自定义逻辑（如 token 注入）必须放在 `api/authInterceptor.ts` 中，在 `main.tsx` 启动时注册拦截器
-- API 契约变更必须同步更新 `specs/CHANGELOG.md` 与三处版本号（`specs/openapi.yaml`、`backend/pom.xml`、`frontend/package.json`）
+- Controller **必须实现**生成的接口，编译期强约束
+- `src/api/` 由代码生成器完全管理（`generate:api` 会清空重写）
+- 自定义逻辑（token 注入、unwrap）**只能**放在 `src/lib/` 下，在 `main.tsx` 启动时注册
+- API 变更必须同步：`specs/openapi.yaml` + `specs/CHANGELOG.md` + `pom.xml` 版本 + `package.json` 版本
 
-## 技术栈
+## 架构
 
-### 后端 DDD 四层架构
+### 后端 DDD 四层
 
 | 层 | 包路径 | 职责 |
 |------|------|------|
-| API | `api/controller/`, `api/assembler/`, `api/exception/` | REST 端点、DTO↔Domain 转换、全局异常处理（`GlobalExceptionHandler`） |
+| API | `api/controller/`, `api/assembler/`, `api/exception/` | REST 端点、DTO↔Domain 转换、全局异常处理 |
 | 应用 | `application/event/`, `application/category/`, `application/tag/`, `application/auth/` | 用例编排、事务、缓存注解、重名校验 |
-| 领域 | `domain/event/`, `domain/category/`, `domain/tag/`, `domain/user/`, `domain/notification/` | 实体 + 仓储接口 + DomainService（纯 POJO，不依赖框架） |
+| 领域 | `domain/event/`, `domain/category/`, `domain/tag/`, `domain/user/`, `domain/notification/` | 实体 + 仓储接口 + DomainService（纯 POJO） |
 | 基础设施 | `infrastructure/persistence/`, `infrastructure/security/`, `infrastructure/config/`, `infrastructure/scheduled/`, `infrastructure/notification/` | MyBatis-Plus 仓储实现（PO + Mapper）、JWT/Spring Security、Caffeine 缓存、提醒调度、SSE |
 
 依赖方向：API → 应用 → 领域 ← 基础设施
 
-### 前端技术栈
-- **UI**: React 19 + TypeScript + Tailwind CSS 4 + shadcn/ui 风格组件（`components/ui/`，基于 Radix UI）
-- **动画**: Framer Motion
-- **Toast**: sonner
-- **日历**: react-big-calendar + dayjs（支持 DnD 拖拽改期/拉伸时长，`CalendarView.tsx`）
-- **状态管理（两层分离）**:
-  - Zustand: UI 状态，含 `authStore`（认证/用户）、`calendarStore`（日历视图状态）、`settingsStore`（偏好设置）
-  - React Query (`@tanstack/react-query`): 服务端数据，`useEvents`/`useCategories`/`useTags` hooks
-- **路由**: react-router-dom v7，`LoginPage` 与 `HomePage` 两个页面
-- **SDK 生成**: `@hey-api/openapi-ts`，配置在 `openapi-ts.config.ts`，输入 `../specs/openapi.yaml`，输出 `src/api/`
+### 前端状态管理（两层分离）
+- **Zustand**（UI 状态）: `authStore`（token + user，localStorage `auth.v3`）、`calendarStore`（视图/弹窗/筛选）、`settingsStore`（偏好，localStorage `settings.v1`）
+- **React Query**（服务端数据）: `useEvents`/`useCategories`/`useTags` 等 hooks，文件在 `src/hooks/`
+- **路径别名**: `@/` → `src/`
 
 ### 持久层
-- **MyBatis-Plus**: domain 定义仓储接口（如 `EventRepository`），infrastructure 用 PO + Mapper 实现
-- **Flyway 迁移**: `src/main/resources/db/migration/V*__*.sql`，启动时自动执行
-- **测试用 H2**: `spring.profiles: test` 启动时用 H2 内存数据库（MySQL 兼容模式），Flyway 关闭
+- **MyBatis-Plus**: domain 定义仓储接口，infrastructure 用 PO + Mapper 实现
+- **Flyway**: `V*__*.sql` 按序执行，启动时自动迁移
+- **测试用 H2**: `src/test/resources/application-test.yml`，`MODE=MySQL` 兼容，**Flyway 关闭**，用 `schema-h2.sql` 初始化表结构
 
-## 认证与多用户数据隔离
-- JWT 无状态认证（access 15min + refresh 7d），BCrypt 密码加密
-- `JwtAuthFilter` 支持 Bearer header 和 `dsa_sse_session` Cookie 两路 token 来源
-- 前端 `authInterceptor.ts`：请求前自动注入 Bearer、过期前 30s 自动续签、401 响应强制登出
-- SSE Cookie 鉴权（v3.0+，不再用 `?token=` 查询参数）
-- **所有业务表含 `user_id`**，查询通过 `CurrentUserService` 强制按当前用户过滤
+## 关键约定
+
+### `unwrap()` — SDK 错误处理
+`@hey-api/openapi-ts` 生成的 SDK 把错误放在 `result.error` 而非抛出异常，React Query `onError` 因此从不触发。所有 hooks 的 `queryFn`/`mutationFn` 必须用 `lib/unwrap.ts` 包裹：检查 `result.error` 或 `!response.ok` 则抛出带后端 `message` 的 `Error`。
+
+### Auth 拦截器自动续签
+`lib/authInterceptor.ts` 在 `main.tsx` 启动时注册到 hey-api 客户端：
+- **请求前**: 注入 `Authorization: Bearer <accessToken>`
+- **过期前 30s**: 自动用 refresh token 续签（单飞锁 `refreshPromise`，避免并发刷新）
+- **401 响应**: 强制登出 + 调 `/auth/logout` 清 SSE Cookie
+
+### 认证与数据隔离
+- JWT 无状态认证：access 15min + refresh 7d，BCrypt 密码加密
+- `JwtAuthFilter` 支持 Bearer header 和 `dsa_sse_session` Cookie 两路 token
+- SSE 鉴权用 Cookie（v3.0+），不再用 `?token=` 查询参数
+- 所有业务表含 `user_id`，查询通过 `CurrentUserService` 强制按当前用户过滤
+
+### 版本号同步
+API 契约版本号在三个文件中保持一致：`specs/openapi.yaml` → `backend/pom.xml` → `frontend/package.json`
+
+### 配置文件速查
+
+| Profile | 数据库 | 用途 |
+|---------|--------|------|
+| dev (默认) | MySQL `daily_schedule_dev` | 本地开发，打印 SQL |
+| test | H2 内存 | 单元测试，无需外部数据库 |
+| prod | MySQL（环境变量注入） | Docker 部署 |
 
 ## 本地环境
-- MySQL 8.0.29 服务名 MySQL80，root/123456
-- 开发库 `daily_schedule_dev`，测试库 `daily_schedule_test`（见 `application-dev.yml`）
-- JDK 21
-- 前端开发代理：Vite `server.proxy` 将 `/api` 转发到 `localhost:8080`
-
-## 配置文件速查
-
-| Profile | 文件 | 数据库 | 用途 |
-|---------|------|--------|------|
-| dev (默认) | `application-dev.yml` | MySQL `daily_schedule_dev` | 本地开发，打印 SQL 日志 |
-| test | `application-test.yml` | H2 内存 `daily_schedule_test` | 单元测试 / 无需 MySQL 启动 |
-| prod | `application-prod.yml` | 通过环境变量注入 | Docker 部署 |
-
-JWT、DB 密码等敏感配置通过环境变量注入，开发环境默认值在 `application-dev.yml` 中。
+- MySQL 8.0.29（服务名 `MySQL80`），root/123456
+- 开发库 `daily_schedule_dev`，测试库 `daily_schedule_test`
+- JDK 21 / Node 22
+- Swagger UI（dev）: http://localhost:8080/swagger-ui.html
 
 ## 当前版本：v3.1（2026-06-09）
 
-核心功能亮点：
-- Event `status`（PLANNED/COMPLETED/CANCELLED）闭环，已完成不提醒、不冲突检测
-- 日历拖拽改期/拉伸时长 + 一键完成 + 标签筛选 + 键盘快捷键（`N`/`T`/`←→`/`1-4`/`?`/`/`）
-- 分类/标签管理弹窗 + 偏好设置 + 周统计 + ICS 导出 + 移动端抽屉侧栏 + zh-cn 周一起始
-- Access token 自动续签（30s 窗口预刷新）+ 401 强制登出 + logout 调服务端清 SSE Cookie
-- `GET /events` 支持 tagId/status 过滤；仓储层 `EventFilter` 模式
-- 测试覆盖 17 类 134 用例（H2 内存数据库）
+核心能力：Event 状态闭环（PLANNED/COMPLETED/CANCELLED）+ 日历拖拽改期/拉伸时长 + 标签筛选 + 5 套主题 + 键盘快捷键 + access token 自动续签 + SSE 提醒推送 + ICS 导出 + 移动端适配
+测试覆盖：26 类 185 用例（H2 内存数据库）+ 前端 4 类 15 用例（vitest）

@@ -48,6 +48,7 @@ artifacts:
       - 每条需求: `### Requirement: <名称>` + 描述（用 SHALL/MUST）
       - 每个场景: `#### Scenario: <名称>` + WHEN/THEN（严格 4 个 #）
       - 每条需求至少一个场景
+      - 可选末尾 `## Test Coverage` 表格：回填历史 spec 时审计场景-测试映射，标记 ✅/⚠️/➕
     requires:
       - proposal
 
@@ -71,6 +72,9 @@ artifacts:
       - **Context**: 背景、当前状态、约束
       - **Goals / Non-Goals**
       - **Decisions**: 每个技术决策含选型理由 + 被否决的备选方案
+      - **DDD Layer Design**: 按四层逐一说明变更方案（领域层/基础设施层/应用层/API 层）
+      - **API Design**: 引用 OpenAPI schema 路径与字段，注明请求/响应/错误码
+      - **Database Design**: 表名/列名/类型/约束/索引/迁移脚本名
       - **Risks / Trade-offs**: [风险] → 缓解措施
       - **Migration Plan**: 部署步骤、回滚策略
       - **Open Questions**
@@ -100,20 +104,45 @@ artifacts:
       示例分组：
       ```
       ## 1. 数据库迁移
-      - [ ] 1.1 编写 V5__xxx.sql
-      ## 2. 领域层
-      - [ ] 2.1 新增 Entity / Enum / Repository 接口
-      ## 3. 基础设施层
-      - [ ] 3.1 实现 Repository + 编写单测
-      ## 4. 应用层
-      - [ ] 4.1 ApplicationService + 单测
-      ## 5. API 层
-      - [ ] 5.1 Controller 实现 generated 接口 + 单测
+      - [ ] 1.1 编写 V<!-- 版本号 -->__<!-- 描述 -->.sql
+      - [ ] 1.2 更新 docs/database/schema.md（如需要）
+
+      ## 2. 领域层 (domain/)
+      - [ ] 2.1 <!-- Entity / Enum / Repository 接口 / DomainService -->
+
+      ## 3. 基础设施层 (infrastructure/)
+      - [ ] 3.1 <!-- persistence: PO + Mapper + RepositoryImpl -->
+      - [ ] 3.2 <!-- security / notification / scheduled / config（按需） -->
+      - [ ] 3.3 <!-- 编写 infrastructure 层单元测试 -->
+
+      ## 4. 应用层 (application/)
+      - [ ] 4.1 <!-- ApplicationService 用例编排 -->
+      - [ ] 4.2 <!-- 编写应用层单元测试 -->
+
+      ## 5. API 层 (api/)
+      - [ ] 5.1 <!-- Controller 实现 generated 接口 -->
+      - [ ] 5.2 <!-- Assembler DTO↔Domain 转换 -->
+      - [ ] 5.3 <!-- 编写 API 层单元测试 -->
+
       ## 6. 契约同步
-      - [ ] 6.1 更新 specs/openapi.yaml + CHANGELOG
-      - [ ] 6.2 重新生成后端接口 + 前端 SDK
-      ## 7. 前端
-      - [ ] 7.1 SDK 类型 + Hook/Store + 组件 + 样式
+      - [ ] 6.1 更新 specs/openapi.yaml
+      - [ ] 6.2 更新 specs/CHANGELOG.md
+      - [ ] 6.3 同步版本号: pom.xml + package.json + openapi.yaml
+      - [ ] 6.4 重新生成后端接口 (mvn compile)
+      - [ ] 6.5 重新生成前端 SDK (npm run generate:api)
+
+      ## 7. 前端 (frontend/src/)
+      - [ ] 7.1 <!-- Zustand store / React Query hooks（如需要） -->
+      - [ ] 7.2 <!-- 组件开发 (components/) -->
+      - [ ] 7.3 <!-- 页面集成 (pages/) -->
+      - [ ] 7.4 <!-- 样式与动画 -->
+
+      ## 8. 文档同步（必须检查）
+      - [ ] 8.1 是否有新前端组件？→ 更新 docs/frontend/component-catalog.md
+      - [ ] 8.2 是否有新实体/表/字段？→ 更新 docs/database/schema.md + docs/uml/README.md
+      - [ ] 8.3 是否有新 API 端点？→ 更新 docs/api/overview.md
+      - [ ] 8.4 是否有架构/模块变动？→ 更新 docs/architecture.md + CLAUDE.md
+      - [ ] 8.5 全量验证: npm run verify + mvn test
       ```
     requires:
       - specs

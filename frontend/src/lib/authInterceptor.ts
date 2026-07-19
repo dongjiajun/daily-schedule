@@ -5,10 +5,10 @@
  *   避免 v3.0 "登录 15 分钟后所有请求 401" 的体验断崖；
  * - 响应 401 时强制登出，回到登录页而不是停留在报错界面。
  *
- * 把这部分逻辑从 client.gen.ts 抽离，避免被 `npm run generate:api` 覆盖。
+ * 放在 src/lib/ 而非 src/api/ 目录下，避免被 `npm run generate:api` 清空。
  */
-import { client } from './client.gen'
-import type { LoginResponse } from './types.gen'
+import { client } from '../api/client.gen'
+import type { LoginResponse } from '../api/types.gen'
 import { useAuthStore } from '../store/authStore'
 
 /** 过期前多久触发预刷新（毫秒）。 */

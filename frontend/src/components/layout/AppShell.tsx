@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { Sidebar } from './Sidebar'
 import { ManageDialog } from './ManageDialog'
 import { ShortcutsDialog } from './ShortcutsDialog'
-import { useCalendarStore } from '../../store/calendarStore'
+import { useCalendarStore } from '@/store/calendarStore'
 
 export function AppShell() {
   const sidebarOpen = useCalendarStore((s) => s.sidebarOpen)

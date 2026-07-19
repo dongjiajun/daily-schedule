@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import dayjs from 'dayjs'
 import { toast } from 'sonner'
 import { listEvents, createEvent, updateEvent, deleteEvent } from '../api/sdk.gen'
-import { unwrap } from '../api/unwrap'
+import { unwrap } from '../lib/unwrap'
 import type { EventCreateRequest, EventResponse } from '../api/types.gen'
 
 function getViewRange(date: dayjs.Dayjs, view: string) {

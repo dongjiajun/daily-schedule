@@ -1,5 +1,5 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { useCalendarStore } from '../../store/calendarStore'
+import { useCalendarStore } from '@/store/calendarStore'
 
 const SHORTCUTS: Array<{ keys: string[]; desc: string }> = [
   { keys: ['N'], desc: '新建日程' },

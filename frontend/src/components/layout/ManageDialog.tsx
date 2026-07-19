@@ -13,12 +13,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { useCalendarStore, type CalendarView } from '../../store/calendarStore'
-import { useSettingsStore, type ThemePreset, THEME_LABELS, THEME_COLORS } from '../../store/settingsStore'
+import { useCalendarStore, type CalendarView } from '@/store/calendarStore'
+import { useSettingsStore, type ThemePreset, THEME_LABELS, THEME_COLORS } from '@/store/settingsStore'
 import {
   useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory,
-} from '../../hooks/useCategories'
-import { useTags, useCreateTag, useUpdateTag, useDeleteTag } from '../../hooks/useTags'
+} from '@/hooks/useCategories'
+import { useTags, useCreateTag, useUpdateTag, useDeleteTag } from '@/hooks/useTags'
 import { cn } from '@/lib/utils'
 import { PRESET_COLORS } from '@/lib/colors'
 

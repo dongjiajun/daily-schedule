@@ -3,14 +3,14 @@ import {
   CalendarDays, Download, HelpCircle, Keyboard, Layers, LogOut, Plus, Search, Settings, Tag as TagIcon, X,
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { useCategories } from '../../hooks/useCategories'
-import { useTags } from '../../hooks/useTags'
-import { useEvents } from '../../hooks/useEvents'
-import { useCalendarStore } from '../../store/calendarStore'
-import { useAuthStore } from '../../store/authStore'
-import { downloadICS } from '../../lib/ics'
+import { useCategories } from '@/hooks/useCategories'
+import { useTags } from '@/hooks/useTags'
+import { useEvents } from '@/hooks/useEvents'
+import { useCalendarStore } from '@/store/calendarStore'
+import { useAuthStore } from '@/store/authStore'
+import { downloadICS } from '@/lib/ics'
 import { Button } from '@/components/ui/button'
-import { cn } from '../../lib/utils'
+import { cn } from '@/lib/utils'
 
 function WeekStats() {
   const { data: weekEvents } = useEvents(dayjs(), 'week')

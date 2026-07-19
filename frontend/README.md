@@ -1,73 +1,44 @@
-# React + TypeScript + Vite
+# 日程管理系统 — 前端
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React 19 + TypeScript 6 + Vite 8 + Tailwind CSS 4
 
-Currently, two official plugins are available:
+## 快速开始
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+cd frontend
+npm install
+npm run dev          # http://localhost:5173，API 代理到 localhost:8080
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 脚本
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+| 命令 | 用途 |
+|------|------|
+| `npm run dev` | 启动开发服务器 |
+| `npm run build` | TypeScript 检查 + Vite 构建 |
+| `npm run lint` | ESLint 检查 |
+| `npm run test` | 运行单元测试 |
+| `npm run verify` | lint + build + test（提交前必须通过） |
+| `npm run generate:api` | 从 `../specs/openapi.yaml` 生成 SDK |
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## 目录结构
+
+| 目录 | 说明 |
+|------|------|
+| `src/api/` | 自动生成（由 `@hey-api/openapi-ts`），**勿手动编辑** |
+| `src/lib/` | 工具函数（`cn`、ICS 导出、auth 拦截器、SDK 错误处理） |
+| `src/hooks/` | React Query hooks（`useEvents`、`useCategories`、`useTags` 等） |
+| `src/store/` | Zustand stores（`authStore`、`calendarStore`、`settingsStore`） |
+| `src/pages/` | 页面组件（`HomePage`、`LoginPage`） |
+| `src/components/ui/` | shadcn/ui 基础组件（Button、Input、Dialog 等） |
+| `src/components/layout/` | 布局组件（AppShell、Sidebar 等） |
+| `src/components/event/` | 日程组件（EventModal、EventForm） |
+| `src/components/calendar/` | 日历组件（CalendarView） |
+| `src/styles/` | 主题 CSS（5 套配色方案） |
+
+## 关键约定
+
+- **路径别名**: `@/` → `src/`
+- `src/api/` 由 `npm run generate:api` 完全管理，每次生成清空重写
+- 自定义逻辑（token 注入、错误处理）放在 `src/lib/`，在 `main.tsx` 启动时注册
+- import 统一使用 `@/` 别名，不使用相对路径
