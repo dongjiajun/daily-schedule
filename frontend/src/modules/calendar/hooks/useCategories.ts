@@ -1,8 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { listCategories, createCategory, updateCategory, deleteCategory } from '../api/sdk.gen'
-import { unwrap } from '../core/lib/unwrap'
-import type { CategoryCreateRequest, CategoryResponse } from '../api/types.gen'
+import { listCategories, createCategory, updateCategory, deleteCategory } from '@/api/sdk.gen'
+import { unwrap } from '@/core/lib/unwrap'
+import type { CategoryCreateRequest, CategoryResponse } from '@/api/types.gen'
 
 export function useCategories() {
   return useQuery<CategoryResponse[]>({

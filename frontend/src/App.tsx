@@ -1,15 +1,15 @@
 import { useEffect } from 'react'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, useRoutes } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from 'sonner'
 import { ErrorBoundary } from './components/layout/ErrorBoundary'
 import { AppShell } from './components/layout/AppShell'
-import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
 import { OnboardingGuide } from './components/layout/OnboardingGuide'
 import { useAuthStore } from './core/store/authStore'
-import { useCalendarStore } from './store/calendarStore'
+import { useCalendarStore } from '@/modules/calendar/store/calendarStore'
 import { useTheme } from './core/hooks/useTheme'
+import { moduleRegistry } from './core/lib/moduleRegistry'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -44,6 +44,20 @@ function OnboardingOverlay() {
   return <OnboardingGuide onClose={closeOnboarding} />
 }
 
+function AppRoutes() {
+  return useRoutes([
+    {
+      path: '/*',
+      element: (
+        <AuthGuard>
+          <AppShell />
+        </AuthGuard>
+      ),
+      children: moduleRegistry.getRoutes(),
+    },
+  ])
+}
+
 export default function App() {
   useTheme()
 
@@ -51,21 +65,10 @@ export default function App() {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
-          <Routes>
-            <Route
-              path="/*"
-              element={
-                <AuthGuard>
-                  <AppShell />
-                </AuthGuard>
-              }
-            >
-              <Route index element={<HomePage />} />
-            </Route>
-          </Routes>
+          <AppRoutes />
+          <OnboardingOverlay />
+          <Toaster position="top-center" richColors />
         </BrowserRouter>
-        <OnboardingOverlay />
-        <Toaster position="top-center" richColors />
       </QueryClientProvider>
     </ErrorBoundary>
   )

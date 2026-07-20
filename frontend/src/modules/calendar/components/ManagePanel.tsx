@@ -1,7 +1,5 @@
 import { useState } from 'react'
 import { Check, Pencil, Plus, Trash2, X } from 'lucide-react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/core/components/ui/dialog'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/core/components/ui/tabs'
 import { Button } from '@/core/components/ui/button'
 import { Input } from '@/core/components/ui/input'
 import { Label } from '@/core/components/ui/label'
@@ -13,12 +11,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/core/components/ui/select'
-import { useCalendarStore, type CalendarView } from '@/store/calendarStore'
+import { TabbedDialog, type TabDefinition } from '@/core/components/layout/TabbedDialog'
+import { useCalendarStore, type CalendarView } from '../store/calendarStore'
 import { useSettingsStore, type ThemePreset, THEME_LABELS, THEME_COLORS } from '@/core/store/settingsStore'
 import {
   useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory,
-} from '@/hooks/useCategories'
-import { useTags, useCreateTag, useUpdateTag, useDeleteTag } from '@/hooks/useTags'
+} from '../hooks/useCategories'
+import { useTags, useCreateTag, useUpdateTag, useDeleteTag } from '../hooks/useTags'
 import { cn } from '@/core/lib/utils'
 import { PRESET_COLORS } from '@daily-schedule/shared'
 
@@ -101,7 +100,6 @@ function ItemList({ items, emptyText, placeholder, maxLength, pendingCreate, onC
 
   return (
     <div className="space-y-3">
-      {/* 新建 */}
       <div className="rounded-xl border border-border-subtle bg-sidebar-muted p-3 space-y-2">
         <div className="flex gap-2">
           <Input
@@ -120,7 +118,6 @@ function ItemList({ items, emptyText, placeholder, maxLength, pendingCreate, onC
         <ColorPicker value={newColor} onChange={setNewColor} />
       </div>
 
-      {/* 列表 */}
       <div className="space-y-1 max-h-[40vh] overflow-y-auto pr-1">
         {items.length === 0 && (
           <p className="text-xs text-foreground-muted text-center py-6">{emptyText}</p>
@@ -189,7 +186,7 @@ function ItemList({ items, emptyText, placeholder, maxLength, pendingCreate, onC
   )
 }
 
-export function ManageDialog() {
+export function ManagePanel() {
   const showManage = useCalendarStore((s) => s.showManage)
   const manageTab = useCalendarStore((s) => s.manageTab)
   const closeManage = useCalendarStore((s) => s.closeManage)
@@ -207,131 +204,137 @@ export function ManageDialog() {
 
   const settings = useSettingsStore()
 
-  return (
-    <Dialog open={showManage} onOpenChange={(o) => { if (!o) closeManage() }}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>管理与偏好</DialogTitle>
-        </DialogHeader>
-        <div className="px-6 py-4">
-          <Tabs value={manageTab} onValueChange={(v) => openManage(v as 'categories' | 'tags' | 'preferences')}>
-            <TabsList className="w-full">
-              <TabsTrigger value="categories" className="flex-1">分类</TabsTrigger>
-              <TabsTrigger value="tags" className="flex-1">标签</TabsTrigger>
-              <TabsTrigger value="preferences" className="flex-1">偏好设置</TabsTrigger>
-            </TabsList>
+  const tabs: TabDefinition[] = [
+    {
+      id: 'categories',
+      label: '分类',
+      content: (
+        <ItemList
+          items={categories ?? []}
+          emptyText="暂无分类"
+          placeholder="分类名称"
+          maxLength={50}
+          pendingCreate={createCategory.isPending}
+          onCreate={(name, color) => createCategory.mutate({ name, color })}
+          onUpdate={(id, name, color) => updateCategory.mutate({ id, data: { name, color } })}
+          onDelete={(id) => deleteCategory.mutate(id)}
+        />
+      ),
+    },
+    {
+      id: 'tags',
+      label: '标签',
+      content: (
+        <ItemList
+          items={tags ?? []}
+          emptyText="暂无标签，添加后可在日程表单中打标"
+          placeholder="标签名称"
+          maxLength={30}
+          pendingCreate={createTag.isPending}
+          onCreate={(name, color) => createTag.mutate({ name, color })}
+          onUpdate={(id, name, color) => updateTag.mutate({ id, data: { name, color } })}
+          onDelete={(id) => deleteTag.mutate(id)}
+        />
+      ),
+    },
+    {
+      id: 'preferences',
+      label: '偏好设置',
+      content: (
+        <div className="space-y-5">
+          <div className="space-y-1.5">
+            <Label>默认视图</Label>
+            <Select value={settings.defaultView} onValueChange={(v) => settings.setDefaultView(v as CalendarView)}>
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {(Object.keys(VIEW_LABELS) as CalendarView[]).map((v) => (
+                  <SelectItem key={v} value={v}>{VIEW_LABELS[v]}视图</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-[11px] text-foreground-muted">下次打开应用时生效</p>
+          </div>
 
-            <TabsContent value="categories" className="mt-4">
-              <ItemList
-                items={categories ?? []}
-                emptyText="暂无分类"
-                placeholder="分类名称"
-                maxLength={50}
-                pendingCreate={createCategory.isPending}
-                onCreate={(name, color) => createCategory.mutate({ name, color })}
-                onUpdate={(id, name, color) => updateCategory.mutate({ id, data: { name, color } })}
-                onDelete={(id) => deleteCategory.mutate(id)}
-              />
-            </TabsContent>
+          <div className="space-y-1.5">
+            <Label>新日程默认提醒</Label>
+            <Select
+              value={settings.defaultReminderMinutes === null ? 'none' : String(settings.defaultReminderMinutes)}
+              onValueChange={(v) => settings.setDefaultReminderMinutes(v === 'none' ? null : Number(v))}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {REMINDER_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-            <TabsContent value="tags" className="mt-4">
-              <ItemList
-                items={tags ?? []}
-                emptyText="暂无标签，添加后可在日程表单中打标"
-                placeholder="标签名称"
-                maxLength={30}
-                pendingCreate={createTag.isPending}
-                onCreate={(name, color) => createTag.mutate({ name, color })}
-                onUpdate={(id, name, color) => updateTag.mutate({ id, data: { name, color } })}
-                onDelete={(id) => deleteTag.mutate(id)}
-              />
-            </TabsContent>
+          <div className="space-y-1.5">
+            <Label>快速新建默认时长</Label>
+            <Select
+              value={String(settings.defaultDurationMinutes)}
+              onValueChange={(v) => settings.setDefaultDurationMinutes(Number(v))}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {DURATION_OPTIONS.map((m) => (
+                  <SelectItem key={m} value={String(m)}>{m >= 60 ? `${m / 60} 小时` : `${m} 分钟`}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-            <TabsContent value="preferences" className="mt-4 space-y-5">
-              <div className="space-y-1.5">
-                <Label>默认视图</Label>
-                <Select value={settings.defaultView} onValueChange={(v) => settings.setDefaultView(v as CalendarView)}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(Object.keys(VIEW_LABELS) as CalendarView[]).map((v) => (
-                      <SelectItem key={v} value={v}>{VIEW_LABELS[v]}视图</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-[11px] text-foreground-muted">下次打开应用时生效</p>
-              </div>
+          <div className="flex items-center justify-between pt-1">
+            <div>
+              <Label className="cursor-pointer" htmlFor="show-completed">显示已完成日程</Label>
+              <p className="text-[11px] text-foreground-muted mt-0.5">关闭后日历上隐藏已完成/已取消的日程</p>
+            </div>
+            <Switch
+              id="show-completed"
+              checked={settings.showCompleted}
+              onCheckedChange={settings.setShowCompleted}
+            />
+          </div>
 
-              <div className="space-y-1.5">
-                <Label>新日程默认提醒</Label>
-                <Select
-                  value={settings.defaultReminderMinutes === null ? 'none' : String(settings.defaultReminderMinutes)}
-                  onValueChange={(v) => settings.setDefaultReminderMinutes(v === 'none' ? null : Number(v))}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {REMINDER_OPTIONS.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label>快速新建默认时长</Label>
-                <Select
-                  value={String(settings.defaultDurationMinutes)}
-                  onValueChange={(v) => settings.setDefaultDurationMinutes(Number(v))}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {DURATION_OPTIONS.map((m) => (
-                      <SelectItem key={m} value={String(m)}>{m >= 60 ? `${m / 60} 小时` : `${m} 分钟`}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="flex items-center justify-between pt-1">
-                <div>
-                  <Label className="cursor-pointer" htmlFor="show-completed">显示已完成日程</Label>
-                  <p className="text-[11px] text-foreground-muted mt-0.5">关闭后日历上隐藏已完成/已取消的日程</p>
-                </div>
-                <Switch
-                  id="show-completed"
-                  checked={settings.showCompleted}
-                  onCheckedChange={settings.setShowCompleted}
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label>主题配色</Label>
-                <Select value={settings.theme} onValueChange={(v) => settings.setTheme(v as ThemePreset)}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(Object.keys(THEME_LABELS) as ThemePreset[]).map((t) => (
-                      <SelectItem key={t} value={t}>
-                        <span className="flex items-center gap-2">
-                          <span className="w-3 h-3 rounded-full border border-border" style={{ backgroundColor: THEME_COLORS[t] }} />
-                          {THEME_LABELS[t]}
-                        </span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-[11px] text-foreground-muted">切换后即时生效，自动保存</p>
-              </div>
-            </TabsContent>
-          </Tabs>
+          <div className="space-y-1.5">
+            <Label>主题配色</Label>
+            <Select value={settings.theme} onValueChange={(v) => settings.setTheme(v as ThemePreset)}>
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {(Object.keys(THEME_LABELS) as ThemePreset[]).map((t) => (
+                  <SelectItem key={t} value={t}>
+                    <span className="flex items-center gap-2">
+                      <span className="w-3 h-3 rounded-full border border-border" style={{ backgroundColor: THEME_COLORS[t] }} />
+                      {THEME_LABELS[t]}
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-[11px] text-foreground-muted">切换后即时生效，自动保存</p>
+          </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      ),
+    },
+  ]
+
+  return (
+    <TabbedDialog
+      open={showManage}
+      onOpenChange={(o) => { if (!o) closeManage() }}
+      title="管理与偏好"
+      tabs={tabs}
+      activeTab={manageTab}
+      onActiveTabChange={(v) => openManage(v as 'categories' | 'tags' | 'preferences')}
+    />
   )
 }

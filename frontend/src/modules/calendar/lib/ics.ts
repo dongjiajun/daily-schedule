@@ -1,5 +1,5 @@
 import dayjs from 'dayjs'
-import type { EventResponse } from '../../api/types.gen'
+import type { EventResponse } from '@/api/types.gen'
 
 function escapeText(text: string): string {
   return text

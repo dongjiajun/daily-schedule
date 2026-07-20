@@ -34,7 +34,7 @@ export interface ModuleDefinition {
   /** 模块描述 */
   description: string
   /** 侧边栏图标（React 组件类型，延迟引用避免循环依赖） */
-  icon: React.ComponentType
+  icon: React.ComponentType<{ className?: string }>
   /** 侧边栏排序权重（数字越小越靠前） */
   order: number
   /** 路由定义（lazy loaded） */
@@ -47,6 +47,8 @@ export interface ModuleDefinition {
   onDestroy?: () => void
   /** 本模块可触发的宠物行为 */
   petActions?: PetActionDefinition[]
+  /** 侧边栏内容组件（可选）。接收 onNavigate 回调用于移动端关闭抽屉 */
+  sidebarComponent?: React.ComponentType<{ onNavigate?: () => void }>
 }
 
 // ── 模块注册中心 ─────────────────────────────────────────

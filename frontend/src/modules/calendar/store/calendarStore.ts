@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import dayjs from 'dayjs'
-import { useSettingsStore } from '../core/store/settingsStore'
+import { useSettingsStore } from '@/core/store/settingsStore'
 
 export type CalendarView = 'month' | 'week' | 'day' | 'agenda'
 

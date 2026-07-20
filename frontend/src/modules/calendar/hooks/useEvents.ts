@@ -1,9 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import dayjs from 'dayjs'
 import { toast } from 'sonner'
-import { listEvents, createEvent, updateEvent, deleteEvent } from '../api/sdk.gen'
-import { unwrap } from '../core/lib/unwrap'
-import type { EventCreateRequest, EventResponse } from '../api/types.gen'
+import { listEvents, createEvent, updateEvent, deleteEvent } from '@/api/sdk.gen'
+import { unwrap } from '@/core/lib/unwrap'
+import type { EventCreateRequest, EventResponse } from '@/api/types.gen'
 
 function getViewRange(date: dayjs.Dayjs, view: string) {
   switch (view) {
@@ -112,7 +112,7 @@ export function useToggleEventStatus() {
         reminderMinutes: event.reminderMinutes,
         status: nextStatus,
         categoryId: event.categoryId,
-        tagIds: event.tags?.map((t) => t.id!).filter(Boolean),
+        tagIds: event.tags?.map((t: { id?: number }) => t.id!).filter(Boolean),
       }
       return unwrap(await updateEvent({ path: { id: event.id! }, body }))
     },

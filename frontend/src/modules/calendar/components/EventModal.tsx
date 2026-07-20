@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { EventForm, type EventFormValues } from './EventForm'
-import { useCreateEvent, useUpdateEvent, useDeleteEvent, useEvents, useToggleEventStatus } from '@/hooks/useEvents'
-import { useCategories } from '@/hooks/useCategories'
-import { useTags } from '@/hooks/useTags'
-import { useCalendarStore } from '@/store/calendarStore'
+import { useCreateEvent, useUpdateEvent, useDeleteEvent, useEvents, useToggleEventStatus } from '../hooks/useEvents'
+import { useCategories } from '../hooks/useCategories'
+import { useTags } from '../hooks/useTags'
+import { useCalendarStore } from '../store/calendarStore'
 import {
   Dialog,
   DialogContent,

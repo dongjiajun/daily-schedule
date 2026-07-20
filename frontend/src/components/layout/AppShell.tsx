@@ -2,9 +2,8 @@ import { Outlet } from 'react-router-dom'
 import { Menu } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Sidebar } from './Sidebar'
-import { ManageDialog } from './ManageDialog'
 import { ShortcutsDialog } from './ShortcutsDialog'
-import { useCalendarStore } from '@/store/calendarStore'
+import { useCalendarStore } from '@/modules/calendar/store/calendarStore'
 
 export function AppShell() {
   const sidebarOpen = useCalendarStore((s) => s.sidebarOpen)
@@ -65,7 +64,6 @@ export function AppShell() {
         </div>
       </main>
 
-      <ManageDialog />
       <ShortcutsDialog />
     </div>
   )

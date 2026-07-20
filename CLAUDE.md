@@ -132,16 +132,42 @@ specs/openapi.yaml
 
 依赖方向：API → 应用 → 领域 ← 基础设施
 
+### 前端目录结构
+```
+src/
+├── core/                    # 稳定基础设施（不可被模块直接依赖）
+│   ├── lib/                 # eventBus, moduleRegistry, utils, unwrap, authInterceptor
+│   ├── store/               # authStore, settingsStore
+│   ├── components/ui/       # shadcn/ui 基础组件
+│   ├── components/layout/   # 通用布局 (TabbedDialog)
+│   ├── hooks/               # useTheme, useNotification, useSseNotifications
+│   └── styles/              # themes.css
+├── modules/                 # 可插拔功能模块
+│   └── calendar/            # 日历模块
+│       ├── index.ts         # ModuleDefinition 导出
+│       ├── routes.tsx        # lazy 路由
+│       ├── components/      # HomePage, CalendarView, EventForm/Modal, CalendarSidebar, ManagePanel
+│       ├── hooks/           # useEvents, useCategories, useTags, useKeyboardShortcuts
+│       ├── store/           # calendarStore
+│       └── lib/             # ics.ts
+├── components/layout/       # 应用 Shell (AppShell, Sidebar, ShortcutsDialog...)
+├── pages/                   # LoginPage
+├── lib/                     # colors.ts (兼容层)
+└── api/                     # 自动生成 SDK
+```
+
 ### 前端状态管理（两层分离）
-- **Zustand**（UI 状态）: `authStore`（token + user，localStorage `auth.v3`）、`calendarStore`（视图/弹窗/筛选）、`settingsStore`（偏好，localStorage `settings.v1`）
-- **React Query**（服务端数据）: `useEvents`/`useCategories`/`useTags` 等 hooks，文件在 `src/hooks/`
+- **Zustand**（UI 状态）: `authStore`（core，token + user）、`calendarStore`（calendar 模块，视图/弹窗/筛选）、`settingsStore`（core，偏好 persist）
+- **React Query**（服务端数据）: `useEvents`/`useCategories`/`useTags` 等 hooks，文件在 `modules/calendar/hooks/`
 - **路径别名**: `@/` → `src/`
+- **模块注册**: `main.tsx` 中 `moduleRegistry.register(calendarModule)` 注册日历模块
+- **动态路由**: `App.tsx` 使用 `useRoutes(moduleRegistry.getRoutes())` 动态装配
+- **PWA**: `vite-plugin-pwa` 提供 manifest + Service Worker（autoUpdate + CacheFirst 静态资源 + NetworkOnly API）
 
 ### 模块间通信（事件总线）
 - **唯一通道**: `core/lib/eventBus.ts`（EventBus 单例），模块间不直接 import store/组件
 - **事件类型**: `SystemEvent` 联合类型（定义在 `packages/shared/src/eventBus.ts`），10 种跨模块事件
-- **模块注册**: `core/lib/moduleRegistry.ts` — `ModuleRegistry` 单例，管理模块生命周期（注册/注销/路由收集/petActions）
-- **核心目录**: `src/core/` — 稳定基础设施（lib/），`src/modules/` — 可插拔功能模块
+- **模块注册**: `core/lib/moduleRegistry.ts` — `ModuleRegistry` 单例，管理模块生命周期（注册/注销/路由收集/petActions/sidebarComponent）
 
 ### 持久层
 - **MyBatis-Plus**: domain 定义仓储接口，infrastructure 用 PO + Mapper 实现

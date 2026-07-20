@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { CalendarView } from '../../store/calendarStore'
+import type { CalendarView } from '@/modules/calendar/store/calendarStore'
 
 export type ThemePreset = 'default' | 'warm' | 'nature' | 'dark' | 'lavender'
 

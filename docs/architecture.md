@@ -6,10 +6,10 @@
 ┌──────────────────────────────────────────────────────────┐
 │                    Browser (React 19)                     │
 │  ┌──────────┐ ┌──────────┐ ┌───────────┐ ┌───────────┐  │
-│  │ Calendar  │ │ EventForm │ │ Sidebar   │ │ Zustand   │  │
-│  │ (DnD)    │ │ + Modal   │ │ + Search  │ │ + RQuery  │  │
-│  └──────────┘ └──────────┘ └───────────┘ └───────────┘  │
-│  shadcn/ui + Framer Motion + sonner Toast                 │
+│  │ 日历模块   │ │ 通用 Shell │ │ Zustand   │ │ModuleReg  │  │
+│  │Calendar  │ │ Sidebar   │ │ + RQuery  │ │ + EventBus│  │
+│  └──────────┘ └───────────┘ └───────────┘ └───────────┘  │
+│  core/ (基础设施) + modules/calendar/ (可插拔)             │
 └───────────────────────┬──────────────────────────────────┘
                         │ REST / SSE (JWT Bearer auth)
 ┌───────────────────────▼──────────────────────────────────┐
@@ -112,18 +112,24 @@ daily-schedule/
 ├── frontend/                 # React 19 Web 前端（Vite）
 │   └── src/
 │       ├── core/             # 核心基础设施（稳定、精简）
-│       │   ├── lib/          # utils, unwrap, ics, authInterceptor, eventBus, moduleRegistry
+│       │   ├── lib/          # utils, unwrap, authInterceptor, eventBus, moduleRegistry
 │       │   ├── store/        # authStore, settingsStore
-│       │   ├── components/ui/ # shadcn/ui 基础组件 (button, dialog, input...)
+│       │   ├── components/
+│       │   │   ├── ui/       # shadcn/ui 基础组件 (button, dialog, input...)
+│       │   │   └── layout/   # 通用布局容器 (TabbedDialog)
 │       │   ├── hooks/        # useTheme, useNotification, useSseNotifications
 │       │   └── styles/       # themes.css
-│       ├── modules/          # 功能模块（按需扩展，当前为空）
-│       ├── components/       # 业务组件（后续迁移到 modules/）
-│       │   ├── calendar/
-│       │   ├── event/
-│       │   └── layout/
-│       ├── hooks/            # 业务 hooks (useEvents, useCategories, useTags)
-│       ├── store/            # 业务 store (calendarStore)
+│       ├── modules/          # 可插拔功能模块
+│       │   └── calendar/     # 日历模块（首个模块）
+│       │       ├── index.ts  # ModuleDefinition 导出
+│       │       ├── routes.tsx
+│       │       ├── components/ (HomePage, CalendarView, EventForm/Modal,
+│       │       │                CalendarSidebar, ManagePanel)
+│       │       ├── hooks/    (useEvents, useCategories, useTags, useKeyboardShortcuts)
+│       │       ├── store/    (calendarStore)
+│       │       └── lib/      (ics.ts)
+│       ├── components/layout/ # 应用 Shell 布局 (AppShell, Sidebar, ShortcutsDialog...)
+│       ├── pages/            # LoginPage
 │       ├── lib/              # colors.ts (re-export 兼容层)
 │       └── api/              # 自动生成的 API SDK
 ├── packages/
@@ -156,14 +162,33 @@ daily-schedule/
 - **ModuleRegistry**: 模块注册/注销/路由收集/petActions 收集，`core/lib/moduleRegistry.ts`
 - **模块隔离**: 模块间不直接 import store/组件，只通过事件总线通信
 
-## 模块结构
+## 后端模块结构（DDD 四层）
 
-| 模块 | 路径 | 职责 |
+| 层 | 包路径 | 职责 |
 |------|------|------|
 | API | `api/controller/`, `api/assembler/`, `api/exception/` | REST 端点、DTO 转换、全局异常处理 |
 | 应用 | `application/event/`, `application/category/`, `application/tag/` | 用例编排、重名校验、缓存注解 |
 | 领域 | `domain/event/`, `domain/category/`, `domain/tag/`, `domain/user/`, `domain/notification/` | 业务实体与规则、读侧投影、仓储接口 |
 | 基础设施 | `infrastructure/persistence/`, `infrastructure/security/`, `infrastructure/config/`, `infrastructure/scheduled/`, `infrastructure/notification/` | 持久化、JWT/认证、缓存配置、调度、SSE |
+
+## 前端模块架构（core + modules）
+
+- **core/** — 稳定基础设施：authStore、settingsStore、EventBus、ModuleRegistry、UI 组件、共享 hooks
+- **modules/calendar/** — 首个功能模块：日历视图、事件管理、筛选、ICS 导出
+- **ModuleRegistry** — 模块注册/注销/路由收集，`main.tsx` 启动时注册
+- **EventBus** — 同步事件总线，类型安全的 `SystemEvent` 联合类型（定义在 `@daily-schedule/shared`）
+- **模块通信** — 模块间不直接 import store/组件，只通过事件总线通信
+
+### 模块定义接口
+
+```typescript
+ModuleDefinition {
+  id: string; name: string; icon: ComponentType;
+  order: number; routes: RouteObject[];
+  sidebarComponent?: ComponentType;  // 模块专属侧边栏
+  petActions?: PetActionDefinition[];  // 宠物行为声明
+}
+```
 
 ## 测试
 - 本地: 需要 MySQL 8.0（dev/test 库）

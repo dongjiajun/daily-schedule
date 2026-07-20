@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import dayjs from 'dayjs'
 import type { EventResponse, CategoryResponse, TagResponse } from '@/api/types.gen'
-import { useCalendarStore } from '@/store/calendarStore'
+import { useCalendarStore } from '../store/calendarStore'
 import { useSettingsStore } from '@/core/store/settingsStore'
 import { Button } from '@/core/components/ui/button'
 import { Input } from '@/core/components/ui/input'
