@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { listTags, createTag, updateTag, deleteTag } from '../api/sdk.gen'
-import { unwrap } from '../lib/unwrap'
+import { unwrap } from '../core/lib/unwrap'
 import type { TagCreateRequest, TagResponse } from '../api/types.gen'
 
 export function useTags() {

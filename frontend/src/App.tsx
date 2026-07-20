@@ -7,9 +7,9 @@ import { AppShell } from './components/layout/AppShell'
 import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
 import { OnboardingGuide } from './components/layout/OnboardingGuide'
-import { useAuthStore } from './store/authStore'
+import { useAuthStore } from './core/store/authStore'
 import { useCalendarStore } from './store/calendarStore'
-import { useTheme } from './hooks/useTheme'
+import { useTheme } from './core/hooks/useTheme'
 
 const queryClient = new QueryClient({
   defaultOptions: {

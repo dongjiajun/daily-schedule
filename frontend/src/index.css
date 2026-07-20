@@ -1,5 +1,5 @@
 @import "tailwindcss";
-@import "./styles/themes.css";
+@import "./core/styles/themes.css";
 
 /* ===== Tailwind 4 语义颜色映射 ===== */
 /* 将 CSS 自定义属性注册为 Tailwind utility 类 */

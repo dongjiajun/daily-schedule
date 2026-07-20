@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { CalendarDays, Eye, EyeOff } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useAuthStore } from '../store/authStore'
+import { useAuthStore } from '../core/store/authStore'
 import { login as loginApi, register as registerApi } from '../api/sdk.gen'
 
 const dots = [

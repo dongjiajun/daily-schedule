@@ -1,26 +1,26 @@
 import { useState } from 'react'
 import { Check, Pencil, Plus, Trash2, X } from 'lucide-react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Switch } from '@/components/ui/switch'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/core/components/ui/dialog'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/core/components/ui/tabs'
+import { Button } from '@/core/components/ui/button'
+import { Input } from '@/core/components/ui/input'
+import { Label } from '@/core/components/ui/label'
+import { Switch } from '@/core/components/ui/switch'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
+} from '@/core/components/ui/select'
 import { useCalendarStore, type CalendarView } from '@/store/calendarStore'
-import { useSettingsStore, type ThemePreset, THEME_LABELS, THEME_COLORS } from '@/store/settingsStore'
+import { useSettingsStore, type ThemePreset, THEME_LABELS, THEME_COLORS } from '@/core/store/settingsStore'
 import {
   useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory,
 } from '@/hooks/useCategories'
 import { useTags, useCreateTag, useUpdateTag, useDeleteTag } from '@/hooks/useTags'
-import { cn } from '@/lib/utils'
-import { PRESET_COLORS } from '@/lib/colors'
+import { cn } from '@/core/lib/utils'
+import { PRESET_COLORS } from '@daily-schedule/shared'
 
 const VIEW_LABELS: Record<CalendarView, string> = { month: '月', week: '周', day: '日', agenda: '议程' }
 

@@ -98,6 +98,64 @@ Scheduler (30s fixedDelay, Clock-injected)
 - **Caffeine 本地缓存**: 分类列表 (categories)、标签列表 (tags)，5 分钟过期
 - **写操作驱逐**: create/update/delete 自动 `@CacheEvict`
 
+## 项目结构（Monorepo）
+
+```
+daily-schedule/
+├── package.json              # pnpm workspace 根（private）
+├── pnpm-workspace.yaml       # workspace 包声明
+├── turbo.json                # Turborepo 任务编排
+├── .npmrc                    # pnpm 配置
+├── pnpm-lock.yaml            # 依赖锁文件
+│
+├── backend/                  # Spring Boot 3.4 后端（Maven）
+├── frontend/                 # React 19 Web 前端（Vite）
+│   └── src/
+│       ├── core/             # 核心基础设施（稳定、精简）
+│       │   ├── lib/          # utils, unwrap, ics, authInterceptor, eventBus, moduleRegistry
+│       │   ├── store/        # authStore, settingsStore
+│       │   ├── components/ui/ # shadcn/ui 基础组件 (button, dialog, input...)
+│       │   ├── hooks/        # useTheme, useNotification, useSseNotifications
+│       │   └── styles/       # themes.css
+│       ├── modules/          # 功能模块（按需扩展，当前为空）
+│       ├── components/       # 业务组件（后续迁移到 modules/）
+│       │   ├── calendar/
+│       │   ├── event/
+│       │   └── layout/
+│       ├── hooks/            # 业务 hooks (useEvents, useCategories, useTags)
+│       ├── store/            # 业务 store (calendarStore)
+│       ├── lib/              # colors.ts (re-export 兼容层)
+│       └── api/              # 自动生成的 API SDK
+├── packages/
+│   └── shared/               # @daily-schedule/shared — 跨平台共享库
+│       └── src/              # 类型定义、EventBus、业务常量
+├── docs/                     # 项目文档
+└── specs/                    # API 契约 + 变更日志
+```
+
+**包管理器**: pnpm（workspace 协议），强制使用（`.npmrc` `engine-strict=true`）
+**任务编排**: Turborepo — `turbo run build` 按依赖顺序构建（shared → frontend）
+**共享库**: `@daily-schedule/shared` — 纯 TypeScript（无 React/DOM 依赖），供 Web + 未来小程序共用
+
+## 事件总线 + 模块注册中心
+
+模块间唯一通信方式——事件总线（`SystemEvent` 联合类型 + `EventBus` 类）：
+
+```
+模块 A (calendar)                模块 B (pet)
+     │                                │
+     │ emit('event:completed')        │ on('event:completed')
+     │                                │
+     └────────── EventBus ────────────┘
+                     │
+              packages/shared/src/eventBus.ts
+```
+
+- **SystemEvent**: 10 种事件类型（日程/任务/习惯/专注/用户）
+- **EventBus**: 同步派发，定义在 shared 包中，frontend 创建单例 `core/lib/eventBus.ts`
+- **ModuleRegistry**: 模块注册/注销/路由收集/petActions 收集，`core/lib/moduleRegistry.ts`
+- **模块隔离**: 模块间不直接 import store/组件，只通过事件总线通信
+
 ## 模块结构
 
 | 模块 | 路径 | 职责 |

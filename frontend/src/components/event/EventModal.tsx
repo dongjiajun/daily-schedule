@@ -9,10 +9,10 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
+} from '@/core/components/ui/dialog'
+import { Button } from '@/core/components/ui/button'
 import { Check, RotateCcw, Trash2 } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn } from '@/core/lib/utils'
 
 interface EventModalProps {
   open: boolean

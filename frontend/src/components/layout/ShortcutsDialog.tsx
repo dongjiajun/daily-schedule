@@ -1,4 +1,4 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/core/components/ui/dialog'
 import { useCalendarStore } from '@/store/calendarStore'
 
 const SHORTCUTS: Array<{ keys: string[]; desc: string }> = [

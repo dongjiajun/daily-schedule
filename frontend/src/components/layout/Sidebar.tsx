@@ -7,10 +7,10 @@ import { useCategories } from '@/hooks/useCategories'
 import { useTags } from '@/hooks/useTags'
 import { useEvents } from '@/hooks/useEvents'
 import { useCalendarStore } from '@/store/calendarStore'
-import { useAuthStore } from '@/store/authStore'
-import { downloadICS } from '@/lib/ics'
-import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
+import { useAuthStore } from '@/core/store/authStore'
+import { downloadICS } from '@/core/lib/ics'
+import { Button } from '@/core/components/ui/button'
+import { cn } from '@/core/lib/utils'
 
 function WeekStats() {
   const { data: weekEvents } = useEvents(dayjs(), 'week')

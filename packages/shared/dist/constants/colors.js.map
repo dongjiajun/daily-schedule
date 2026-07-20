@@ -1,0 +1,1 @@
+{"version":3,"file":"colors.js","sourceRoot":"","sources":["../../src/constants/colors.ts"],"names":[],"mappings":"AAAA,kCAAkC;AAClC,MAAM,CAAC,MAAM,aAAa,GAAa;IACrC,SAAS,EAAE,WAAW;IACtB,SAAS,EAAE,cAAc;IACzB,SAAS,EAAE,YAAY;IACvB,SAAS,EAAE,UAAU;IACrB,SAAS,EAAE,aAAa;IACxB,SAAS,EAAE,WAAW;IACtB,SAAS,EAAE,WAAW;IACtB,SAAS,EAAE,aAAa;IACxB,SAAS,EAAE,WAAW;CACvB,CAAA"}

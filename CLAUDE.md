@@ -40,8 +40,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### 首次设置
 ```bash
 cd backend && mvn compile      # 确认 JDK 21 + Maven 就绪
-cd frontend && npm install      # Node 22 + npm
+pnpm install                    # Node 22 + pnpm（根目录，安装所有 workspace 包）
 docker-compose up -d            # 或 Docker 一键启动全部服务
+```
+
+### Monorepo（根目录）
+```bash
+pnpm install                    # 安装所有 workspace 依赖
+turbo run build                 # 按依赖顺序构建（shared → frontend）
+turbo run verify                # 全量 lint + build + test
+pnpm --filter @daily-schedule/shared run build   # 仅构建共享库
 ```
 
 ### 后端（backend/）
@@ -54,23 +62,25 @@ mvn spring-boot:run -Dspring-boot.run.profiles=test  # 启动（H2 内存库，�
 
 ### 前端（frontend/）
 ```bash
-npm run dev          # :5173，API 代理到 localhost:8080
-npm run build        # tsc + vite build
-npm run lint         # ESLint
-npm run test         # vitest 单元测试
-npm run test:watch   # vitest 监视模式
-npm run generate:api # 从 ../specs/openapi.yaml 生成 SDK
-npm run verify       # lint + build + test（提交前必须通过）
+pnpm run dev          # :5173，API 代理到 localhost:8080
+pnpm run build        # tsc -b + vite build（tsc -b 自动构建 shared）
+pnpm run lint         # ESLint
+pnpm run test         # vitest 单元测试
+pnpm run test:watch   # vitest 监视模式
+pnpm run generate:api # 从 ../specs/openapi.yaml 生成 SDK
+pnpm run verify       # lint + build + test（提交前必须通过）
 ```
 
 ## 提交前验证（CI 门禁对齐）
 
 ```bash
-cd frontend && npm run verify   # lint + TypeScript 检查 + 构建 + 测试
-cd backend && mvn test          # 编译 + 单元测试（H2 内存库）
+cd frontend && pnpm run verify   # lint + TypeScript 检查 + 构建 + 测试
+cd backend && mvn test            # 编译 + 单元测试（H2 内存库）
+# 或根目录全量验证：
+turbo run verify && cd backend && mvn test
 ```
 
-**CI 四层门禁**: 后端 `mvn test` + 前端 `npm run lint` + 前端 `npm run test` + 前端 `npm run build`（含 SDK freshness check）
+**CI 四层门禁**: 后端 `mvn test` + 前端 `pnpm run lint` + 前端 `pnpm run test` + 前端 `pnpm run build`（含 SDK freshness check）
 **常见失败**: `@typescript-eslint/no-explicit-any` / `tsc -b` 类型错误 / 后端单测失败
 
 **文档检查**（每次变更后逐项确认）：
@@ -126,6 +136,12 @@ specs/openapi.yaml
 - **Zustand**（UI 状态）: `authStore`（token + user，localStorage `auth.v3`）、`calendarStore`（视图/弹窗/筛选）、`settingsStore`（偏好，localStorage `settings.v1`）
 - **React Query**（服务端数据）: `useEvents`/`useCategories`/`useTags` 等 hooks，文件在 `src/hooks/`
 - **路径别名**: `@/` → `src/`
+
+### 模块间通信（事件总线）
+- **唯一通道**: `core/lib/eventBus.ts`（EventBus 单例），模块间不直接 import store/组件
+- **事件类型**: `SystemEvent` 联合类型（定义在 `packages/shared/src/eventBus.ts`），10 种跨模块事件
+- **模块注册**: `core/lib/moduleRegistry.ts` — `ModuleRegistry` 单例，管理模块生命周期（注册/注销/路由收集/petActions）
+- **核心目录**: `src/core/` — 稳定基础设施（lib/），`src/modules/` — 可插拔功能模块
 
 ### 持久层
 - **MyBatis-Plus**: domain 定义仓储接口，infrastructure 用 PO + Mapper 实现

@@ -2,21 +2,21 @@ import { useState, type FormEvent } from 'react'
 import dayjs from 'dayjs'
 import type { EventResponse, CategoryResponse, TagResponse } from '@/api/types.gen'
 import { useCalendarStore } from '@/store/calendarStore'
-import { useSettingsStore } from '@/store/settingsStore'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Switch } from '@/components/ui/switch'
+import { useSettingsStore } from '@/core/store/settingsStore'
+import { Button } from '@/core/components/ui/button'
+import { Input } from '@/core/components/ui/input'
+import { Label } from '@/core/components/ui/label'
+import { Textarea } from '@/core/components/ui/textarea'
+import { Switch } from '@/core/components/ui/switch'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import { cn } from '@/lib/utils'
-import { PRESET_COLORS } from '@/lib/colors'
+} from '@/core/components/ui/select'
+import { cn } from '@/core/lib/utils'
+import { PRESET_COLORS } from '@daily-schedule/shared'
 import { ChevronDown } from 'lucide-react'
 
 export interface EventFormValues {
