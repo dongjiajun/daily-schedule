@@ -32,7 +32,8 @@ ErrorBoundary（最外层错误捕获）
 | 路径 | 页面 | 说明 |
 |------|------|------|
 | `/` | HomePage (calendar 模块) | 主日历页面（AuthGuard 保护，未认证内联渲染 LoginPage） |
-| 未来 | pet/todo/habits 等 | 各模块通过 `moduleRegistry.register()` 声明路由 |
+| `/todo` | TodoPage (todo 模块) | 任务看板页面（看板+列表双视图） |
+| 未来 | pet/habits 等 | 各模块通过 `moduleRegistry.register()` 声明路由 |
 
 ## 目录结构
 
@@ -127,6 +128,17 @@ frontend/src/
 - **EventForm** — 事件表单；新建时智能默认（下一个整/半点 + 偏好时长 + 偏好提醒）
 - **CalendarSidebar** — 日历模块专属侧边栏：新建按钮、搜索、分类/标签筛选、周统计、操作按钮、ManagePanel
 - **ManagePanel** — 管理面板，使用 TabbedDialog 提供分类/标签/偏好设置三个标签页
+
+### 任务看板模块 (`modules/todo/`)
+
+- **TodoPage** — 任务主页面，组合 TaskToolbar + BoardView/ListView
+- **BoardView** — 三列看板（TODO | IN_PROGRESS | DONE），HTML5 Drag & Drop 跨列移动
+- **TaskColumn** — 单列容器：标题 + 数量徽章 + 卡片列表 + 内联快速创建 + drop 区域高亮
+- **TaskCard** — 任务卡片：标题/优先级标签(彩色)/截止日期(逾期标红)/标签 chips + 拖拽手柄
+- **ListView** — 列表视图：排序控件（默认/优先级/截止日期/创建时间）+ 任务行
+- **TaskRow** — 列表行：状态下拉框切换 + 信息 + 编辑/删除操作
+- **TaskForm** — 创建/编辑 Dialog：标题/描述/优先级/截止日期
+- **TaskToolbar** — 顶部工具栏：看板/列表视图切换 + 新建任务按钮
 
 ### 认证模块
 

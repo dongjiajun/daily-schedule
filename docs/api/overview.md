@@ -241,3 +241,43 @@ v1 仅支持改名：`{ "name": "二橘" }`
 
 - v1 即时消费模式：购买即使用，效果立即应用到宠物
 - 专注币不足返回 400
+
+## 任务 Task（v3.3 新增）
+
+### 查询任务 `GET /tasks`
+
+支持按状态/优先级/标签过滤，返回当前用户任务列表。
+
+```
+GET /api/v1/tasks?status=TODO&priority=HIGH&tagId=1
+```
+
+### 创建任务 `POST /tasks`
+
+```json
+// Request
+{ "title": "买水果", "priority": "HIGH", "dueDate": "2026-07-25", "tagIds": [1, 2] }
+// Response 201
+{ "id": 1, "title": "买水果", "status": "TODO", "priority": "HIGH", "dueDate": "2026-07-25", "sortOrder": 1, "tags": [...], "createdAt": "..." }
+```
+
+- 仅标题必填，其余字段均可选
+- 默认 status=TODO，priority=MEDIUM
+
+### 更新任务 `PUT /tasks/{id}`
+
+部分更新语义：仅更新请求中提供的字段。
+
+### 删除任务 `DELETE /tasks/{id}`
+
+级联删除 task_tags 关联，返回 204。
+
+### 移动任务 `PATCH /tasks/{id}/move`
+
+```json
+// Request
+{ "status": "IN_PROGRESS", "sortOrder": 3 }
+```
+
+- 拖拽看板卡片时调用，变更任务状态和排序位置
+- status 为 TODO / IN_PROGRESS / DONE 之一

@@ -1,6 +1,6 @@
 # 数据库设计
 
-> 当前状态: v3.2，对应 Flyway 迁移 V1–V5  
+> 当前状态: v3.3，对应 Flyway 迁移 V1–V6  
 > 迁移脚本: `backend/src/main/resources/db/migration/`
 
 ## ER 图
@@ -145,6 +145,7 @@
 | V3 | `V3__multi_user.sql` | user 表补 email/displayName/avatarUrl/status/lastLoginAt；category/tag 加 `UNIQUE(user_id, name)`；event 加复合索引 |
 | V4 | `V4__event_status.sql` | event 表加 status 列（PLANNED/COMPLETED/CANCELLED） |
 | V5 | `V5__create_pet_tables.sql` | 新增宠物系统三张表：pets / pet_accessories / pet_interactions + 种子数据 |
+| V6 | `V6__create_task_tables.sql` | 新增任务看板两张表：tasks / task_tags |
 
 
 
@@ -195,3 +196,30 @@
 | created_at | DATETIME | NOT NULL | NOW() | |
 
 索引: `idx_interaction_pet (pet_id)`, `idx_interaction_time (pet_id, created_at)`
+
+### tasks（任务 — v3.3 新增）
+
+| 字段 | 类型 | 约束 | 默认值 | 说明 |
+|------|------|------|--------|------|
+| id | BIGINT | PK, AUTO | | |
+| user_id | BIGINT | NOT NULL | | 数据隔离 |
+| title | VARCHAR(200) | NOT NULL | | 任务标题 |
+| description | TEXT | | NULL | 任务描述 |
+| status | VARCHAR(20) | NOT NULL | 'TODO' | TODO / IN_PROGRESS / DONE |
+| priority | VARCHAR(10) | NOT NULL | 'MEDIUM' | LOW / MEDIUM / HIGH / URGENT |
+| sort_order | INT | NOT NULL | 0 | 同列内排序 |
+| due_date | DATE | | NULL | 截止日期 |
+| created_at | DATETIME | NOT NULL | NOW() | |
+| updated_at | DATETIME | NOT NULL | NOW() ON UPDATE | |
+
+索引: `idx_tasks_user_status (user_id, status)`, `idx_tasks_user_priority (user_id, priority)`
+CHECK: `status IN ('TODO', 'IN_PROGRESS', 'DONE')`, `priority IN ('LOW', 'MEDIUM', 'HIGH', 'URGENT')`
+
+### task_tags（任务-标签关联 — v3.3 新增）
+
+| 字段 | 类型 | 约束 |
+|------|------|------|
+| task_id | BIGINT | PK, FK → tasks ON DELETE CASCADE |
+| tag_id | BIGINT | PK, FK → tag ON DELETE CASCADE |
+
+索引: `idx_task_tags_tag (tag_id)`

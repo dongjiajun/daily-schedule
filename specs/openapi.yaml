@@ -1,9 +1,13 @@
 openapi: 3.0.3
 info:
   title: 日程管理系统 API
-  version: 3.2.0
+  version: 3.3.0
   description: |
-    v3.2 接口定义 — 前后端契约唯一真相源。
+    v3.3 接口定义 — 前后端契约唯一真相源。
+
+    **v3.3 变更**：
+    - 新增任务看板 API：`/tasks`、`/tasks/{id}`、`/tasks/{id}/move`
+    - 新增 4 个 schema：TaskProfile、CreateTaskRequest、UpdateTaskRequest、MoveTaskRequest
 
     **v3.2 变更**：
     - 新增宠物养成 API：`/pets/me`、`/pets/me/interact`、`/shop/items`、`/shop/purchase`
@@ -606,6 +610,148 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+  /tasks:
+    get:
+      operationId: listTasks
+      tags: [Task]
+      summary: 查询任务列表
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [TODO, IN_PROGRESS, DONE]
+          description: 按状态过滤
+        - name: priority
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [LOW, MEDIUM, HIGH, URGENT]
+          description: 按优先级过滤
+        - name: tagId
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int64
+          description: 按标签过滤
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TaskProfile'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      operationId: createTask
+      tags: [Task]
+      summary: 创建任务
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTaskRequest'
+      responses:
+        '201':
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskProfile'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /tasks/{id}:
+    put:
+      operationId: updateTask
+      tags: [Task]
+      summary: 更新任务
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTaskRequest'
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskProfile'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      operationId: deleteTask
+      tags: [Task]
+      summary: 删除任务
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: 删除成功
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /tasks/{id}/move:
+    patch:
+      operationId: moveTask
+      tags: [Task]
+      summary: 移动任务到目标列
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MoveTaskRequest'
+      responses:
+        '200':
+          description: 移动成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskProfile'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
   /sse/notifications:
     get:
       operationId: subscribeNotifications
@@ -1029,6 +1175,87 @@ components:
         newHunger:
           type: integer
         newExperience:
+          type: integer
+
+    TaskProfile:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+        priority:
+          type: string
+        sortOrder:
+          type: integer
+        dueDate:
+          type: string
+          format: date
+        tags:
+          type: array
+          items:
+            $ref: '#/components/schemas/TagResponse'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateTaskRequest:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+        priority:
+          type: string
+          enum: [LOW, MEDIUM, HIGH, URGENT]
+        dueDate:
+          type: string
+          format: date
+        tagIds:
+          type: array
+          items:
+            type: integer
+            format: int64
+
+    UpdateTaskRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+        priority:
+          type: string
+          enum: [LOW, MEDIUM, HIGH, URGENT]
+        dueDate:
+          type: string
+          format: date
+        tagIds:
+          type: array
+          items:
+            type: integer
+            format: int64
+
+    MoveTaskRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [TODO, IN_PROGRESS, DONE]
+        sortOrder:
           type: integer
 
     ApiResponse:

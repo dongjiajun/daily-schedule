@@ -187,6 +187,40 @@ export type PurchaseResult = {
     newExperience?: number;
 };
 
+export type TaskProfile = {
+    id?: number;
+    title?: string;
+    description?: string;
+    status?: string;
+    priority?: string;
+    sortOrder?: number;
+    dueDate?: string;
+    tags?: Array<TagResponse>;
+    createdAt?: string;
+    updatedAt?: string;
+};
+
+export type CreateTaskRequest = {
+    title: string;
+    description?: string;
+    priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+    dueDate?: string;
+    tagIds?: Array<number>;
+};
+
+export type UpdateTaskRequest = {
+    title?: string;
+    description?: string;
+    priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+    dueDate?: string;
+    tagIds?: Array<number>;
+};
+
+export type MoveTaskRequest = {
+    status: 'TODO' | 'IN_PROGRESS' | 'DONE';
+    sortOrder?: number;
+};
+
 /**
  * 错误响应包装
  */
@@ -905,6 +939,174 @@ export type PurchaseItemResponses = {
 };
 
 export type PurchaseItemResponse = PurchaseItemResponses[keyof PurchaseItemResponses];
+
+export type ListTasksData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * 按状态过滤
+         */
+        status?: 'TODO' | 'IN_PROGRESS' | 'DONE';
+        /**
+         * 按优先级过滤
+         */
+        priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+        /**
+         * 按标签过滤
+         */
+        tagId?: number;
+    };
+    url: '/tasks';
+};
+
+export type ListTasksErrors = {
+    /**
+     * 未认证或 token 失效
+     */
+    401: ApiResponse;
+};
+
+export type ListTasksError = ListTasksErrors[keyof ListTasksErrors];
+
+export type ListTasksResponses = {
+    /**
+     * 成功
+     */
+    200: Array<TaskProfile>;
+};
+
+export type ListTasksResponse = ListTasksResponses[keyof ListTasksResponses];
+
+export type CreateTaskData = {
+    body: CreateTaskRequest;
+    path?: never;
+    query?: never;
+    url: '/tasks';
+};
+
+export type CreateTaskErrors = {
+    /**
+     * 请求参数不合法
+     */
+    400: ApiResponse;
+    /**
+     * 未认证或 token 失效
+     */
+    401: ApiResponse;
+};
+
+export type CreateTaskError = CreateTaskErrors[keyof CreateTaskErrors];
+
+export type CreateTaskResponses = {
+    /**
+     * 创建成功
+     */
+    201: TaskProfile;
+};
+
+export type CreateTaskResponse = CreateTaskResponses[keyof CreateTaskResponses];
+
+export type DeleteTaskData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/tasks/{id}';
+};
+
+export type DeleteTaskErrors = {
+    /**
+     * 未认证或 token 失效
+     */
+    401: ApiResponse;
+    /**
+     * 资源不存在或无权访问
+     */
+    404: ApiResponse;
+};
+
+export type DeleteTaskError = DeleteTaskErrors[keyof DeleteTaskErrors];
+
+export type DeleteTaskResponses = {
+    /**
+     * 删除成功
+     */
+    204: void;
+};
+
+export type DeleteTaskResponse = DeleteTaskResponses[keyof DeleteTaskResponses];
+
+export type UpdateTaskData = {
+    body: UpdateTaskRequest;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/tasks/{id}';
+};
+
+export type UpdateTaskErrors = {
+    /**
+     * 请求参数不合法
+     */
+    400: ApiResponse;
+    /**
+     * 未认证或 token 失效
+     */
+    401: ApiResponse;
+    /**
+     * 资源不存在或无权访问
+     */
+    404: ApiResponse;
+};
+
+export type UpdateTaskError = UpdateTaskErrors[keyof UpdateTaskErrors];
+
+export type UpdateTaskResponses = {
+    /**
+     * 更新成功
+     */
+    200: TaskProfile;
+};
+
+export type UpdateTaskResponse = UpdateTaskResponses[keyof UpdateTaskResponses];
+
+export type MoveTaskData = {
+    body: MoveTaskRequest;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/tasks/{id}/move';
+};
+
+export type MoveTaskErrors = {
+    /**
+     * 请求参数不合法
+     */
+    400: ApiResponse;
+    /**
+     * 未认证或 token 失效
+     */
+    401: ApiResponse;
+    /**
+     * 资源不存在或无权访问
+     */
+    404: ApiResponse;
+};
+
+export type MoveTaskError = MoveTaskErrors[keyof MoveTaskErrors];
+
+export type MoveTaskResponses = {
+    /**
+     * 移动成功
+     */
+    200: TaskProfile;
+};
+
+export type MoveTaskResponse = MoveTaskResponses[keyof MoveTaskResponses];
 
 export type SubscribeNotificationsData = {
     body?: never;

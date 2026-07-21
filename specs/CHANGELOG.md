@@ -8,6 +8,27 @@
 
 ---
 
+## [3.3.0] — 2026-07-22
+
+新增任务看板模块（MINOR），Phase 1 情感核心 M1.5 首个新业务模块。
+
+### Added — 任务
+- `GET /tasks` — 按状态/优先级/标签过滤查询当前用户任务列表。
+- `POST /tasks` — 创建任务（标题必填，可选描述/优先级/截止日期/标签）。
+- `PUT /tasks/{id}` — 更新任务（部分更新语义，支持标签变更）。
+- `DELETE /tasks/{id}` — 删除任务（级联删除标签关联）。
+- `PATCH /tasks/{id}/move` — 拖拽移动任务到目标状态列。
+- 新增 `TaskProfile`、`CreateTaskRequest`、`UpdateTaskRequest`、`MoveTaskRequest` schema。
+
+### Database
+- 后端新增 Flyway `V6__create_task_tables.sql`：`tasks`、`task_tags` 两张新表。
+
+### Frontend
+- 新增 `modules/todo/` 模块：看板视图（三列拖拽）+ 列表视图（排序/筛选）。
+- 宠物模块新增 `task:completed` / `task:created` 事件监听。
+
+---
+
 ## [3.2.0] — 2026-07-21
 
 新增宠物养成系统 API（MINOR），Phase 1 情感核心 M1.1 起点。

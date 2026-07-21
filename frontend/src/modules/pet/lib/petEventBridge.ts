@@ -26,7 +26,17 @@ export function registerPetEventListeners() {
     store.showBubble(`「${getTitle(payload)}」取消了…`)
   })
 
-  unsubscribers = [unsub1, unsub2, unsub3]
+  const unsub4 = eventBus.on('task:completed', ({ payload }) => {
+    const title = getTitle(payload)
+    store.triggerAnimation('happy')
+    store.showBubble(`任务「${title}」完成！你真棒！✅`)
+  })
+
+  const unsub5 = eventBus.on('task:created', () => {
+    store.showBubble('新任务已就绪，一起加油！💪')
+  })
+
+  unsubscribers = [unsub1, unsub2, unsub3, unsub4, unsub5]
 }
 
 export function unregisterPetEventListeners() {

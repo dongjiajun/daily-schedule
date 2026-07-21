@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { CreateCategoryData, CreateCategoryErrors, CreateCategoryResponses, CreateEventData, CreateEventErrors, CreateEventResponses, CreatePetData, CreatePetErrors, CreatePetResponses, CreateTagData, CreateTagErrors, CreateTagResponses, CurrentUserData, CurrentUserErrors, CurrentUserResponses, DeleteCategoryData, DeleteCategoryErrors, DeleteCategoryResponses, DeleteEventData, DeleteEventErrors, DeleteEventResponses, DeleteTagData, DeleteTagErrors, DeleteTagResponses, GetEventByIdData, GetEventByIdErrors, GetEventByIdResponses, GetMyPetData, GetMyPetErrors, GetMyPetResponses, GetShopItemsData, GetShopItemsResponses, InteractWithPetData, InteractWithPetErrors, InteractWithPetResponses, ListCategoriesData, ListCategoriesErrors, ListCategoriesResponses, ListEventsData, ListEventsErrors, ListEventsResponses, ListTagsData, ListTagsErrors, ListTagsResponses, LoginData, LoginErrors, LoginResponses, LogoutData, LogoutErrors, LogoutResponses, PurchaseItemData, PurchaseItemErrors, PurchaseItemResponses, RefreshTokenData, RefreshTokenErrors, RefreshTokenResponses, RegisterData, RegisterErrors, RegisterResponses, SubscribeNotificationsData, SubscribeNotificationsErrors, SubscribeNotificationsResponse, SubscribeNotificationsResponses, UpdateCategoryData, UpdateCategoryErrors, UpdateCategoryResponses, UpdateEventData, UpdateEventErrors, UpdateEventResponses, UpdatePetData, UpdatePetErrors, UpdatePetResponses, UpdateTagData, UpdateTagErrors, UpdateTagResponses } from './types.gen';
+import type { CreateCategoryData, CreateCategoryErrors, CreateCategoryResponses, CreateEventData, CreateEventErrors, CreateEventResponses, CreatePetData, CreatePetErrors, CreatePetResponses, CreateTagData, CreateTagErrors, CreateTagResponses, CreateTaskData, CreateTaskErrors, CreateTaskResponses, CurrentUserData, CurrentUserErrors, CurrentUserResponses, DeleteCategoryData, DeleteCategoryErrors, DeleteCategoryResponses, DeleteEventData, DeleteEventErrors, DeleteEventResponses, DeleteTagData, DeleteTagErrors, DeleteTagResponses, DeleteTaskData, DeleteTaskErrors, DeleteTaskResponses, GetEventByIdData, GetEventByIdErrors, GetEventByIdResponses, GetMyPetData, GetMyPetErrors, GetMyPetResponses, GetShopItemsData, GetShopItemsResponses, InteractWithPetData, InteractWithPetErrors, InteractWithPetResponses, ListCategoriesData, ListCategoriesErrors, ListCategoriesResponses, ListEventsData, ListEventsErrors, ListEventsResponses, ListTagsData, ListTagsErrors, ListTagsResponses, ListTasksData, ListTasksErrors, ListTasksResponses, LoginData, LoginErrors, LoginResponses, LogoutData, LogoutErrors, LogoutResponses, MoveTaskData, MoveTaskErrors, MoveTaskResponses, PurchaseItemData, PurchaseItemErrors, PurchaseItemResponses, RefreshTokenData, RefreshTokenErrors, RefreshTokenResponses, RegisterData, RegisterErrors, RegisterResponses, SubscribeNotificationsData, SubscribeNotificationsErrors, SubscribeNotificationsResponse, SubscribeNotificationsResponses, UpdateCategoryData, UpdateCategoryErrors, UpdateCategoryResponses, UpdateEventData, UpdateEventErrors, UpdateEventResponses, UpdatePetData, UpdatePetErrors, UpdatePetResponses, UpdateTagData, UpdateTagErrors, UpdateTagResponses, UpdateTaskData, UpdateTaskErrors, UpdateTaskResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -276,6 +276,63 @@ export const getShopItems = <ThrowOnError extends boolean = false>(options?: Opt
 export const purchaseItem = <ThrowOnError extends boolean = false>(options: Options<PurchaseItemData, ThrowOnError>) => (options.client ?? client).post<PurchaseItemResponses, PurchaseItemErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/shop/purchase',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * 查询任务列表
+ */
+export const listTasks = <ThrowOnError extends boolean = false>(options?: Options<ListTasksData, ThrowOnError>) => (options?.client ?? client).get<ListTasksResponses, ListTasksErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/tasks',
+    ...options
+});
+
+/**
+ * 创建任务
+ */
+export const createTask = <ThrowOnError extends boolean = false>(options: Options<CreateTaskData, ThrowOnError>) => (options.client ?? client).post<CreateTaskResponses, CreateTaskErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/tasks',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * 删除任务
+ */
+export const deleteTask = <ThrowOnError extends boolean = false>(options: Options<DeleteTaskData, ThrowOnError>) => (options.client ?? client).delete<DeleteTaskResponses, DeleteTaskErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/tasks/{id}',
+    ...options
+});
+
+/**
+ * 更新任务
+ */
+export const updateTask = <ThrowOnError extends boolean = false>(options: Options<UpdateTaskData, ThrowOnError>) => (options.client ?? client).put<UpdateTaskResponses, UpdateTaskErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/tasks/{id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * 移动任务到目标列
+ */
+export const moveTask = <ThrowOnError extends boolean = false>(options: Options<MoveTaskData, ThrowOnError>) => (options.client ?? client).patch<MoveTaskResponses, MoveTaskErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/tasks/{id}/move',
     ...options,
     headers: {
         'Content-Type': 'application/json',
