@@ -9,6 +9,10 @@
     ".": {
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
+    },
+    "./holiday": {
+      "import": "./dist/holiday/index.js",
+      "types": "./dist/holiday/index.d.ts"
     }
   },
   "scripts": {

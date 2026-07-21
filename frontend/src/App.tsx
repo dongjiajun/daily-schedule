@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from 'sonner'
 import { ErrorBoundary } from './components/layout/ErrorBoundary'
 import { AppShell } from './components/layout/AppShell'
+import { EffectLayer } from './core/components/effects/EffectLayer'
 import { LoginPage } from './pages/LoginPage'
 import { OnboardingGuide } from './components/layout/OnboardingGuide'
 import { useAuthStore } from './core/store/authStore'
@@ -65,6 +66,7 @@ export default function App() {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
+          <EffectLayer />
           <AppRoutes />
           <OnboardingOverlay />
           <Toaster position="top-center" richColors />

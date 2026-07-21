@@ -1,3 +1,5 @@
 packages:
   - "frontend"
   - "packages/*"
+allowBuilds:
+  '@tsparticles/engine': false

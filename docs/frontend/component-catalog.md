@@ -108,7 +108,16 @@ frontend/src/
 
 ### 核心容器（Core Components）
 
+- **ErrorBoundary** (`core/components/layout/ErrorBoundary.tsx`) — React 错误边界，支持静默模式
 - **TabbedDialog** (`core/components/layout/TabbedDialog.tsx`) — 通用标签对话框容器，支持受控/非受控模式，供各模块复用
+
+### 特效组件 (core/components/effects/)
+
+- **EffectLayer** (`core/components/effects/EffectLayer.tsx`) — 特效渲染容器，根据当前节日 `effectType` 激活对应特效；自动检测移动端降级和 `prefers-reduced-motion`
+- **SnowfallEffect** (`core/components/effects/SnowfallEffect.tsx`) — 纯 CSS 雪花飘落，零 JS 开销
+- **PetalFallEffect** (`core/components/effects/PetalFallEffect.tsx`) — 纯 CSS 花瓣飘落
+- **FireworkEffect** (`core/components/effects/FireworkEffect.tsx`) — tsParticles 烟花粒子
+- **LanternFallEffect** (`core/components/effects/LanternFallEffect.tsx`) — tsParticles 灯笼/孔明灯飘升
 
 ### 日历模块 (`modules/calendar/`)
 

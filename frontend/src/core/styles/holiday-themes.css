@@ -1,0 +1,210 @@
+/* ═══════════════════════════════════════════════════════════════
+   节日主题 CSS 变量 — 16 套节日配色
+   通过 [data-theme="holiday-<id>"] 选择器激活
+   消费 holidayEngine.getActiveTheme() → useTheme auto 模式
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── 春节 ── */
+[data-theme="holiday-spring-festival"] {
+  --color-primary: #E63946;
+  --color-accent: #FFD700;
+  --color-bg: #1A0A0A;
+  --color-surface: #2D1810;
+  --color-gradient-from: #8B0000;
+  --color-gradient-via: #E63946;
+  --color-gradient-to: #FFD700;
+}
+
+/* ── 圣诞节 ── */
+[data-theme="holiday-christmas"] {
+  --color-primary: #C41E3A;
+  --color-accent: #FFFFFF;
+  --color-bg: #1A2F1A;
+  --color-surface: #243824;
+  --color-gradient-from: #2E8B57;
+  --color-gradient-via: #C41E3A;
+  --color-gradient-to: #FFFFFF;
+}
+
+/* ── 圣诞前夕 ── */
+[data-theme="holiday-christmas-eve"] {
+  --color-primary: #C41E3A;
+  --color-accent: #FFFFFF;
+  --color-bg: #1A2A1A;
+  --color-surface: #223422;
+  --color-gradient-from: #228B22;
+  --color-gradient-via: #C41E3A;
+  --color-gradient-to: #FFFFFF;
+}
+
+/* ── 万圣节 ── */
+[data-theme="holiday-halloween"] {
+  --color-primary: #FF6B00;
+  --color-accent: #000000;
+  --color-bg: #1A0F2E;
+  --color-surface: #2D1A3D;
+  --color-gradient-from: #4B0082;
+  --color-gradient-via: #FF6B00;
+  --color-gradient-to: #000000;
+}
+
+/* ── 中秋 ── */
+[data-theme="holiday-mid-autumn"] {
+  --color-primary: #D4A017;
+  --color-accent: #F5E6C8;
+  --color-bg: #0F1225;
+  --color-surface: #1A1D35;
+  --color-gradient-from: #1B1B5E;
+  --color-gradient-via: #D4A017;
+  --color-gradient-to: #F5E6C8;
+}
+
+/* ── 端午 ── */
+[data-theme="holiday-dragon-boat"] {
+  --color-primary: #2E7D32;
+  --color-accent: #FFD54F;
+  --color-bg: #0F2A14;
+  --color-surface: #1A3520;
+  --color-gradient-from: #0288D1;
+  --color-gradient-via: #2E7D32;
+  --color-gradient-to: #FFD54F;
+}
+
+/* ── 情人节 ── */
+[data-theme="holiday-valentines"] {
+  --color-primary: #E91E63;
+  --color-accent: #F8BBD0;
+  --color-bg: #1A0F18;
+  --color-surface: #2D1A2A;
+  --color-gradient-from: #FFC0CB;
+  --color-gradient-via: #E91E63;
+  --color-gradient-to: #F8BBD0;
+}
+
+/* ── 元旦 ── */
+[data-theme="holiday-new-year"] {
+  --color-primary: #C0C0C0;
+  --color-accent: #FFFFFF;
+  --color-bg: #1A1A2A;
+  --color-surface: #2A2A3A;
+  --color-gradient-from: #1A1A2A;
+  --color-gradient-via: #C0C0C0;
+  --color-gradient-to: #FFD700;
+}
+
+/* ── 元旦前夕 ── */
+[data-theme="holiday-new-years-eve"] {
+  --color-primary: #C0C0C0;
+  --color-accent: #FFFFFF;
+  --color-bg: #1A1A2A;
+  --color-surface: #2A2A3A;
+  --color-gradient-from: #1A1A2A;
+  --color-gradient-via: #C0C0C0;
+  --color-gradient-to: #FFD700;
+}
+
+/* ── 感恩节 ── */
+[data-theme="holiday-thanksgiving"] {
+  --color-primary: #D35400;
+  --color-accent: #FFE0B2;
+  --color-bg: #1A1008;
+  --color-surface: #2D1C10;
+  --color-gradient-from: #8B4513;
+  --color-gradient-via: #D35400;
+  --color-gradient-to: #FFE0B2;
+}
+
+/* ── 圣帕特里克节 ── */
+[data-theme="holiday-st-patricks"] {
+  --color-primary: #2E7D32;
+  --color-accent: #81C784;
+  --color-bg: #0F1A10;
+  --color-surface: #1A2A1C;
+  --color-gradient-from: #1A2A1C;
+  --color-gradient-via: #2E7D32;
+  --color-gradient-to: #FFFFFF;
+}
+
+/* ── 樱花季 ── */
+[data-theme="holiday-sakura"] {
+  --color-primary: #F8BBD0;
+  --color-accent: #E91E63;
+  --color-bg: #1A1418;
+  --color-surface: #2D2028;
+  --color-gradient-from: #F8BBD0;
+  --color-gradient-via: #FFFFFF;
+  --color-gradient-to: #E91E63;
+}
+
+/* ── 排灯节 ── */
+[data-theme="holiday-diwali"] {
+  --color-primary: #FFD700;
+  --color-accent: #FF3D00;
+  --color-bg: #1A0A00;
+  --color-surface: #2D1500;
+  --color-gradient-from: #FF6F00;
+  --color-gradient-via: #FFD700;
+  --color-gradient-to: #FF3D00;
+}
+
+/* ── 复活节 ── */
+[data-theme="holiday-easter"] {
+  --color-primary: #FCE4EC;
+  --color-accent: #CE93D8;
+  --color-bg: #1A1820;
+  --color-surface: #2D2835;
+  --color-gradient-from: #FFF176;
+  --color-gradient-via: #FCE4EC;
+  --color-gradient-to: #CE93D8;
+}
+
+/* ── 元宵节 ── */
+[data-theme="holiday-lantern-festival"] {
+  --color-primary: #E63946;
+  --color-accent: #FF9800;
+  --color-bg: #1A0A0A;
+  --color-surface: #2D1510;
+  --color-gradient-from: #FFD700;
+  --color-gradient-via: #E63946;
+  --color-gradient-to: #FF9800;
+}
+
+/* ── 清明节 ── */
+[data-theme="holiday-qingming"] {
+  --color-primary: #90A4AE;
+  --color-accent: #E0E0E0;
+  --color-bg: #141A18;
+  --color-surface: #202A26;
+  --color-gradient-from: #81C784;
+  --color-gradient-via: #90A4AE;
+  --color-gradient-to: #E0E0E0;
+}
+
+/* ── 世界读书日 ── */
+[data-theme="holiday-world-book-day"] {
+  --color-primary: #5B8C5A;
+  --color-accent: #8B4513;
+  --color-bg: #0F1A10;
+  --color-surface: #1A2A1C;
+  --color-gradient-from: #F5DEB3;
+  --color-gradient-via: #5B8C5A;
+  --color-gradient-to: #8B4513;
+}
+
+/* ── 世界环境日 ── */
+[data-theme="holiday-world-environment-day"] {
+  --color-primary: #228B22;
+  --color-accent: #FFD700;
+  --color-bg: #0A1A0F;
+  --color-surface: #152A1C;
+  --color-gradient-from: #87CEEB;
+  --color-gradient-via: #228B22;
+  --color-gradient-to: #FFD700;
+}
+
+/* ── 过渡动画 ── */
+:root {
+  transition: --color-primary 0.5s, --color-accent 0.5s, --color-bg 0.5s,
+    --color-surface 0.5s, --color-gradient-from 0.5s, --color-gradient-via 0.5s,
+    --color-gradient-to 0.5s;
+}

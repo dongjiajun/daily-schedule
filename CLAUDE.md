@@ -52,6 +52,11 @@ turbo run verify                # 全量 lint + build + test
 pnpm --filter @daily-schedule/shared run build   # 仅构建共享库
 ```
 
+**shared 包子路径**: `@daily-schedule/shared/holiday` 独立导出 HolidayEngine（避免 barrel export 级联加载 lunar-typescript）。消费方式：
+```typescript
+import { holidayEngine } from '@daily-schedule/shared/holiday'
+```
+
 ### 后端（backend/）
 ```bash
 mvn clean test                                   # 编译 + 全部测试
