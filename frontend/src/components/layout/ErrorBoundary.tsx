@@ -3,6 +3,8 @@ import { Component, type ReactNode } from 'react'
 interface Props {
   children: ReactNode
   fallback?: ReactNode
+  /** 静默模式：出错时渲染空节点而非全屏错误页 */
+  silent?: boolean
 }
 
 interface State {
@@ -22,6 +24,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
+      if (this.props.silent) return null
       return (
         this.props.fallback ?? (
           <div className="flex flex-col items-center justify-center h-screen gap-4">

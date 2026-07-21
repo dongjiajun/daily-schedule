@@ -1,15 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { PetAvatar } from '../PetAvatar'
 import { usePetStore } from '../../store/petStore'
-
-// Mock @rive-app/react-canvas
-vi.mock('@rive-app/react-canvas', () => ({
-  useRive: () => ({
-    rive: null, // No animation loaded → triggers fallback
-    RiveComponent: () => null,
-  }),
-}))
 
 describe('PetAvatar', () => {
   beforeEach(() => {

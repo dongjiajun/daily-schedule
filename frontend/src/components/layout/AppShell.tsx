@@ -3,6 +3,7 @@ import { Menu } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Sidebar } from './Sidebar'
 import { ShortcutsDialog } from './ShortcutsDialog'
+import { ErrorBoundary } from './ErrorBoundary'
 import { useCalendarStore } from '@/modules/calendar/store/calendarStore'
 import { PetPanel } from '@/modules/pet/components/PetPanel'
 
@@ -66,7 +67,9 @@ export function AppShell() {
       </main>
 
       <ShortcutsDialog />
-      <PetPanel />
+      <ErrorBoundary silent>
+        <PetPanel />
+      </ErrorBoundary>
     </div>
   )
 }
