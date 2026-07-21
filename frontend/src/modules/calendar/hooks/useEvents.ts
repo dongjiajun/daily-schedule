@@ -3,6 +3,7 @@ import dayjs from 'dayjs'
 import { toast } from 'sonner'
 import { listEvents, createEvent, updateEvent, deleteEvent } from '@/api/sdk.gen'
 import { unwrap } from '@/core/lib/unwrap'
+import { eventBus } from '@/core/lib/eventBus'
 import type { EventCreateRequest, EventResponse } from '@/api/types.gen'
 
 function getViewRange(date: dayjs.Dayjs, view: string) {
@@ -60,9 +61,10 @@ export function useCreateEvent() {
   const queryClient = useQueryClient()
   return useMutation<EventResponse, Error, EventCreateRequest>({
     mutationFn: async (data) => unwrap(await createEvent({ body: data })),
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['events'] })
       toast.success('日程创建成功')
+      eventBus.emit({ type: 'event:created', payload: { eventId: String(data.id), title: data.title ?? '' } })
     },
     onError: (err) => { toast.error(err.message) },
   })
@@ -82,11 +84,12 @@ export function useUpdateEvent(options?: { silent?: boolean }) {
 
 export function useDeleteEvent() {
   const queryClient = useQueryClient()
-  return useMutation<void, Error, number>({
-    mutationFn: async (id) => { unwrap(await deleteEvent({ path: { id } })) },
-    onSuccess: () => {
+  return useMutation<void, Error, { id: number; title: string }>({
+    mutationFn: async ({ id }) => { unwrap(await deleteEvent({ path: { id } })) },
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['events'] })
       toast.success('日程已删除')
+      eventBus.emit({ type: 'event:cancelled', payload: { eventId: String(variables.id), title: variables.title } })
     },
     onError: (err) => { toast.error(err.message) },
   })
@@ -119,6 +122,9 @@ export function useToggleEventStatus() {
     onSuccess: (updated) => {
       queryClient.invalidateQueries({ queryKey: ['events'] })
       toast.success(updated.status === 'COMPLETED' ? '已标记完成' : '已恢复为计划中')
+      if (updated.status === 'COMPLETED') {
+        eventBus.emit({ type: 'event:completed', payload: { eventId: String(updated.id), title: updated.title ?? '' } })
+      }
     },
     onError: (err) => { toast.error(err.message) },
   })

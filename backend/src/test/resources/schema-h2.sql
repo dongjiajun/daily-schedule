@@ -48,3 +48,52 @@ CREATE TABLE IF NOT EXISTS event_tag (
     tag_id BIGINT NOT NULL,
     PRIMARY KEY (event_id, tag_id)
 );
+
+CREATE TABLE IF NOT EXISTS pet_accessories (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) NOT NULL,
+    type VARCHAR(20) NOT NULL,
+    price INT NOT NULL,
+    effect_mood INT NOT NULL DEFAULT 0,
+    effect_hunger INT NOT NULL DEFAULT 0,
+    effect_experience INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS pets (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL UNIQUE,
+    species VARCHAR(20) NOT NULL,
+    name VARCHAR(30) NOT NULL,
+    experience INT NOT NULL DEFAULT 0,
+    level INT NOT NULL DEFAULT 1,
+    mood INT NOT NULL DEFAULT 100,
+    hunger INT NOT NULL DEFAULT 100,
+    coins INT NOT NULL DEFAULT 100,
+    current_accessory BIGINT NULL,
+    last_interacted_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (current_accessory) REFERENCES pet_accessories(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS pet_interactions (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    pet_id BIGINT NOT NULL,
+    type VARCHAR(20) NOT NULL,
+    quantity INT NOT NULL DEFAULT 1,
+    mood_change INT NOT NULL DEFAULT 0,
+    hunger_change INT NOT NULL DEFAULT 0,
+    experience_gain INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (pet_id) REFERENCES pets(id) ON DELETE CASCADE
+);
+
+-- 种子数据
+INSERT INTO pet_accessories (name, type, price, effect_mood, effect_hunger, effect_experience) VALUES
+('小鱼干',   'FOOD', 10,  5, 20,  3),
+('高级猫粮', 'FOOD', 25, 10, 40,  8),
+('狗粮',     'FOOD', 15,  8, 30,  5),
+('磨牙棒',   'FOOD', 20,  8, 25,  6),
+('优质罐头', 'FOOD', 35, 15, 50, 10),
+('玩具球',   'FOOD',  5, 15,  0,  5);

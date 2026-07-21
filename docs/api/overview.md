@@ -187,3 +187,57 @@ GET /api/v1/sse/notifications
 4. COMPLETED / CANCELLED 日程**不触发**提醒
 
 **前端重连**：`useSseNotifications` hook 负责连接管理，断开后指数退避自动重连。v3.0+ 不再使用 `?token=` 查询参数，依赖 Cookie 自动认证。
+
+## 宠物 Pet（v3.2 新增）
+
+### 创建宠物 `POST /pets/me`
+
+```json
+// Request
+{ "species": "ORANGE_CAT", "name": "大橘" }
+// Response 201
+{ "id": 1, "species": "ORANGE_CAT", "name": "大橘", "mood": 100, "hunger": 100, "coins": 100, "level": 1, "experience": 0 }
+```
+
+- 每用户仅限一只宠物，重复创建返回 409
+- species: `ORANGE_CAT` | `SHIBA_INU`
+
+### 查看宠物 `GET /pets/me`
+
+返回完整 PetProfile（id / species / name / experience / level / mood / hunger / coins / lastInteractedAt / createdAt）。无宠物时返回 404。
+
+### 更新宠物 `PUT /pets/me`
+
+v1 仅支持改名：`{ "name": "二橘" }`
+
+### 互动 `POST /pets/me/interact`
+
+```json
+// Request - 喂食
+{ "type": "FEED", "itemId": 1, "quantity": 1 }
+// Request - 玩耍
+{ "type": "PLAY", "quantity": 1 }
+// Response
+{ "moodChange": 25, "hungerChange": -10, "experienceGain": 15, "coinChange": 0, "newMood": 95, "newHunger": 70, "newExperience": 15, "newCoins": 100 }
+```
+
+- FEED 需指定 `itemId`（商品 ID），不指定则默认最便宜食物。专注币不足时返回 400。
+- PLAY 免费，不消耗专注币
+
+## 商店 Shop（v3.2 新增）
+
+### 物品列表 `GET /shop/items`
+
+返回 ShopItem 数组：`[{ "id": 1, "name": "小鱼干", "type": "FOOD", "price": 10, "effectMood": 5, "effectHunger": 20, "effectExperience": 3 }, ...]`
+
+### 购买 `POST /shop/purchase`
+
+```json
+// Request
+{ "itemId": 1, "quantity": 2 }
+// Response
+{ "success": true, "itemName": "小鱼干", "quantity": 2, "totalCost": 20, "newCoins": 80, "newMood": 90, "newHunger": 100, "newExperience": 6 }
+```
+
+- v1 即时消费模式：购买即使用，效果立即应用到宠物
+- 专注币不足返回 400

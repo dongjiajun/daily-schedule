@@ -1,6 +1,6 @@
 # 数据库设计
 
-> 当前状态: v3.1，对应 Flyway 迁移 V1–V4  
+> 当前状态: v3.2，对应 Flyway 迁移 V1–V5  
 > 迁移脚本: `backend/src/main/resources/db/migration/`
 
 ## ER 图
@@ -144,5 +144,54 @@
 | V2 | `V2__add_user_support.sql` | 新增 user 表 + 所有业务表加 user_id + `last_reminded_at` |
 | V3 | `V3__multi_user.sql` | user 表补 email/displayName/avatarUrl/status/lastLoginAt；category/tag 加 `UNIQUE(user_id, name)`；event 加复合索引 |
 | V4 | `V4__event_status.sql` | event 表加 status 列（PLANNED/COMPLETED/CANCELLED） |
+| V5 | `V5__create_pet_tables.sql` | 新增宠物系统三张表：pets / pet_accessories / pet_interactions + 种子数据 |
 
-**无 V5 迁移**：当前版本 v3.1。
+
+
+### pets（宠物 — v3.2 新增）
+
+| 字段 | 类型 | 约束 | 默认值 | 说明 |
+|------|------|------|--------|------|
+| id | BIGINT | PK, AUTO | | |
+| user_id | BIGINT | NOT NULL, UNIQUE | | 每用户仅限一只 |
+| species | VARCHAR(20) | NOT NULL | | ORANGE_CAT / SHIBA_INU |
+| name | VARCHAR(30) | NOT NULL | | 宠物昵称 |
+| experience | INT | NOT NULL | 0 | 经验值 |
+| level | INT | NOT NULL | 1 | 等级 (1-50) |
+| mood | INT | NOT NULL | 100 | 心情 (0-100) |
+| hunger | INT | NOT NULL | 100 | 饱腹 (0-100) |
+| coins | INT | NOT NULL | 100 | 专注币 |
+| current_accessory | BIGINT | NULL, FK → pet_accessories | NULL | 当前佩戴 |
+| last_interacted_at | DATETIME | NOT NULL | NOW() | 最近互动时间 |
+| created_at | DATETIME | NOT NULL | NOW() | |
+| updated_at | DATETIME | NOT NULL | NOW() ON UPDATE | |
+
+索引: `idx_pet_user (user_id)` UNIQUE
+
+### pet_accessories（物品目录 — v3.2 新增）
+
+| 字段 | 类型 | 约束 | 默认值 | 说明 |
+|------|------|------|--------|------|
+| id | BIGINT | PK, AUTO | | |
+| name | VARCHAR(50) | NOT NULL | | 物品名称 |
+| type | VARCHAR(20) | NOT NULL | | FOOD / ACCESSORY |
+| price | INT | NOT NULL | | 价格（专注币） |
+| effect_mood | INT | NOT NULL | 0 | 心情效果 |
+| effect_hunger | INT | NOT NULL | 0 | 饱腹效果 |
+| effect_experience | INT | NOT NULL | 0 | 经验效果 |
+| created_at | DATETIME | NOT NULL | NOW() | |
+
+### pet_interactions（互动记录 — v3.2 新增）
+
+| 字段 | 类型 | 约束 | 默认值 | 说明 |
+|------|------|------|--------|------|
+| id | BIGINT | PK, AUTO | | |
+| pet_id | BIGINT | NOT NULL, FK → pets ON DELETE CASCADE | | |
+| type | VARCHAR(20) | NOT NULL | | FEED / PLAY |
+| quantity | INT | NOT NULL | 1 | |
+| mood_change | INT | NOT NULL | 0 | 心情变化 |
+| hunger_change | INT | NOT NULL | 0 | 饱腹变化 |
+| experience_gain | INT | NOT NULL | 0 | 经验获得 |
+| created_at | DATETIME | NOT NULL | NOW() | |
+
+索引: `idx_interaction_pet (pet_id)`, `idx_interaction_time (pet_id, created_at)`

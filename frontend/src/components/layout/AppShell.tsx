@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { Sidebar } from './Sidebar'
 import { ShortcutsDialog } from './ShortcutsDialog'
 import { useCalendarStore } from '@/modules/calendar/store/calendarStore'
+import { PetPanel } from '@/modules/pet/components/PetPanel'
 
 export function AppShell() {
   const sidebarOpen = useCalendarStore((s) => s.sidebarOpen)
@@ -65,6 +66,7 @@ export function AppShell() {
       </main>
 
       <ShortcutsDialog />
+      <PetPanel />
     </div>
   )
 }

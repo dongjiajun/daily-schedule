@@ -47,7 +47,7 @@ export function EventModal({ open, eventId, onClose }: EventModalProps) {
 
   const handleDelete = () => {
     if (eventId) {
-      deleteMutation.mutate(eventId, { onSuccess: onClose })
+      deleteMutation.mutate({ id: eventId, title: existingEvent?.title ?? '' }, { onSuccess: onClose })
     }
   }
 

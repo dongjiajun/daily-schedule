@@ -39,6 +39,7 @@
 ┌───────────────────────▼──────────────────────────────────┐
 │                  MySQL 8.0 (InnoDB)                       │
 │   user | category | tag | event | event_tag               │
+│   pets | pet_accessories | pet_interactions (v3.2)         │
 │   event.last_reminded_at（幂等标记）                       │
 └──────────────────────────────────────────────────────────┘
 ```

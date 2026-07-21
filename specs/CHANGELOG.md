@@ -8,6 +8,28 @@
 
 ---
 
+## [3.2.0] — 2026-07-21
+
+新增宠物养成系统 API（MINOR），Phase 1 情感核心 M1.1 起点。
+
+### Added — 宠物
+- 新增 `PetSpecies` schema：`ORANGE_CAT` / `SHIBA_INU`。
+- `POST /pets/me` — 创建宠物（选择物种 + 命名），每用户仅限一只。
+- `GET /pets/me` — 获取当前用户宠物完整状态。
+- `PUT /pets/me` — 更新宠物信息（v1 仅支持改名）。
+- `POST /pets/me/interact` — 互动操作（`FEED` 消耗专注币 / `PLAY` 免费）。
+- 新增 `PetProfile`、`InteractRequest`、`InteractionResult` schema。
+
+### Added — 商店
+- `GET /shop/items` — 获取商店物品列表（v1 仅食物）。
+- `POST /shop/purchase` — 购买物品（即时消费模式，效果立即应用）。
+- 新增 `ShopItem`、`PurchaseRequest`、`PurchaseResult` schema。
+
+### 数据库
+- 后端新增 Flyway `V5__create_pet_tables.sql`：`pets`、`pet_accessories`、`pet_interactions` 三张新表 + 种子数据。
+
+---
+
 ## [3.1.0] — 2026-06-09
 
 围绕「日程完成闭环 + 标签过滤」的向后兼容增量（MINOR）。

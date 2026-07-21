@@ -1,9 +1,13 @@
 openapi: 3.0.3
 info:
   title: 日程管理系统 API
-  version: 3.1.0
+  version: 3.2.0
   description: |
-    v3.1 接口定义 — 前后端契约唯一真相源。
+    v3.2 接口定义 — 前后端契约唯一真相源。
+
+    **v3.2 变更**：
+    - 新增宠物养成 API：`/pets/me`、`/pets/me/interact`、`/shop/items`、`/shop/purchase`
+    - 新增 4 个 schema：PetProfile、InteractionResult、ShopItem、PurchaseResult
 
     **v3.1 变更**：
     - Event 新增 `status` 字段（PLANNED / COMPLETED / CANCELLED），支持"标记完成"。
@@ -484,6 +488,124 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+  /pets/me:
+    post:
+      operationId: createPet
+      tags: [Pet]
+      summary: 创建当前用户的宠物
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePetRequest'
+      responses:
+        '201':
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PetProfile'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    get:
+      operationId: getMyPet
+      tags: [Pet]
+      summary: 获取当前用户的宠物详情
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PetProfile'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      operationId: updatePet
+      tags: [Pet]
+      summary: 更新宠物（仅支持改名）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePetRequest'
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PetProfile'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /pets/me/interact:
+    post:
+      operationId: interactWithPet
+      tags: [Pet]
+      summary: 与宠物互动（喂食/玩耍）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InteractRequest'
+      responses:
+        '200':
+          description: 互动成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InteractionResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /shop/items:
+    get:
+      operationId: getShopItems
+      tags: [Shop]
+      summary: 获取商店物品列表
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ShopItem'
+
+  /shop/purchase:
+    post:
+      operationId: purchaseItem
+      tags: [Shop]
+      summary: 购买物品（即时消费模式）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PurchaseRequest'
+      responses:
+        '200':
+          description: 购买成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PurchaseResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
   /sse/notifications:
     get:
       operationId: subscribeNotifications
@@ -767,6 +889,146 @@ components:
           type: string
           format: date-time
         reminderMinutes:
+          type: integer
+
+    CreatePetRequest:
+      type: object
+      required: [species, name]
+      properties:
+        species:
+          $ref: '#/components/schemas/PetSpecies'
+        name:
+          type: string
+          maxLength: 30
+
+    UpdatePetRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          maxLength: 30
+
+    PetSpecies:
+      type: string
+      enum: [ORANGE_CAT, SHIBA_INU]
+
+    PetProfile:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        species:
+          type: string
+        name:
+          type: string
+        experience:
+          type: integer
+        level:
+          type: integer
+        mood:
+          type: integer
+        hunger:
+          type: integer
+        coins:
+          type: integer
+        currentAccessory:
+          type: integer
+          format: int64
+        lastInteractedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+
+    InteractRequest:
+      type: object
+      required: [type]
+      properties:
+        type:
+          type: string
+          enum: [FEED, PLAY]
+        itemId:
+          type: integer
+          format: int64
+          description: 喂食时指定的食物 ID（可选，默认最便宜食物）
+        quantity:
+          type: integer
+          default: 1
+          minimum: 1
+          maximum: 10
+
+    InteractionResult:
+      type: object
+      properties:
+        moodChange:
+          type: integer
+        hungerChange:
+          type: integer
+        experienceGain:
+          type: integer
+        coinChange:
+          type: integer
+        newMood:
+          type: integer
+        newHunger:
+          type: integer
+        newExperience:
+          type: integer
+        newCoins:
+          type: integer
+
+    ShopItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        type:
+          type: string
+        price:
+          type: integer
+        effectMood:
+          type: integer
+        effectHunger:
+          type: integer
+        effectExperience:
+          type: integer
+
+    PurchaseRequest:
+      type: object
+      required: [itemId]
+      properties:
+        itemId:
+          type: integer
+          format: int64
+        quantity:
+          type: integer
+          default: 1
+          minimum: 1
+
+    PurchaseResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        itemName:
+          type: string
+        quantity:
+          type: integer
+        totalCost:
+          type: integer
+        newCoins:
+          type: integer
+        newMood:
+          type: integer
+        newHunger:
+          type: integer
+        newExperience:
           type: integer
 
     ApiResponse:

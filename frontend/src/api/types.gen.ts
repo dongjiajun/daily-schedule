@@ -116,6 +116,77 @@ export type ReminderEvent = {
     reminderMinutes?: number;
 };
 
+export type CreatePetRequest = {
+    species: PetSpecies;
+    name: string;
+};
+
+export type UpdatePetRequest = {
+    name: string;
+};
+
+export type PetSpecies = 'ORANGE_CAT' | 'SHIBA_INU';
+
+export type PetProfile = {
+    id?: number;
+    species?: string;
+    name?: string;
+    experience?: number;
+    level?: number;
+    mood?: number;
+    hunger?: number;
+    coins?: number;
+    currentAccessory?: number;
+    lastInteractedAt?: string;
+    createdAt?: string;
+};
+
+export type InteractRequest = {
+    type: 'FEED' | 'PLAY';
+    /**
+     * 喂食时指定的食物 ID（可选，默认最便宜食物）
+     */
+    itemId?: number;
+    quantity?: number;
+};
+
+export type InteractionResult = {
+    moodChange?: number;
+    hungerChange?: number;
+    experienceGain?: number;
+    coinChange?: number;
+    newMood?: number;
+    newHunger?: number;
+    newExperience?: number;
+    newCoins?: number;
+};
+
+export type ShopItem = {
+    id?: number;
+    name?: string;
+    type?: string;
+    price?: number;
+    effectMood?: number;
+    effectHunger?: number;
+    effectExperience?: number;
+};
+
+export type PurchaseRequest = {
+    itemId: number;
+    quantity?: number;
+};
+
+export type PurchaseResult = {
+    success?: boolean;
+    itemName?: string;
+    quantity?: number;
+    totalCost?: number;
+    newCoins?: number;
+    newMood?: number;
+    newHunger?: number;
+    newExperience?: number;
+};
+
 /**
  * 错误响应包装
  */
@@ -677,6 +748,163 @@ export type UpdateTagResponses = {
 };
 
 export type UpdateTagResponse = UpdateTagResponses[keyof UpdateTagResponses];
+
+export type GetMyPetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/pets/me';
+};
+
+export type GetMyPetErrors = {
+    /**
+     * 资源不存在或无权访问
+     */
+    404: ApiResponse;
+};
+
+export type GetMyPetError = GetMyPetErrors[keyof GetMyPetErrors];
+
+export type GetMyPetResponses = {
+    /**
+     * 成功
+     */
+    200: PetProfile;
+};
+
+export type GetMyPetResponse = GetMyPetResponses[keyof GetMyPetResponses];
+
+export type CreatePetData = {
+    body: CreatePetRequest;
+    path?: never;
+    query?: never;
+    url: '/pets/me';
+};
+
+export type CreatePetErrors = {
+    /**
+     * 请求参数不合法
+     */
+    400: ApiResponse;
+    /**
+     * 资源冲突（用户名/邮箱/分类名/标签名重复）
+     */
+    409: ApiResponse;
+};
+
+export type CreatePetError = CreatePetErrors[keyof CreatePetErrors];
+
+export type CreatePetResponses = {
+    /**
+     * 创建成功
+     */
+    201: PetProfile;
+};
+
+export type CreatePetResponse = CreatePetResponses[keyof CreatePetResponses];
+
+export type UpdatePetData = {
+    body: UpdatePetRequest;
+    path?: never;
+    query?: never;
+    url: '/pets/me';
+};
+
+export type UpdatePetErrors = {
+    /**
+     * 请求参数不合法
+     */
+    400: ApiResponse;
+    /**
+     * 资源不存在或无权访问
+     */
+    404: ApiResponse;
+};
+
+export type UpdatePetError = UpdatePetErrors[keyof UpdatePetErrors];
+
+export type UpdatePetResponses = {
+    /**
+     * 更新成功
+     */
+    200: PetProfile;
+};
+
+export type UpdatePetResponse = UpdatePetResponses[keyof UpdatePetResponses];
+
+export type InteractWithPetData = {
+    body: InteractRequest;
+    path?: never;
+    query?: never;
+    url: '/pets/me/interact';
+};
+
+export type InteractWithPetErrors = {
+    /**
+     * 请求参数不合法
+     */
+    400: ApiResponse;
+    /**
+     * 资源不存在或无权访问
+     */
+    404: ApiResponse;
+};
+
+export type InteractWithPetError = InteractWithPetErrors[keyof InteractWithPetErrors];
+
+export type InteractWithPetResponses = {
+    /**
+     * 互动成功
+     */
+    200: InteractionResult;
+};
+
+export type InteractWithPetResponse = InteractWithPetResponses[keyof InteractWithPetResponses];
+
+export type GetShopItemsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/shop/items';
+};
+
+export type GetShopItemsResponses = {
+    /**
+     * 成功
+     */
+    200: Array<ShopItem>;
+};
+
+export type GetShopItemsResponse = GetShopItemsResponses[keyof GetShopItemsResponses];
+
+export type PurchaseItemData = {
+    body: PurchaseRequest;
+    path?: never;
+    query?: never;
+    url: '/shop/purchase';
+};
+
+export type PurchaseItemErrors = {
+    /**
+     * 请求参数不合法
+     */
+    400: ApiResponse;
+    /**
+     * 资源不存在或无权访问
+     */
+    404: ApiResponse;
+};
+
+export type PurchaseItemError = PurchaseItemErrors[keyof PurchaseItemErrors];
+
+export type PurchaseItemResponses = {
+    /**
+     * 购买成功
+     */
+    200: PurchaseResult;
+};
+
+export type PurchaseItemResponse = PurchaseItemResponses[keyof PurchaseItemResponses];
 
 export type SubscribeNotificationsData = {
     body?: never;
