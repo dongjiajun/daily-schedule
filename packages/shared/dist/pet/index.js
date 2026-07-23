@@ -1,0 +1,2 @@
+export { clampToViewport, isInsideRect, avoidZones, isInSoftZone, determineMode, computeNextTarget, computeWanderTarget, computeAttractedTarget, computeRestingTarget, randomWanderInterval, randomMoveDuration, computeFacing, createDefaultConfig, } from './roaming';
+//# sourceMappingURL=index.js.map

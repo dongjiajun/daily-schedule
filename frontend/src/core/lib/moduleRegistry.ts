@@ -66,11 +66,15 @@ export class ModuleRegistry {
       throw new Error(`Module "${def.id}" is already registered.`)
     }
     this.modules.set(def.id, def)
+    // 调用模块的初始化回调（如注册事件监听器）
+    def.onInit?.()
     return () => this.unregister(def.id)
   }
 
   /** 注销模块 */
   unregister(id: string): void {
+    const mod = this.modules.get(id)
+    mod?.onDestroy?.()
     this.modules.delete(id)
   }
 

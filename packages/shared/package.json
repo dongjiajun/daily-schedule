@@ -13,6 +13,10 @@
     "./holiday": {
       "import": "./dist/holiday/index.js",
       "types": "./dist/holiday/index.d.ts"
+    },
+    "./pet": {
+      "import": "./dist/pet/index.js",
+      "types": "./dist/pet/index.d.ts"
     }
   },
   "scripts": {

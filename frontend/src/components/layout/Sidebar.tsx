@@ -2,6 +2,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { CalendarDays, LogOut, X } from 'lucide-react'
 import { useAuthStore } from '@/core/store/authStore'
 import { moduleRegistry } from '@/core/lib/moduleRegistry'
+import { SidebarPet } from '@/modules/pet/components/SidebarPet'
 
 /**
  * 通用 Sidebar Shell：
@@ -51,7 +52,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       {/* Module navigation */}
       {modules.length > 1 && (
         <div className="px-3 py-2 border-b border-border-subtle">
-          <div className="flex gap-1">
+          <div className="flex flex-col gap-0.5">
             {modules.map((m) => {
               const isActive = m.id === activeModule?.id
               const Icon = m.icon
@@ -67,15 +68,15 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                     }
                     onNavigate?.()
                   }}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all duration-150 ${
+                  className={`flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-sm transition-all duration-150 ${
                     isActive
                       ? 'bg-accent/10 text-foreground font-medium'
                       : 'text-foreground-muted hover:bg-hover hover:text-foreground-secondary'
                   }`}
                   title={m.name}
                 >
-                  <Icon className="w-4 h-4" />
-                  <span className="truncate">{m.name}</span>
+                  <Icon className="w-4 h-4 shrink-0" />
+                  <span>{m.name}</span>
                 </button>
               )
             })}
@@ -92,8 +93,12 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         )}
       </div>
 
-      {/* Footer — User + Logout */}
-      <div className="px-4 py-3.5 border-t border-border-subtle">
+      {/* Footer — SidebarPet + User + Logout */}
+      <div className="mt-auto">
+        {/* 迷你宠物常驻 */}
+        <SidebarPet onNavigate={onNavigate} />
+
+        <div className="px-4 py-3 border-t border-border-subtle">
         <div
           className="flex items-center justify-between group cursor-pointer py-1"
           onClick={logout}
@@ -104,6 +109,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
           </span>
           <LogOut className="w-3.5 h-3.5 text-foreground-muted group-hover:text-foreground-secondary transition-colors" />
         </div>
+      </div>
       </div>
     </aside>
   )

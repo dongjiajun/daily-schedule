@@ -2,7 +2,6 @@ import { useMyPet } from '../hooks/usePet'
 import { usePetStore } from '../store/petStore'
 import { PetAvatar } from './PetAvatar'
 import { PetStatus } from './PetStatus'
-import { PetMenu } from './PetMenu'
 import { PetSelection } from './PetSelection'
 import { Loader2 } from 'lucide-react'
 
@@ -22,7 +21,6 @@ export default function PetPage() {
         <div className="flex flex-col items-center gap-6">
           <div className="relative">
             <PetAvatar size={200} />
-            <PetMenu />
           </div>
           <PetStatus pet={pet} isLoading={false} />
 

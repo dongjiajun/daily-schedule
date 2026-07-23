@@ -3,29 +3,44 @@ import { usePetStore } from '../petStore'
 
 describe('petStore', () => {
   beforeEach(() => {
-    usePetStore.setState({
-      animationState: 'idle',
-      bubbleMessage: null,
-      menuOpen: false,
-      selectionOpen: false,
-    })
+    usePetStore.getState().reset()
     vi.useFakeTimers()
   })
 
   it('初始状态正确', () => {
     const s = usePetStore.getState()
+    expect(s.emotionState).toBe('idle')
     expect(s.animationState).toBe('idle')
     expect(s.bubbleMessage).toBeNull()
     expect(s.menuOpen).toBe(false)
     expect(s.selectionOpen).toBe(false)
+    expect(s.comboCount).toBe(0)
+    expect(s.isResting).toBe(false)
   })
 
-  it('triggerAnimation happy 后 5s 自动恢复 idle', () => {
+  it('setEmotion 定时后自动回 idle', () => {
+    usePetStore.getState().setEmotion('happy', 3000)
+    expect(usePetStore.getState().emotionState).toBe('happy')
+
+    vi.advanceTimersByTime(3000)
+    expect(usePetStore.getState().emotionState).toBe('idle')
+  })
+
+  it('setEmotion 无 duration 不会自动回 idle', () => {
+    usePetStore.getState().setEmotion('idle')
+    expect(usePetStore.getState().emotionState).toBe('idle')
+
+    vi.advanceTimersByTime(10000)
+    expect(usePetStore.getState().emotionState).toBe('idle')
+  })
+
+  it('triggerAnimation 兼容旧 API', () => {
     usePetStore.getState().triggerAnimation('happy')
+    expect(usePetStore.getState().emotionState).toBe('happy')
     expect(usePetStore.getState().animationState).toBe('happy')
 
     vi.advanceTimersByTime(5000)
-    expect(usePetStore.getState().animationState).toBe('idle')
+    expect(usePetStore.getState().emotionState).toBe('idle')
   })
 
   it('showBubble 后 4s 自动清除', () => {
@@ -36,15 +51,47 @@ describe('petStore', () => {
     expect(usePetStore.getState().bubbleMessage).toBeNull()
   })
 
-  it('setMenuOpen 切换菜单', () => {
-    usePetStore.getState().setMenuOpen(true)
-    expect(usePetStore.getState().menuOpen).toBe(true)
-    usePetStore.getState().setMenuOpen(false)
-    expect(usePetStore.getState().menuOpen).toBe(false)
+  it('combo 计数正确触发 excited', () => {
+    const store = usePetStore.getState()
+    store.incrementCombo() // 1
+    expect(usePetStore.getState().comboCount).toBe(1)
+    expect(usePetStore.getState().emotionState).toBe('happy')
+
+    store.incrementCombo() // 2
+    expect(usePetStore.getState().comboCount).toBe(2)
+    expect(usePetStore.getState().emotionState).toBe('happy')
+
+    store.incrementCombo() // 3 → excited!
+    expect(usePetStore.getState().comboCount).toBe(3)
+    expect(usePetStore.getState().emotionState).toBe('excited')
   })
 
-  it('setSelectionOpen 切换选择框', () => {
-    usePetStore.getState().setSelectionOpen(true)
-    expect(usePetStore.getState().selectionOpen).toBe(true)
+  it('resetCombo 清空连击', () => {
+    const store = usePetStore.getState()
+    store.incrementCombo()
+    store.incrementCombo()
+    store.incrementCombo()
+    expect(usePetStore.getState().comboCount).toBe(3)
+
+    store.resetCombo()
+    expect(usePetStore.getState().comboCount).toBe(0)
+  })
+
+  it('游走位置设置', () => {
+    usePetStore.getState().setPosition({ x: 500, y: 300 })
+    expect(usePetStore.getState().position).toEqual({ x: 500, y: 300 })
+  })
+
+  it('朝向设置', () => {
+    usePetStore.getState().setFacing('left')
+    expect(usePetStore.getState().facing).toBe('left')
+  })
+
+  it('休息/唤醒状态', () => {
+    usePetStore.getState().startResting()
+    expect(usePetStore.getState().isResting).toBe(true)
+
+    usePetStore.getState().wakeUp()
+    expect(usePetStore.getState().isResting).toBe(false)
   })
 })

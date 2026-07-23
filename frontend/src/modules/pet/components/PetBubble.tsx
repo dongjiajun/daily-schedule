@@ -12,22 +12,7 @@ export function PetBubble() {
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: -4, scale: 0.95 }}
           transition={{ duration: 0.25, ease: 'easeOut' }}
-          style={{
-            position: 'absolute',
-            bottom: '100%',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            marginBottom: 8,
-            background: '#fff',
-            color: '#333',
-            padding: '6px 12px',
-            borderRadius: 12,
-            fontSize: 13,
-            whiteSpace: 'nowrap',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-            pointerEvents: 'none',
-            zIndex: 50,
-          }}
+          className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 rounded-xl text-[13px] whitespace-nowrap pointer-events-none z-50 shadow-lg bg-surface/95 backdrop-blur text-foreground"
         >
           {message}
         </motion.div>

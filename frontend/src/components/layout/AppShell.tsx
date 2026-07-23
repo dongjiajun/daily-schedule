@@ -5,7 +5,7 @@ import { Sidebar } from './Sidebar'
 import { ShortcutsDialog } from './ShortcutsDialog'
 import { ErrorBoundary } from './ErrorBoundary'
 import { useCalendarStore } from '@/modules/calendar/store/calendarStore'
-import { PetPanel } from '@/modules/pet/components/PetPanel'
+import { RoamingPet } from '@/modules/pet/components/RoamingPet'
 
 export function AppShell() {
   const sidebarOpen = useCalendarStore((s) => s.sidebarOpen)
@@ -68,7 +68,7 @@ export function AppShell() {
 
       <ShortcutsDialog />
       <ErrorBoundary silent>
-        <PetPanel />
+        <RoamingPet />
       </ErrorBoundary>
     </div>
   )

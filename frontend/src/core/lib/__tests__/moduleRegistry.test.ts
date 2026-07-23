@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { ModuleRegistry, type ModuleDefinition } from '../moduleRegistry'
 
 function makeModule(overrides: Partial<ModuleDefinition> = {}): ModuleDefinition {
@@ -99,5 +99,19 @@ describe('ModuleRegistry', () => {
 
   it('should return undefined for non-existent module', () => {
     expect(registry.get('nonexistent')).toBeUndefined()
+  })
+
+  it('should call onInit when registering', () => {
+    const onInit = vi.fn()
+    const unregister = registry.register(makeModule({ id: 'with-init', onInit }))
+    expect(onInit).toHaveBeenCalledTimes(1)
+    unregister()
+  })
+
+  it('should call onDestroy when unregistering', () => {
+    const onDestroy = vi.fn()
+    const unregister = registry.register(makeModule({ id: 'with-destroy', onDestroy }))
+    unregister()
+    expect(onDestroy).toHaveBeenCalledTimes(1)
   })
 })
