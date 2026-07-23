@@ -50,8 +50,6 @@ jobs:
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: 11
 
       - name: Set up Node 22
         uses: actions/setup-node@v4
