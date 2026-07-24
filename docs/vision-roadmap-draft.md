@@ -371,12 +371,12 @@ packages/shared/（Taro + Web 共享）
 
 ## 六、待明确问题
 
-1. **宠物动画引擎**: Lottie vs Rive 的最终选择？Lottie 生态更成熟，Rive 交互状态机更适合宠物
-2. **小程序宠物渲染**: lottie-miniprogram 的能力是否足够？是否需要降级为帧动画？
-3. **节日特效性能预算**: 移动端 Canvas 粒子特效的性能上限？
-4. **Monorepo 工具**: pnpm workspace vs Turborepo vs Nx？
-5. **后端模块化**: 是否需要拆分为微服务？还是保持模块化单体（modular monolith）？
-6. **i18n 方案**: react-i18next vs 自建？需要支持多少语言？
+1. **宠物动画引擎** ✅ 已决策：SVG 程序化插画（SvgAvatar），放弃 Rive/Lottie（兼容性考量）
+2. **小程序宠物渲染** ⏳ 延后到 Phase 2 决策
+3. **节日特效性能预算** ✅ 已决策：CSS（雪花/花瓣）+ tsParticles（烟花/灯笼），移动端自动降级 + `prefers-reduced-motion` 检测
+4. **Monorepo 工具** ✅ 已决策：pnpm workspace + Turborepo
+5. **后端模块化** ✅ 已决策：模块化单体（modular monolith），DDD Bounded Context
+6. **i18n 方案** ⏳ 延后到 Phase 3+ 决策
 
 ---
 
@@ -384,7 +384,7 @@ packages/shared/（Taro + Web 共享）
 
 - **后端**: Spring Boot 3.4 + Java 21, 59 个源文件, DDD 四层
 - **前端**: React 19 + TypeScript, 61 个源文件, Zustand + React Query
-- **数据库**: MySQL 8.0, 5 张表, Flyway 迁移
-- **API**: 18 个端点, OpenAPI 契约驱动
-- **测试**: 26 个后端测试类 (185 用例) + 4 个前端测试类 (15 用例)
-- **当前版本**: v3.1 (2026-06-09)
+- **数据库**: MySQL 8.0, 10+ 张表, 6 次 Flyway 迁移
+- **API**: 25+ 个端点, OpenAPI 契约驱动
+- **测试**: 37 个后端测试类 (257 用例) + 18 个前端测试文件 (96 用例)
+- **当前版本**: v3.3.0 (2026-07-25)

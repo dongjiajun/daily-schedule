@@ -2,7 +2,7 @@
 
 > **版本**: v1.0 | **日期**: 2026-07-20
 > **关联文档**: `docs/vision-roadmap-draft.md`
-> **状态**: ✅ Phase 0 完成 — v4.0 就绪
+> **状态**: ✅ Phase 0 完成 + M1.1-M1.5 完成 — M1.6 待执行
 
 ---
 
@@ -106,31 +106,31 @@
 
 **主题**: "赋予产品人格"
 
-### M1.1: 宠物后端 (Week 1-2)
+### M1.1: 宠物后端 (Week 1-2) ✅
 
 - OpenAPI 新增 pets/pet_accessories/pet_interactions 路径
 - Flyway V5: `pets` + `pet_accessories` + `pet_interactions` 表
 - DDD 完整实现: 15 个新文件 (domain/application/api/infrastructure)
 - API: `GET/POST /pets/me`, `POST /feed`, `POST /play`, `GET/POST /shop`
 
-### M1.2: 宠物前端 v1 (Week 2-4)
+### M1.2: 宠物前端 v1 (Week 2-4) ✅
 
 - **Week 2**: Rive + React 19 + Vite 兼容性验证
 - 新建 `modules/pet/`: PetAvatar (Rive Canvas)、PetBubble、PetMenu、PetSelection、PetStatus、petStore、usePet
 - 事件总线: 宠物监听 `event:completed`/`event:cancelled`，日历模块 emit 事件
 
-### M1.3: 国际节日引擎 (Week 4-5)
+### M1.3: 国际节日引擎 (Week 4-5) ✅
 
 - `packages/shared/src/holiday/`: 四层节日数据（固定公历/浮动公历/农历/地区性）
 - 依赖 `lunar-typescript` 处理农历
 
-### M1.4: 节日主题 + 特效 (Week 5-7)
+### M1.4: 节日主题 + 特效 (Week 5-7) ✅
 
 - `core/styles/holiday-themes.css`: 12+ 节日 CSS 变量
 - `core/components/effects/`: 特效组件（雪花 CSS / 烟花 tsParticles / 花瓣…）
 - Settings 扩展: `auto` 主题、`effectIntensity`、`autoDarkMode`
 
-### M1.5: 任务看板模块 (Week 7-9)
+### M1.5: 任务看板模块 (Week 7-9) ✅
 
 - OpenAPI + Flyway V6: `task` + `task_tag` 表
 - 后端 `com.dailyschedule.todo.*` (~12 文件) + 前端 `modules/todo/`
@@ -238,6 +238,10 @@ Phase 0 Module Registry → M1.1 Pet Backend → M1.2 Pet Frontend → Phase 2 M
 7. `managedialog-refactor` — TabbedDialog 容器化
 8. `pwa-support` — manifest + service worker
 9. `version-sync-automation` — 版本对齐脚本
+
+**Phase 1 实际归档变更（超出原计划）**:
+- `fix-module-routing-and-ui` — 修复路由和侧边栏问题
+- `pet-v2-roaming-animation` — 宠物 v2 游走动画（自由漫游 + SVG 插画 + 粒子爆发）
 
 ---
 

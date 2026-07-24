@@ -1,6 +1,6 @@
 # 数据库设计
 
-> 当前状态: v3.3，对应 Flyway 迁移 V1–V6  
+> 当前状态: v3.3.0，对应 Flyway 迁移 V1–V6  
 > 迁移脚本: `backend/src/main/resources/db/migration/`
 
 ## ER 图

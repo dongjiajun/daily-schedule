@@ -94,6 +94,7 @@ turbo run verify && cd backend && mvn test
 - 新实体/表/字段 → `docs/database/schema.md` + `docs/uml/README.md`
 - 新 API 端点 → `docs/api/overview.md`
 - 架构/模块变动 → `docs/architecture.md` + `CLAUDE.md`
+- 版本号/测试数/模块列表变动 → `CLAUDE.md` 底部版本声明 + `README.md`
 
 ## 关键文档
 - API 契约: `specs/openapi.yaml`（**唯一真相源**）
@@ -214,7 +215,7 @@ API 契约版本号在三个文件中保持一致：`specs/openapi.yaml` → `ba
 - JDK 21 / Node 22
 - Swagger UI（dev）: http://localhost:8080/swagger-ui.html
 
-## 当前版本：v3.1（2026-06-09）
+## 当前版本：v3.3.0（2026-07-25）
 
-核心能力：Event 状态闭环（PLANNED/COMPLETED/CANCELLED）+ 日历拖拽改期/拉伸时长 + 标签筛选 + 5 套主题 + 键盘快捷键 + access token 自动续签 + SSE 提醒推送 + ICS 导出 + 移动端适配
-测试覆盖：26 类 185 用例（H2 内存数据库）+ 前端 4 类 15 用例（vitest）
+核心能力：Event 状态闭环 + 日历拖拽改期/拉伸时长 + 标签筛选 + 5 套主题 + 节日主题自动切换 + 特效系统（5 种）+ 键盘快捷键 + JWT 自动续签 + SSE 提醒推送 + ICS 导出 + PWA + 移动端适配 + 宠物养成（游走/情绪/粒子）+ 任务看板（三列看板+列表+拖拽）
+测试覆盖：37 类 257 用例（后端 H2）+ 18 文件 96 用例（前端 vitest）

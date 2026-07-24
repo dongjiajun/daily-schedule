@@ -166,5 +166,79 @@ Scheduler     Repository     Channel    SseEmitter    Browser
   │  │                          │           │───────────>│
   │  │                          │           │            │ browser notify
   │  markReminded(id, now)      │           │            │
-  │──────────────>│             │           │            │
+  ```
+
+
+## Pet 领域模型（v3.2 新增）
+
+```
+┌──────────────────────────────────────────────────┐
+│                     Pet                          │
+├──────────────────────────────────────────────────┤
+│ + id: Long                                       │
+│ + userId: Long (UNIQUE)                          │
+│ + species: PetSpecies (ORANGE_CAT / SHIBA_INU)   │
+│ + name: String                                   │
+│ + experience: Integer                            │
+│ + level: Integer (1-50)                          │
+│ + mood: Integer (0-100)                          │
+│ + hunger: Integer (0-100)                        │
+│ + coins: Integer                                 │
+│ + currentAccessory: Long                         │
+│ + lastInteractedAt: LocalDateTime                │
+│ + createdAt: LocalDateTime                       │
+│ + updatedAt: LocalDateTime                       │
+├──────────────────────────────────────────────────┤
+│ + feed(item, quantity): InteractionResult        │
+│ + play(): InteractionResult                      │
+│ + updateMood(delta): void                        │
+└──────────────┬───────────────────────────────────┘
+               │ has
+┌──────────────▼───────────────────┐
+│        PetInteraction            │
+├──────────────────────────────────┤
+│ + id: Long                       │
+│ + petId: Long (FK)               │
+│ + type: FEED / PLAY              │
+│ + quantity: Integer              │
+│ + moodChange: Integer            │
+│ + hungerChange: Integer          │
+│ + experienceGain: Integer        │
+│ + createdAt: LocalDateTime       │
+└──────────────────────────────────┘
+
+┌──────────────────────────────────┐
+│          ShopItem                 │
+├──────────────────────────────────┤
+│ + id: Long                       │
+│ + name: String                   │
+│ + type: FOOD / ACCESSORY         │
+│ + price: Integer                 │
+│ + effectMood / effectHunger      │
+│ + effectExperience: Integer      │
+└──────────────────────────────────┘
+```
+
+## Task 领域模型（v3.3 新增）
+
+```
+┌──────────────────────────────────────────────────┐
+│                     Task                         │
+├──────────────────────────────────────────────────┤
+│ + id: Long                                       │
+│ + userId: Long                                   │
+│ + title: String                                  │
+│ + description: String                            │
+│ + status: TaskStatus (TODO/IN_PROGRESS/DONE)     │
+│ + priority: TaskPriority (LOW/MED/HIGH/URGENT)   │
+│ + sortOrder: Integer                             │
+│ + dueDate: LocalDate                             │
+│ + tagIds: Set<Long>           ── 写路径          │
+│ + tags: List<Tag>             ── 读路径投影      │
+│ + createdAt: LocalDateTime                       │
+│ + updatedAt: LocalDateTime                       │
+├──────────────────────────────────────────────────┤
+│ + isValid(): boolean                             │
+│ + moveToStatus(status): void                     │
+└──────────────────────────────────────────────────┘
 ```

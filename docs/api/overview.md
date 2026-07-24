@@ -1,6 +1,7 @@
 # API 规范
 
 > **唯一真相源**: `specs/openapi.yaml`  
+> **当前 API 版本**: 3.3.0  
 > **变更历史**: `specs/CHANGELOG.md`  
 > 本文档提供叙事性说明与使用示例；Schema 细节与端点定义以 OpenAPI 文件为准。
 

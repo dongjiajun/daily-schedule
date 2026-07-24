@@ -39,7 +39,8 @@
 ┌───────────────────────▼──────────────────────────────────┐
 │                  MySQL 8.0 (InnoDB)                       │
 │   user | category | tag | event | event_tag               │
-│   pets | pet_accessories | pet_interactions (v3.2)         │
+│   pets | pet_accessories | pet_interactions               │
+│   tasks | task_tags                                       │
 │   event.last_reminded_at（幂等标记）                       │
 └──────────────────────────────────────────────────────────┘
 ```
@@ -121,7 +122,9 @@ daily-schedule/
 │       │   ├── hooks/        # useTheme, useNotification, useSseNotifications
 │       │   └── styles/       # themes.css
 │       ├── modules/          # 可插拔功能模块
-│       │   └── calendar/     # 日历模块（首个模块）
+│       │   ├── calendar/     # 日历模块
+│       │   ├── pet/          # 宠物模块（核心差异化）
+│       │   └── todo/         # 任务看板模块
 │       │       ├── index.ts  # ModuleDefinition 导出
 │       │       ├── routes.tsx
 │       │       ├── components/ (HomePage, CalendarView, EventForm/Modal,
@@ -167,15 +170,17 @@ daily-schedule/
 
 | 层 | 包路径 | 职责 |
 |------|------|------|
-| API | `api/controller/`, `api/assembler/`, `api/exception/` | REST 端点、DTO 转换、全局异常处理 |
-| 应用 | `application/event/`, `application/category/`, `application/tag/` | 用例编排、重名校验、缓存注解 |
-| 领域 | `domain/event/`, `domain/category/`, `domain/tag/`, `domain/user/`, `domain/notification/` | 业务实体与规则、读侧投影、仓储接口 |
+| API | `api/controller/`, `api/assembler/`, `api/exception/` | REST 端点、DTO 转换、全局异常处理（7 个 Controller） |
+| 应用 | `application/event/`, `application/category/`, `application/tag/`, `application/pet/`, `application/todo/`, `application/auth/` | 用例编排、重名校验、缓存注解 |
+| 领域 | `domain/event/`, `domain/category/`, `domain/tag/`, `domain/user/`, `domain/pet/`, `domain/task/`, `domain/notification/` | 业务实体与规则（33+ 文件）、仓储接口 |
 | 基础设施 | `infrastructure/persistence/`, `infrastructure/security/`, `infrastructure/config/`, `infrastructure/scheduled/`, `infrastructure/notification/` | 持久化、JWT/认证、缓存配置、调度、SSE |
 
 ## 前端模块架构（core + modules）
 
-- **core/** — 稳定基础设施：authStore、settingsStore、EventBus、ModuleRegistry、UI 组件、共享 hooks
-- **modules/calendar/** — 首个功能模块：日历视图、事件管理、筛选、ICS 导出
+- **core/** — 稳定基础设施：authStore、settingsStore、EventBus、ModuleRegistry、UI 组件、共享 hooks、节日特效
+- **modules/calendar/** — 日历模块：日历视图、事件管理、筛选、ICS 导出
+- **modules/pet/** — 宠物模块（核心差异化）：自由游走、SVG 插画、情绪状态机、粒子特效、事件总线联动
+- **modules/todo/** — 任务看板模块：三列看板 + 列表视图、拖拽排序、标签筛选
 - **ModuleRegistry** — 模块注册/注销/路由收集，`main.tsx` 启动时注册
 - **EventBus** — 同步事件总线，类型安全的 `SystemEvent` 联合类型（定义在 `@daily-schedule/shared`）
 - **模块通信** — 模块间不直接 import store/组件，只通过事件总线通信
@@ -192,20 +197,11 @@ ModuleDefinition {
 ```
 
 ## 测试
-- 本地: 需要 MySQL 8.0（dev/test 库）
-- CI: 使用 H2 内存数据库（MySQL 兼容模式），无需外部数据库
-- 测试总数: 134 用例，17 个测试类
-- 运行: `cd backend && mvn test`
 
-## 测试矩阵
-
-| 层 | 测试类 | 用例数 |
-|---|--------|------|
-| 领域 | `EventDomainServiceTest` / `UserTest` | 13 / 7 |
-| 应用 | `EventApplicationServiceTest` / `CategoryApplicationServiceTest` / `TagApplicationServiceTest` / `AuthApplicationServiceTest` | 5 / 9 / 8 / 6 |
-| 基础设施 | `EventRepositoryImplTest` / `SseEmitterManagerTest` / `BrowserNotificationServiceTest` / `ReminderSchedulerTest` / `JwtUtilTest` / `JwtAuthFilterTest` / `CurrentUserServiceTest` / `PasswordHasherImplTest` | 13 / 5 / 5 / 7 / 8 / 6 / 4 / 5 |
-| API | `EventControllerTest` / `CategoryControllerTest` / `EventAssemblerTest` | 5 / 4 / 7 |
-| **合计** | 17 类 | **134** |
+- **后端**: 37 个测试类，257 个用例，0 失败。H2 内存数据库（MySQL 兼容模式）。
+- **前端**: 18 个测试文件，96 个用例，0 失败。vitest + jsdom。
+- **CI**: GitHub Actions 四道门禁 — 版本检查 → 后端 mvn test → 前端 lint → test → build（含 SDK freshness）
+- **运行**: `cd backend && mvn test` / `cd frontend && pnpm run test`
 
 ## 容器化部署
 
@@ -215,4 +211,6 @@ docker-compose up -d   # MySQL 8.0 + 后端 8080 + 前端 :5173
 
 ## 设计文档
 
-- `docs/design/multi-user-auth.md` — 多用户登录方案（已实现）
+- `specs/openapi.yaml` — API 契约（唯一真相源）
+- `openspec/specs/` — 46 个能力规格文档
+- `docs/vision-roadmap-draft.md` — 产品愿景与路线图
