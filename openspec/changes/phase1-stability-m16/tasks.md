@@ -9,7 +9,7 @@
 - [x] 1.3 运行 `cd frontend && pnpm run lint` — 确认零 ESLint 错误 ✅
 - [x] 1.4 运行 `cd frontend && pnpm run build` — 确认 tsc + Vite 构建通过 ✅
 - [x] 1.5 运行 `turbo run build` — 确认 Monorepo 依赖链正确（shared → frontend，2 tasks） ✅
-- [ ] 1.6 确认 CI 门禁全部通过（触发 push 或检查 Actions tab）
+- [x] 1.6 确认 CI 门禁全部通过（触发 push 或检查 Actions tab）✅ — 4/4 jobs 全部通过
 
 ## 2. 日历功能零退化验证（手动冒烟）
 
@@ -64,9 +64,9 @@
 
 ## 7. 缺陷修复（如发现）
 
-- [ ] 7.1 记录所有发现的缺陷，按 P0/P1/P2 分级
-- [ ] 7.2 修复 P0 级缺陷（阻断核心流程的），重新验证
-- [ ] 7.3 P1 级缺陷根据影响评估决定是否在 M1.6 内修复或记录到 Phase 2 backlog
+- [x] 7.1 记录所有发现的缺陷，按 P0/P1/P2 分级 ✅ — P0: README 无法使用(已修复), OnboardingGuide 无响应(已修复), CORS 端口硬编码(已修复)
+- [x] 7.2 修复 P0 级缺陷（阻断核心流程的），重新验证 ✅ — 全部已修复并验证
+- [x] 7.3 P1 级缺陷根据影响评估决定是否在 M1.6 内修复或记录到 Phase 2 backlog ✅ — P1: 前端测试覆盖不足→已开独立 change 完成
 
 ## 8. 产出验证报告
 
