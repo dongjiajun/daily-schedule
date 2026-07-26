@@ -20,36 +20,90 @@ Spring Boot 3.4 + React 19 + MySQL 8.0 全栈日程管理应用。
 
 ## 快速开始
 
-### Docker（推荐）
+### 前置条件
 
-```bash
-docker-compose up -d
+启动前确认以下环境就绪：
+
+```powershell
+# 1. MySQL 8.0 已运行（Windows 服务名 MySQL80）
+sc query MySQL80 | findstr RUNNING
+
+# 2. Java 21+ 已安装（实测 JDK 21/24 均可）
+java --version
+
+# 3. Maven 3.8+ 已安装
+mvn --version
+
+# 4. Node 22+ 和 pnpm 11+ 已安装
+node --version
+pnpm --version
 ```
 
-访问 http://localhost:5173
+数据库 `daily_schedule_dev` 需要提前创建（若不存在）：
+```powershell
+mysql -u root -p123456 -e "CREATE DATABASE IF NOT EXISTS daily_schedule_dev"
+```
 
-### 本地开发
+### 启动步骤
 
-**要求**: JDK 21、Node 22、pnpm 11+、MySQL 8.0
+**1. 安装依赖**（仅首次，根目录）
 
-```bash
-# 安装依赖（根目录，安装所有 workspace 包）
+```powershell
 pnpm install
+```
 
-# 后端
+**2. 启动后端**（打开第一个终端）
+
+```powershell
 cd backend
-mvn spring-boot:run -Dspring-boot.run.profiles=dev
+mvn spring-boot:run "-Dspring-boot.run.profiles=dev"
+```
 
-# 前端（新终端）
+首次运行需下载依赖 + 生成 OpenAPI 代码，约 2-5 分钟。看到 `Started` 日志表示就绪，访问 http://localhost:8080。
+
+若报 `Port 8080 was already in use`，说明有残留 Java 进程，执行：
+```powershell
+netstat -ano | findstr :8080          # 找到 PID
+taskkill //PID <PID> //F               # 结束进程
+```
+
+> **PowerShell 特别注意**：`-D` 参数必须用引号包裹 `"-Dspring-boot.run.profiles=dev"`，否则 PowerShell 会把 `.run.profiles=dev` 错误解析为 Maven 生命周期名。
+
+**3. 启动前端**（打开第二个终端）
+
+```powershell
 cd frontend
 pnpm run dev
 ```
 
+访问 http://localhost:5173，注册账号后即可使用。
+
+### 使用 Docker（备选，需 Docker Desktop）
+
+```powershell
+docker compose up -d
+```
+
+访问 http://localhost:5173。Docker 镜像构建可能较慢，适合不想配置本地环境的情况。
+
+### 常见问题
+
+| 问题 | 解决 |
+|------|------|
+| 端口 8080 被占用 | `taskkill //PID <PID> //F` 杀掉旧进程 |
+| `mvn` 不是可执行命令 | Maven 未安装或未加入 PATH |
+| MySQL 连接超时 | `sc start MySQL80` 启动 MySQL 服务 |
+| 数据库不存在 | `mysql -u root -p123456 -e "CREATE DATABASE daily_schedule_dev"` |
+| `pnpm` 找不到 | `npm install -g pnpm@11` 安装 pnpm |
+| 前端端口自动切换 | 5173 被占时 Vite 自动使用 5174/5175，看终端输出确认实际端口 |
+| 前端 API 请求 401 | 先注册账号，登录后自动注入 JWT Token |
+| JDK 24 上有 WARNING 日志 | 正常现象，不影响运行（Maven 3.8 兼容性警告） |
+
 ## 提交前验证
 
-```bash
-cd frontend && pnpm run verify   # lint + TypeScript 检查 + 构建 + 测试
-cd backend && mvn test            # 编译 + 单元测试（H2 内存库）
+```powershell
+cd frontend; pnpm run verify   # lint + TypeScript 检查 + 构建 + 测试
+cd backend; mvn test            # 编译 + 单元测试（H2 内存库）
 ```
 
 CI 四道门禁：版本一致性检查 → 后端 `mvn test` → 前端 `pnpm run lint` → `pnpm run test` → `pnpm run build`（含 SDK freshness check）
@@ -73,7 +127,7 @@ CI 四道门禁：版本一致性检查 → 后端 `mvn test` → 前端 `pnpm r
 
 | 层 | 技术 |
 |----|------|
-| 后端框架 | Spring Boot 3.4 / Java 21 |
+| 后端框架 | Spring Boot 3.4 / Java 21+ |
 | ORM | MyBatis-Plus 3.5 |
 | 数据库迁移 | Flyway |
 | 认证 | Spring Security + JWT (HS256) |
