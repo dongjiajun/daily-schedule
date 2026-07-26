@@ -199,7 +199,8 @@ ModuleDefinition {
 ## 测试
 
 - **后端**: 37 个测试类，257 个用例，0 失败。H2 内存数据库（MySQL 兼容模式）。
-- **前端**: 18 个测试文件，96 个用例，0 失败。vitest + jsdom。
+- **前端**: 43 个测试文件，166 个用例，0 失败。vitest + jsdom。
+- **E2E**: 8 条 Playwright 用例（auth/calendar/task/pet），CI 集成。webServer 复用后台启动的后端 + 自动启动前端 Vite。
 - **CI**: GitHub Actions 四道门禁 — 版本检查 → 后端 mvn test → 前端 lint → test → build（含 SDK freshness）
 - **运行**: `cd backend && mvn test` / `cd frontend && pnpm run test`
 

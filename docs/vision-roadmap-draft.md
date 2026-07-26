@@ -386,5 +386,5 @@ packages/shared/（Taro + Web 共享）
 - **前端**: React 19 + TypeScript, 61 个源文件, Zustand + React Query
 - **数据库**: MySQL 8.0, 10+ 张表, 6 次 Flyway 迁移
 - **API**: 25+ 个端点, OpenAPI 契约驱动
-- **测试**: 37 个后端测试类 (257 用例) + 18 个前端测试文件 (96 用例)
+- **测试**: 37 个后端测试类 (257 用例) + 43 个前端测试文件 (166 用例) + 8 条 Playwright E2E 用例
 - **当前版本**: v3.3.0 (2026-07-25)
