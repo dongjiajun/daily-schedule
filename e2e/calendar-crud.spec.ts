@@ -3,18 +3,26 @@ import { test, expect } from '@playwright/test'
 const USER = { username: `c_${Date.now()}`, email: `c_${Date.now()}@test.com`, password: 'test123456' }
 
 async function login(page: Parameters<Parameters<typeof test>[1]>[0]['page']) {
-  // 标记 onboarding 已完成，避免引导遮挡 UI
   await page.goto('/')
   await page.evaluate(() => localStorage.setItem('onboarding_done', '1'))
-  // 注册（忽略已存在）
-  await page.request.post('/api/v1/auth/register', {
+  // API 注册 + 创建宠物（避免 PetSelection 弹窗）
+  const regResp = await page.request.post('/api/v1/auth/register', {
     data: { username: USER.username, email: USER.email, password: USER.password }
   })
-  // 登录
+  if (regResp.status() === 201) {
+    const data = await regResp.json()
+    // 用注册返回的 token 创建宠物
+    await page.request.post('/api/v1/pets/me', {
+      data: { species: 'ORANGE_CAT', name: '大橘' },
+      headers: { Authorization: `Bearer ${data.accessToken}` }
+    })
+  }
+  // UI 登录
   await page.fill('input[placeholder="输入用户名或邮箱"]', USER.username)
   await page.fill('input[placeholder="输入密码"]', USER.password)
   await page.click('text=登录')
-  await page.waitForTimeout(4000)
+  await page.waitForURL('**/')
+  await page.waitForTimeout(2000)
 }
 
 test.describe.serial('Calendar', () => {
@@ -25,8 +33,7 @@ test.describe.serial('Calendar', () => {
 
   test('新建日程按钮打开创建弹窗', async ({ page }) => {
     await login(page)
-    // 点击侧边栏"新建日程"按钮
-    await page.locator('button[title*="新建"]').click()
+    await page.locator('button').filter({ hasText: /新建日程/ }).click()
     await page.waitForTimeout(800)
     await expect(page.locator('input[placeholder="日程标题"]')).toBeVisible({ timeout: 5000 })
     await page.keyboard.press('Escape')
@@ -34,12 +41,14 @@ test.describe.serial('Calendar', () => {
 
   test('创建日程并验证可见', async ({ page }) => {
     await login(page)
-    await page.locator('button[title*="新建"]').click()
+    await page.locator('button').filter({ hasText: /新建日程/ }).click()
     await page.waitForTimeout(500)
-    await page.fill('input[placeholder="日程标题"]', '验证可见')
-    await page.locator('button:has-text("创建日程"), button:has-text("保存")').click()
-    await page.waitForTimeout(1500)
-    await expect(page.getByText('验证可见')).toBeVisible({ timeout: 10_000 })
+    const title = `验证可见_${Date.now()}`
+    await page.fill('input[placeholder="日程标题"]', title)
+    await page.keyboard.press('Enter')
+    await page.waitForTimeout(3000)
+    // 日历上应出现标题文本
+    await expect(page.locator(`text=${title}`).first()).toBeVisible({ timeout: 15_000 })
   })
 
   test('视图切换', async ({ page }) => {

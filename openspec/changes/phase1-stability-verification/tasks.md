@@ -25,7 +25,7 @@
 - [x] 3.3 `e2e/todo-crud.spec.ts` 已创建 — 看板页面导航通过
 - [x] 3.4 `e2e/edge-cases.spec.ts` 已创建 — 边界条件场景覆盖
 - [x] 3.5 `e2e/holiday-theme.spec.ts` 已创建 — 主题/特效场景覆盖
-- [ ] 3.6 E2E UI 交互微调（新建日程按钮选择器、弹窗操作等）—— 由后续 PR 跟进
+- [x] 3.6 E2E UI 交互微调 — PetSelection API 绕过 + onboarding localStorage 跳过 + 按钮选择器修复 ✅
 
 ## 4. 缺陷修复 ✅
 

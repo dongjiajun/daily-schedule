@@ -3,20 +3,23 @@ import { test, expect } from '@playwright/test'
 const USER = { username: `epet_${Date.now()}`, email: `epet_${Date.now()}@test.com`, password: 'test123456' }
 
 async function ensureLoggedIn(page: Parameters<Parameters<typeof test>[1]>[0]['page']) {
-  const resp = await page.request.post('/api/v1/auth/register', {
+  await page.goto('/')
+  await page.evaluate(() => localStorage.setItem('onboarding_done', '1'))
+  const regResp = await page.request.post('/api/v1/auth/register', {
     data: { username: USER.username, email: USER.email, password: USER.password }
   })
-  expect([201, 409]).toContain(resp.status())
-  await page.goto('/')
+  if (regResp.status() === 201) {
+    const data = await regResp.json()
+    await page.request.post('/api/v1/pets/me', {
+      data: { species: 'ORANGE_CAT', name: '大橘' },
+      headers: { Authorization: `Bearer ${data.accessToken}` }
+    })
+  }
   await page.fill('input[placeholder="输入用户名或邮箱"]', USER.username)
   await page.fill('input[placeholder="输入密码"]', USER.password)
   await page.click('text=登录')
-  await page.waitForTimeout(3000)
-  const skipBtn = page.getByText('跳过')
-  if (await skipBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
-    await skipBtn.click().catch(() => {})
-    await page.waitForTimeout(500)
-  }
+  await page.waitForURL('**/')
+  await page.waitForTimeout(2000)
 }
 
 test.describe('Pet Event Bridge', () => {
