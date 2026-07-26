@@ -7,9 +7,12 @@
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "test": "turbo run test",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
     "verify": "turbo run verify"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.0",
     "turbo": "^2.6.3"
   }
 }

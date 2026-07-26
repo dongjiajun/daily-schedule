@@ -116,9 +116,7 @@ jobs:
         run: pnpm --filter @daily-schedule/shared run build
 
       - name: Install Playwright browsers
-        working-directory: frontend
         run: pnpm exec playwright install --with-deps chromium
 
       - name: Run E2E tests
-        working-directory: frontend
         run: pnpm run test:e2e

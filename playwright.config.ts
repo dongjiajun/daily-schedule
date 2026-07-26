@@ -19,13 +19,13 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: 'cd ../backend && mvn spring-boot:run "-Dspring-boot.run.profiles=test"',
+      command: 'cd backend && mvn spring-boot:run "-Dspring-boot.run.profiles=test"',
       port: 8080,
       timeout: 120_000,
       reuseExistingServer: !process.env.CI,
     },
     {
-      command: 'pnpm run dev',
+      command: 'cd frontend && pnpm run dev',
       port: 5173,
       timeout: 30_000,
       reuseExistingServer: !process.env.CI,
