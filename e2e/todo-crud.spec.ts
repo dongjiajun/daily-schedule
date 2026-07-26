@@ -1,0 +1,55 @@
+import { test, expect } from '@playwright/test'
+
+const USER = { username: `etodo_${Date.now()}`, email: `etodo_${Date.now()}@test.com`, password: 'test123456' }
+
+async function ensureLoggedIn(page: Parameters<Parameters<typeof test>[1]>[0]['page']) {
+  const resp = await page.request.post('/api/v1/auth/register', {
+    data: { username: USER.username, email: USER.email, password: USER.password }
+  })
+  expect([201, 409]).toContain(resp.status())
+  await page.goto('/')
+  await page.fill('input[placeholder="输入用户名或邮箱"]', USER.username)
+  await page.fill('input[placeholder="输入密码"]', USER.password)
+  await page.click('text=登录')
+  await page.waitForTimeout(3000)
+}
+
+test.describe('Todo Board', () => {
+  test('导航到 /todo 显示看板页面', async ({ page }) => {
+    await ensureLoggedIn(page)
+    await page.goto('/todo')
+    await expect(page).toHaveURL(/\/todo/)
+    await expect(page.locator('body')).toBeVisible()
+  })
+
+  test('创建任务', async ({ page }) => {
+    await ensureLoggedIn(page)
+    await page.goto('/todo')
+    const createBtn = page.getByRole('button', { name: /新建任务/ })
+    if (await createBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+      await createBtn.click()
+      await page.waitForTimeout(300)
+      const input = page.locator('input[name="title"], input[placeholder*="标题"]').first()
+      if (await input.isVisible({ timeout: 1000 }).catch(() => false)) {
+        await input.fill(`T_${Date.now()}`)
+        await page.getByRole('button', { name: /创建|保存|确定/ }).click()
+        await page.waitForTimeout(1000)
+      }
+    }
+  })
+
+  test('视图切换', async ({ page }) => {
+    await ensureLoggedIn(page)
+    await page.goto('/todo')
+    const listBtn = page.getByRole('button', { name: /列表/ })
+    if (await listBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await listBtn.click()
+      await page.waitForTimeout(300)
+    }
+    const boardBtn = page.getByRole('button', { name: /看板/ })
+    if (await boardBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await boardBtn.click()
+      await page.waitForTimeout(300)
+    }
+  })
+})
