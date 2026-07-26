@@ -90,6 +90,19 @@ jobs:
     runs-on: ubuntu-latest
     needs: [backend, frontend]
     continue-on-error: true
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: 123456
+          MYSQL_DATABASE: daily_schedule_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "mysqladmin ping -h localhost"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v4
 
@@ -116,11 +129,6 @@ jobs:
       - name: Build shared package
         run: pnpm --filter @daily-schedule/shared run build
 
-      - name: Setup MySQL
-        run: |
-          sudo systemctl start mysql
-          sudo mysql -e "CREATE DATABASE IF NOT EXISTS daily_schedule_test; ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '123456'; FLUSH PRIVILEGES;"
-
       - name: Start backend (background)
         working-directory: backend
         run: mvn spring-boot:run -Dspring-boot.run.profiles=test &
@@ -136,10 +144,11 @@ jobs:
           for i in $(seq 1 30); do
             if curl -s http://localhost:8080/api/v1/auth/me > /dev/null 2>&1; then
               echo "Backend ready after ${i}0 seconds"
-              break
+              exit 0
             fi
             sleep 10
           done
+          echo "Backend failed to start" && exit 1
 
       - name: Install Playwright browsers
         run: pnpm exec playwright install --with-deps chromium
