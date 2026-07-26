@@ -19,7 +19,9 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: 'cd backend && mvn spring-boot:run -Dspring-boot.run.profiles=test',
+      command: process.env.CI
+        ? 'cd backend && DB_HOST=mysql mvn spring-boot:run -Dspring-boot.run.profiles=test'
+        : 'cd backend && mvn spring-boot:run -Dspring-boot.run.profiles=test',
       port: 8080,
       timeout: 300_000,
       reuseExistingServer: !process.env.CI,
