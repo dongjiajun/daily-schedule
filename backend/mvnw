@@ -1,0 +1,4 @@
+#!/bin/sh
+# Maven wrapper — delegates to system mvn.
+# Provides a stable entry point for Playwright webServer on both CI and local.
+exec mvn "$@"

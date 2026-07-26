@@ -129,26 +129,20 @@ jobs:
       - name: Build shared package
         run: pnpm --filter @daily-schedule/shared run build
 
-      - name: Start backend (background)
+      - name: Start backend
         working-directory: backend
-        run: mvn spring-boot:run -Dspring-boot.run.profiles=test &
+        run: |
+          mvn spring-boot:run -Dspring-boot.run.profiles=test &
+          for i in $(seq 1 30); do
+            curl -s http://localhost:8080/api/v1/auth/me > /dev/null 2>&1 && echo "Backend ready" && break
+            sleep 10
+          done
         env:
           DB_HOST: localhost
           DB_PORT: 3306
           DB_NAME: daily_schedule_test
           DB_USER: root
           DB_PASSWORD: 123456
-
-      - name: Wait for backend
-        run: |
-          for i in $(seq 1 30); do
-            if curl -s http://localhost:8080/api/v1/auth/me > /dev/null 2>&1; then
-              echo "Backend ready after ${i}0 seconds"
-              exit 0
-            fi
-            sleep 10
-          done
-          echo "Backend failed to start" && exit 1
 
       - name: Install Playwright browsers
         run: pnpm exec playwright install --with-deps chromium
