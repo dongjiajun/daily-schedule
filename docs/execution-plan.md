@@ -2,7 +2,7 @@
 
 > **版本**: v1.0 | **日期**: 2026-07-20
 > **关联文档**: `docs/vision-roadmap-draft.md`
-> **状态**: ✅ Phase 0 完成 + M1.1-M1.5 完成 — M1.6 待执行
+> **状态**: ✅ Phase 1 完成 — v4.5 就绪（M1.6 Go/No-Go: GO）
 
 ---
 
@@ -136,9 +136,11 @@
 - 后端 `com.dailyschedule.todo.*` (~12 文件) + 前端 `modules/todo/`
 - Kanban CRUD + 拖拽 + 宠物联动
 
-### M1.6: 稳定性 (Week 9-10)
+### M1.6: 稳定性 (Week 9-10) ✅
 
-**Go/No-Go**: 宠物可见 + 响应日程 + 节日主题自切 + 看板全功能 + Phase 0 零回归
+**Go/No-Go**: 宠物可见 + 响应日程 + 节日主题自切 + 看板全功能 + Phase 0 零回归 → **GO** ✅
+
+详见 `docs/phase1-verification-report.md`
 
 ---
 
