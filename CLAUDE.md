@@ -63,7 +63,7 @@ import { computeNextTarget, createDefaultConfig } from '@daily-schedule/shared/p
 mvn clean test                                   # 编译 + 全部测试
 mvn test -Dtest="EventApplicationServiceTest"    # 单个测试类
 mvn spring-boot:run -Dspring-boot.run.profiles=dev   # 启动（需本地 MySQL）
-mvn spring-boot:run -Dspring-boot.run.profiles=test  # 启动（H2 内存库，无需 MySQL）
+mvn spring-boot:run -Dspring-boot.run.profiles=test  # 启动（MySQL daily_schedule_test，需 MySQL）
 ```
 
 ### 前端（frontend/）
@@ -73,6 +73,7 @@ pnpm run build        # tsc -b + vite build（tsc -b 自动构建 shared）
 pnpm run lint         # ESLint
 pnpm run test         # vitest 单元测试
 pnpm run test:watch   # vitest 监视模式
+pnpm run test:e2e     # Playwright E2E 测试（需先启动服务）
 pnpm run generate:api # 从 ../specs/openapi.yaml 生成 SDK
 pnpm run verify       # lint + build + test（提交前必须通过）
 ```
@@ -80,13 +81,14 @@ pnpm run verify       # lint + build + test（提交前必须通过）
 ## 提交前验证（CI 门禁对齐）
 
 ```bash
-cd frontend && pnpm run verify   # lint + TypeScript 检查 + 构建 + 测试
-cd backend && mvn test            # 编译 + 单元测试（H2 内存库）
+cd frontend && pnpm run verify             # lint + TypeScript 检查 + 构建 + vitest
+cd backend && mvn test                      # 编译 + 单元测试（H2 内存库）
+cd frontend && npm run test:e2e             # Playwright E2E 测试（需先启动服务）
 # 或根目录全量验证：
-turbo run verify && cd backend && mvn test
+turbo run verify && cd backend && mvn test && cd frontend && npm run test:e2e
 ```
 
-**CI 四层门禁**: 后端 `mvn test` + 前端 `pnpm run lint` + 前端 `pnpm run test` + 前端 `pnpm run build`（含 SDK freshness check）
+**CI 五层门禁**: 后端 `mvn test` + 前端 `pnpm run lint` + 前端 `pnpm run test` + 前端 `pnpm run build`（含 SDK freshness check）+ 前端 `npm run test:e2e`
 **常见失败**: `@typescript-eslint/no-explicit-any` / `tsc -b` 类型错误 / 后端单测失败
 
 **文档检查**（每次变更后逐项确认）：
@@ -179,7 +181,8 @@ src/
 ### 持久层
 - **MyBatis-Plus**: domain 定义仓储接口，infrastructure 用 PO + Mapper 实现
 - **Flyway**: `V*__*.sql` 按序执行，启动时自动迁移
-- **测试用 H2**: `src/test/resources/application-test.yml`，`MODE=MySQL` 兼容，**Flyway 关闭**，用 `schema-h2.sql` 初始化表结构
+- **单元测试用 H2**: `src/test/resources/application-test.yml`，`MODE=MySQL` 兼容，**Flyway 关闭**，用 `schema-h2.sql` 初始化表结构
+- **启动用 test profile**: `src/main/resources/application-test.yml`，连接 MySQL `daily_schedule_test`（用于 CI/E2E 环境，本地启动不建议用此 profile）
 
 ## 关键约定
 
@@ -206,7 +209,8 @@ API 契约版本号在三个文件中保持一致：`specs/openapi.yaml` → `ba
 | Profile | 数据库 | 用途 |
 |---------|--------|------|
 | dev (默认) | MySQL `daily_schedule_dev` | 本地开发，打印 SQL |
-| test | H2 内存 | 单元测试，无需外部数据库 |
+| test | MySQL `daily_schedule_test` | CI/E2E 测试环境，需 MySQL |
+| test (classpath) | H2 内存 | `mvn test` 单元测试专用，无需外部数据库 |
 | prod | MySQL（环境变量注入） | Docker 部署 |
 
 ## 本地环境
@@ -218,4 +222,4 @@ API 契约版本号在三个文件中保持一致：`specs/openapi.yaml` → `ba
 ## 当前版本：v3.3.0（2026-07-25）
 
 核心能力：Event 状态闭环 + 日历拖拽改期/拉伸时长 + 标签筛选 + 5 套主题 + 节日主题自动切换 + 特效系统（5 种）+ 键盘快捷键 + JWT 自动续签 + SSE 提醒推送 + ICS 导出 + PWA + 移动端适配 + 宠物养成（游走/情绪/粒子）+ 任务看板（三列看板+列表+拖拽）
-测试覆盖：37 类 257 用例（后端 H2）+ 43 文件 166 用例（前端 vitest）+ 8 条 E2E 用例（Playwright）
+测试覆盖：37 类 257 用例（后端 H2）+ 43 文件 166 用例（前端 vitest）+ 9 文件 25 用例（Playwright E2E）

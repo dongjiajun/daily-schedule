@@ -132,13 +132,13 @@ frontend/src/
 ### 任务看板模块 (`modules/todo/`)
 
 - **TodoPage** — 任务主页面，组合 TaskToolbar + BoardView/ListView
-- **BoardView** — 三列看板（TODO | IN_PROGRESS | DONE），HTML5 Drag & Drop 跨列移动
-- **TaskColumn** — 单列容器：标题 + 数量徽章 + 卡片列表 + 内联快速创建 + drop 区域高亮
-- **TaskCard** — 任务卡片：标题/优先级标签(彩色)/截止日期(逾期标红)/标签 chips + 拖拽手柄
-- **ListView** — 列表视图：排序控件（默认/优先级/截止日期/创建时间）+ 任务行
-- **TaskRow** — 列表行：状态下拉框切换 + 信息 + 编辑/删除操作
-- **TaskForm** — 创建/编辑 Dialog：标题/描述/优先级/截止日期
-- **TaskToolbar** — 顶部工具栏：看板/列表视图切换 + 新建任务按钮
+- **BoardView** — 三列看板（TODO | IN_PROGRESS | DONE），HTML5 Drag & Drop 跨列移动，响应式列宽（`flex-1`）
+- **TaskColumn** — 单列容器：lucide 图标标题 + 数量 Badge + 卡片列表 + 内联快速创建 + drop 区域高亮，CSS 变量主题色
+- **TaskCard** — 任务卡片：lucide 图标（截止日期/逾期）+ 优先级 Badge（纯文本色块）+ 标签 chips + 拖拽手柄 + shadcn/ui Button 操作
+- **ListView** — 列表视图：shadcn/ui Button 排序控件（默认/优先级/截止日期/创建时间）+ 任务行
+- **TaskRow** — 列表行：shadcn/ui Select 状态切换 + lucide 图标 + shadcn/ui Button 编辑/删除
+- **TaskForm** — shadcn/ui Dialog 创建/编辑弹窗（含 backdrop-blur + 入场动画）：标题/描述/优先级/截止日期
+- **TaskToolbar** — 顶部工具栏：shadcn/ui Button 看板/列表视图切换（lucide Columns2/List 图标）+ 新建任务按钮（Plus 图标），CSS 变量主题色
 
 ### 宠物模块 (`modules/pet/`)
 

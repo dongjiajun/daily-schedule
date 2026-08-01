@@ -1,5 +1,7 @@
 import type { TaskProfile } from '@/api/types.gen'
 import { useDeleteTask } from '../hooks/useTasks'
+import { Button } from '@/core/components/ui/button'
+import { AlertTriangle, Calendar, Pencil, Trash2 } from 'lucide-react'
 
 const priorityColors: Record<string, string> = {
   URGENT: 'bg-red-500 text-white',
@@ -34,11 +36,11 @@ export function TaskCard({ task, onEdit }: TaskCardProps) {
     <div
       draggable
       onDragStart={handleDragStart}
-      className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow group"
+      className="bg-surface rounded-xl shadow-sm border border-border p-3 cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow group"
     >
       {/* Title + priority */}
       <div className="flex items-start justify-between gap-2 mb-1">
-        <span className="text-sm font-medium text-gray-800 dark:text-gray-100 flex-1 truncate">
+        <span className="text-sm font-medium text-foreground flex-1 truncate">
           {task.title}
         </span>
         <span
@@ -50,8 +52,10 @@ export function TaskCard({ task, onEdit }: TaskCardProps) {
 
       {/* Due date */}
       {task.dueDate && (
-        <div className={`text-xs mb-1 ${isOverdue ? 'text-red-500 font-semibold' : 'text-gray-500'}`}>
-          {isOverdue && '⚠️ '}📅 {task.dueDate}
+        <div className={`flex items-center gap-1 text-xs mb-1 ${isOverdue ? 'text-red-500 font-semibold' : 'text-foreground-muted'}`}>
+          {isOverdue && <AlertTriangle className="size-3" />}
+          <Calendar className="size-3" />
+          {task.dueDate}
         </div>
       )}
 
@@ -72,22 +76,27 @@ export function TaskCard({ task, onEdit }: TaskCardProps) {
 
       {/* Action buttons */}
       <div className="flex justify-end gap-1 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
-        <button
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={() => onEdit(task)}
-          className="text-xs text-blue-500 hover:text-blue-700 px-1"
         >
+          <Pencil className="size-3" />
           编辑
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={() => {
             if (window.confirm('确定删除此任务？')) {
               deleteTask.mutate(task.id!)
             }
           }}
-          className="text-xs text-red-500 hover:text-red-700 px-1"
+          className="text-red-500 hover:text-red-700"
         >
+          <Trash2 className="size-3" />
           删除
-        </button>
+        </Button>
       </div>
     </div>
   )

@@ -1,12 +1,28 @@
 import type { TaskProfile } from '@/api/types.gen'
 import { useDeleteTask, useMoveTask } from '../hooks/useTasks'
 import { emitTaskCompleted } from '../lib/taskEvents'
+import { Button } from '@/core/components/ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/core/components/ui/select'
+import { Pencil, Trash2, ClipboardList, CircleDot, CheckCircle2 } from 'lucide-react'
 
 const priorityLabels: Record<string, string> = {
-  URGENT: '🔴 紧急',
-  HIGH: '🟠 高',
-  MEDIUM: '🔵 中',
-  LOW: '⚪ 低',
+  URGENT: '紧急',
+  HIGH: '高',
+  MEDIUM: '中',
+  LOW: '低',
+}
+
+const priorityTextColors: Record<string, string> = {
+  URGENT: 'text-red-500',
+  HIGH: 'text-orange-400',
+  MEDIUM: 'text-blue-400',
+  LOW: 'text-foreground-muted',
+}
+
+const statusIcon: Record<string, React.ComponentType<{ className?: string }>> = {
+  TODO: ClipboardList,
+  IN_PROGRESS: CircleDot,
+  DONE: CheckCircle2,
 }
 
 interface TaskRowProps {
@@ -36,38 +52,54 @@ export function TaskRow({ task, onEdit }: TaskRowProps) {
     )
   }
 
-  const statusIcon: Record<string, string> = {
-    TODO: '📋',
-    IN_PROGRESS: '🚀',
-    DONE: '✅',
-  }
+  const StatusIcon = statusIcon[task.status ?? 'TODO'] ?? ClipboardList
 
   return (
-    <div className="flex items-center gap-3 px-4 py-2 bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750">
+    <div className="flex items-center gap-3 px-4 py-2 bg-surface border-b border-border hover:bg-hover transition-colors">
       {/* Status dropdown */}
-      <select
+      <Select
         value={task.status ?? 'TODO'}
-        onChange={(e) => handleStatusChange(e.target.value)}
-        className="text-sm border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200"
+        onValueChange={handleStatusChange}
       >
-        <option value="TODO">📋 待办</option>
-        <option value="IN_PROGRESS">🚀 进行中</option>
-        <option value="DONE">✅ 已完成</option>
-      </select>
+        <SelectTrigger className="w-[120px] h-8 text-sm">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="TODO">
+            <span className="flex items-center gap-1.5">
+              <ClipboardList className="size-3.5" />
+              待办
+            </span>
+          </SelectItem>
+          <SelectItem value="IN_PROGRESS">
+            <span className="flex items-center gap-1.5">
+              <CircleDot className="size-3.5" />
+              进行中
+            </span>
+          </SelectItem>
+          <SelectItem value="DONE">
+            <span className="flex items-center gap-1.5">
+              <CheckCircle2 className="size-3.5" />
+              已完成
+            </span>
+          </SelectItem>
+        </SelectContent>
+      </Select>
 
       {/* Title */}
-      <span className="flex-1 text-sm text-gray-800 dark:text-gray-100 truncate">
-        {statusIcon[task.status ?? 'TODO']} {task.title}
+      <span className="flex-1 text-sm text-foreground truncate flex items-center gap-1.5">
+        <StatusIcon className="size-3.5 flex-shrink-0" />
+        {task.title}
       </span>
 
       {/* Priority */}
-      <span className="text-xs text-gray-500 min-w-[60px]">
+      <span className={`text-xs min-w-[40px] ${priorityTextColors[task.priority ?? 'MEDIUM']}`}>
         {priorityLabels[task.priority ?? 'MEDIUM']}
       </span>
 
       {/* Due date */}
-      <span className={`text-xs min-w-[90px] ${isOverdue ? 'text-red-500 font-semibold' : 'text-gray-500'}`}>
-        {task.dueDate ? `${isOverdue ? '⚠️ ' : ''}${task.dueDate}` : '—'}
+      <span className={`text-xs min-w-[90px] ${isOverdue ? 'text-red-500 font-semibold' : 'text-foreground-muted'}`}>
+        {task.dueDate ? task.dueDate : '—'}
       </span>
 
       {/* Tags */}
@@ -84,18 +116,22 @@ export function TaskRow({ task, onEdit }: TaskRowProps) {
       </div>
 
       {/* Actions */}
-      <div className="flex gap-2">
-        <button onClick={() => onEdit(task)} className="text-xs text-blue-500 hover:text-blue-700">
+      <div className="flex gap-1">
+        <Button variant="ghost" size="sm" onClick={() => onEdit(task)}>
+          <Pencil className="size-3" />
           编辑
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={() => {
             if (window.confirm('确定删除此任务？')) deleteTask.mutate(task.id!)
           }}
-          className="text-xs text-red-500 hover:text-red-700"
+          className="text-red-500 hover:text-red-700"
         >
+          <Trash2 className="size-3" />
           删除
-        </button>
+        </Button>
       </div>
     </div>
   )

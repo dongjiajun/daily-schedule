@@ -5,7 +5,7 @@
 
   ⚠️ 测试边界提醒：
   涉及以下技术时，单元测试 mock 无法覆盖真实浏览器行为，
-  MUST 在 8.5 smoke test 中手工验证：
+  MUST 在 9.4 smoke test 中手工验证：
     - Canvas / WebGL / WASM（如 Rive、Lottie、tsParticles）
     - 文件上传 / 拖拽 / 剪贴板
     - Service Worker / PWA 离线
@@ -47,7 +47,9 @@
 - [ ] 7.2 <!-- 组件开发 (components/) -->
 - [ ] 7.3 <!-- 页面集成 (pages/) -->
 - [ ] 7.4 <!-- 样式与动画 -->
-- [ ] 7.5 编写前端测试（store 单测 + hooks 单测 + 组件渲染测试）
+- [ ] 7.5 编写/更新 vitest 单元测试（store 单测 + hooks 单测 + 组件渲染测试）
+- [ ] 7.6 编写/更新 Playwright E2E 测试（`e2e/*.spec.ts`，覆盖关键用户流程）
+- [ ] 7.7 运行 `npm run test:e2e` 确认 E2E 全部通过
 
 ## 8. 文档同步
 <!-- 每次变更必须逐项确认，无变更则打勾通过 -->
@@ -58,8 +60,9 @@
 
 ## 9. 全量验证
 - [ ] 9.1 `cd backend && mvn test` — 后端单元测试全部通过
-- [ ] 9.2 `cd frontend && pnpm run verify` — 前端 lint + tsc + build + test 全部通过
-- [ ] 9.3 Smoke test — 启动前后端，浏览器验证关键路径：
+- [ ] 9.2 `cd frontend && pnpm run verify` — 前端 lint + tsc + build + vitest 全部通过
+- [ ] 9.3 `cd frontend && npm run test:e2e` — Playwright E2E 全部通过
+- [ ] 9.4 Smoke test — 启动前后端，浏览器手工验证 mock 无法覆盖的场景：
   <!-- 列出本次变更影响的关键用户流程，逐项验证 -->
   - [ ] <!-- 如：登录 → 创建日程 → 日历视图显示 -->
   - [ ] <!-- 如：点击宠物 → 互动菜单弹出 → 喂食成功 -->

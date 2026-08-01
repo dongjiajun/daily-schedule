@@ -30,6 +30,14 @@ test.describe('Todo Board', () => {
     await expect(page.locator('body')).toBeVisible()
   })
 
+  test('看板页面使用 lucide 图标渲染列标题', async ({ page }) => {
+    await ensureLoggedIn(page)
+    await page.goto('/todo')
+    // lucide SVG icons should be present in column headers
+    const svgIcons = page.locator('svg.lucide')
+    await expect(svgIcons.first()).toBeVisible({ timeout: 5000 })
+  })
+
   test('创建任务', async ({ page }) => {
     await ensureLoggedIn(page)
     await page.goto('/todo')
@@ -43,6 +51,18 @@ test.describe('Todo Board', () => {
         await page.getByRole('button', { name: /创建|保存|确定/ }).click()
         await page.waitForTimeout(1000)
       }
+    }
+  })
+
+  test('新建任务 Dialog 正常打开', async ({ page }) => {
+    await ensureLoggedIn(page)
+    await page.goto('/todo')
+    const createBtn = page.getByRole('button', { name: /新建任务/ })
+    if (await createBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+      await createBtn.click()
+      await page.waitForTimeout(500)
+      // Dialog should be visible with backdrop
+      await expect(page.locator('[role="dialog"]')).toBeVisible({ timeout: 3000 })
     }
   })
 

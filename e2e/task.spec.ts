@@ -11,4 +11,11 @@ test.describe('Task Board', () => {
     const bodyText = await page.textContent('body')
     expect(bodyText).toBeTruthy()
   })
+
+  test('看板路由返回非空页面', async ({ page }) => {
+    await page.goto('/todo')
+    // Page should have content regardless of auth state
+    const text = await page.locator('body').innerText()
+    expect(text.length).toBeGreaterThan(0)
+  })
 })

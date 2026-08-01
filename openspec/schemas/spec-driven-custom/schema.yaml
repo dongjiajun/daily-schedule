@@ -93,7 +93,7 @@ artifacts:
       **推荐编排**: 数据库迁移 → 领域层 → 基础设施层 → 应用层 → API 层 → 前端 → 文档同步 → 全量验证
       - 涉及 API 契约变更时，确保 "重新生成 SDK" 作为独立任务
       - 后端任务后紧跟对应测试任务
-      - 前端任务包含 SDK 重新生成、组件开发、状态管理、样式，以及 store/hooks/组件测试
+      - 前端任务包含 SDK 重新生成、组件开发、状态管理、样式，以及 vitest 单元测试（store/hooks/组件）和 Playwright E2E 测试（`e2e/*.spec.ts`）
       - 涉及 Canvas/WASM/Web API 等 mock 无法覆盖的技术时，必须在全量验证中加 smoke test（浏览器手工验证）
 
       格式：
@@ -138,7 +138,9 @@ artifacts:
       - [ ] 7.2 <!-- 组件开发 (components/) -->
       - [ ] 7.3 <!-- 页面集成 (pages/) -->
       - [ ] 7.4 <!-- 样式与动画 -->
-      - [ ] 7.5 编写前端测试（store 单测 + hooks 单测 + 组件渲染测试）
+      - [ ] 7.5 编写/更新 vitest 单元测试（store 单测 + hooks 单测 + 组件渲染测试）
+      - [ ] 7.6 编写/更新 Playwright E2E 测试（e2e/*.spec.ts，覆盖关键用户流程）
+      - [ ] 7.7 运行 npm run test:e2e 确认 E2E 全部通过
 
       ## 8. 文档同步
       - [ ] 8.1 是否有新前端组件？→ 更新 docs/frontend/component-catalog.md
@@ -149,7 +151,8 @@ artifacts:
       ## 9. 全量验证
       - [ ] 9.1 cd backend && mvn test
       - [ ] 9.2 cd frontend && pnpm run verify
-      - [ ] 9.3 Smoke test — 浏览器验证关键路径
+      - [ ] 9.3 cd frontend && npm run test:e2e — Playwright E2E 全部通过
+      - [ ] 9.4 Smoke test — 浏览器手工验证 mock 无法覆盖的场景
       ```
     requires:
       - specs

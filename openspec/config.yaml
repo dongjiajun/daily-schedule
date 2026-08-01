@@ -2,7 +2,7 @@ schema: spec-driven-custom
 
 context: |
   ## 项目概要
-  日程管理系统（Spring Boot 3.4 + React 19 + MySQL 8.0），v3.1。
+  日程管理系统（Spring Boot 3.4 + React 19 + MySQL 8.0），v3.3.0。
 
   ## 技术栈
   - 后端: Java 21, Spring Boot 3.4, MyBatis-Plus 3.5, Flyway, Spring Security + JWT, Caffeine Cache, Maven
@@ -40,8 +40,8 @@ context: |
   - 路由: LoginPage + HomePage, shadcn/ui 风格组件 (components/ui/)
 
   ## 测试
-  - 后端: JUnit 5 + H2 内存数据库 (test profile), 17 类 134 用例
-  - 前端: TypeScript 严格模式 + ESLint
+  - 后端: JUnit 5 + H2 内存数据库 (test profile)
+  - 前端: vitest 单元测试 (store/hooks/组件) + Playwright E2E (`e2e/*.spec.ts`, `npm run test:e2e`) + ESLint
 
   ## 版本号位置
   specs/openapi.yaml (version), backend/pom.xml (version), frontend/package.json (version)
@@ -63,6 +63,7 @@ rules:
     - 按 DDD 分层编排任务顺序: 数据库迁移 → 领域层 → 基础设施层 → 应用层 → API 层 → 前端
     - API 契约变更后必须包含 "重新生成 SDK" 任务
     - 每个后端任务完成后应包含对应的测试任务
+    - 前端任务必须包含 vitest 单元测试更新 + Playwright E2E 测试更新 (`e2e/*.spec.ts`)
     - 涉及新前端组件时必须在 tasks 中包含 component-catalog.md 更新
     - 涉及新实体/数据库表/字段时必须在 tasks 中包含 schema.md + uml/README.md 更新
     - 涉及新 API 端点时必须在 tasks 中包含 api/overview.md 更新
