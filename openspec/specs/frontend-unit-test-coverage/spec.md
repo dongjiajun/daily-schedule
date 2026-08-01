@@ -2,7 +2,11 @@
 
 为当前缺少测试的前端源文件编写 vitest 单元测试，覆盖关键路径和重要功能。
 
-## ADDED Requirements
+## Purpose
+
+前端单元测试覆盖 — 为缺少测试的前端源文件编写 vitest 单元测试，覆盖关键路径和重要功能。
+
+## Requirements
 
 ### Requirement: eventBus 单元测试
 系统 SHALL 为 `core/lib/eventBus.ts` 提供完整的单元测试覆盖。

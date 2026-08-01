@@ -2,6 +2,10 @@
 
 宠物游走引擎 — 宠物以独立角色形式在页面自由移动，替代固定卡片。
 
+## Purpose
+
+宠物游走引擎 — 宠物以独立角色形式在页面自由移动，替代固定卡片。
+
 ## Requirements
 
 ### Requirement: Free-Roaming Character

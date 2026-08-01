@@ -1,6 +1,10 @@
 # Theme System
 
-## ADDED Requirements
+## Purpose
+
+主题系统 — 通过 data-theme 属性 + 语义化 CSS 设计 Token 提供 5 套可切换配色方案，主题选择持久化到 localStorage。
+
+## Requirements
 
 ### Requirement: 用户可以通过 data-theme 属性切换全应用配色方案
 系统 SHALL 在 `<html>` 元素上设置 `data-theme` 属性来控制主题。所有组件颜色 SHALL 通过 CSS 自定义属性（`var(--color-*)`）间接引用，而非硬编码色值。切换 `data-theme` 属性值 SHALL 即时改变所有引用该属性的 UI 元素颜色。

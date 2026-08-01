@@ -1,6 +1,10 @@
 # Pre-commit Verify
 
-## ADDED Requirements
+## Purpose
+
+提交前验证 — 提供前端一键验证脚本（lint + build），并在 CLAUDE.md 中记录提交前验证流程与 CI 门禁说明。
+
+## Requirements
 
 ### Requirement: 前端提供一键验证脚本
 `frontend/package.json` SHALL 包含 `verify` 脚本，SHALL 执行 `npm run lint && npm run build`，确保 lint 和 TypeScript 编译同时通过。

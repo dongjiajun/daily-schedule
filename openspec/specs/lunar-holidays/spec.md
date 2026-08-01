@@ -46,5 +46,8 @@
 - **THEN** 返回 `{ id: "qingming", name: "清明节" }`
 
 ### Requirement: 非农历节日日期空返回
+系统 SHALL 在输入日期无任何农历节日（含 range）时返回空数组。
+
+#### Scenario: 非节日日期返回空
 - **WHEN** 输入某公历日期，当天没有任何农历节日（含 range）
 - **THEN** 返回空数组 `[]`

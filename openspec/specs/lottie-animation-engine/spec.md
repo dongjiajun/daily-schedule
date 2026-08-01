@@ -2,6 +2,10 @@
 
 Lottie 动画运行时集成，管理动画片段切换与情绪状态映射。
 
+## Purpose
+
+Lottie 动画引擎 — 集成 lottie-react 作为宠物动画运行时，管理动画片段切换与情绪状态映射，并提供 SVG 插画降级方案。
+
 ## Requirements
 
 ### Requirement: Lottie Runtime Integration

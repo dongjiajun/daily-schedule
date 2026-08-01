@@ -2,7 +2,11 @@
 
 编写 Playwright E2E 用例验证 Phase 1 Go/No-Go 五项条件，替代手动冒烟 checklist。
 
-## ADDED Requirements
+## Purpose
+
+Phase 1 E2E 验证 — 编写 Playwright E2E 用例验证 Phase 1 Go/No-Go 五项条件，替代手动冒烟 checklist。
+
+## Requirements
 
 ### Requirement: 日历 CRUD E2E
 系统 SHALL 通过 Playwright E2E 验证日历日程的创建、编辑、删除、拖拽、状态流转、标签筛选、ICS 导出、视图切换、分类管理。

@@ -2,6 +2,10 @@
 
 宠物情绪状态机 — 8 种情绪状态 + 平滑过渡 + 条件触发。
 
+## Purpose
+
+宠物情绪状态机 — 8 种情绪状态 + 平滑过渡 + 条件触发。
+
 ## Requirements
 
 ### Requirement: Emotion State Machine

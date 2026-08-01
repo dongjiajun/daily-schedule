@@ -3,9 +3,7 @@
 ## Purpose
 
 确保代码变更后文档同步不遗漏：通过 OpenSpec tasks 模板、config rules、CLAUDE.md 检查清单三层机制约束文档更新，并规范 docs/ 目录生命周期（当前真值 vs 归档）与规划文档组织。
-
 ## Requirements
-
 ### Requirement: Tasks 模板强制包含文档同步阶段
 `openspec/schemas/spec-driven-custom/templates/tasks.md` SHALL 包含独立的"文档同步"阶段（非可选收尾），在契约同步之后、验证之前。
 
@@ -79,3 +77,16 @@ CLAUDE.md 篇幅 SHALL 维持在官方建议的 100-200 行范围内，只保留
 - **GIVEN** 删除 `frontend/README.md`、`memory/` 目录
 - **WHEN** 全仓库搜索 `frontend/README.md` 与 `memory/` 路径引用
 - **THEN** 仅剩 README.md 文档索引表条目（已同步移除），无其他断链
+
+### Requirement: 主 specs 结构有效性
+所有主 spec（`openspec/specs/<capability>/spec.md`）SHALL 通过 `openspec validate --specs`：每个 spec SHALL 包含 `## Purpose` 与 `## Requirements` 两个必选段，每个需求 SHALL 包含至少一个 `#### Scenario:` 块。归档 sync 之后 SHALL 运行 `openspec validate --specs` 确认全绿。
+
+#### Scenario: 归档后主 specs 全绿
+- **GIVEN** 变更归档且 delta specs 已同步至 `openspec/specs/` 主目录
+- **WHEN** 运行 `openspec validate --specs`
+- **THEN** 全部主 spec 通过（无缺失 Purpose / Requirements / Scenario 错误）
+
+#### Scenario: 新 spec 结构不完整时校验失败
+- **WHEN** 某主 spec 缺少 `## Purpose` 段或某需求缺少 Scenario 块
+- **THEN** `openspec validate --specs` 报告该 spec 无效，直至修复结构
+

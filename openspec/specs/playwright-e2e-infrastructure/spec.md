@@ -2,7 +2,11 @@
 
 引入 Playwright 端到端测试框架，编写关键路径 E2E 用例，集成到 CI。
 
-## ADDED Requirements
+## Purpose
+
+Playwright E2E 基础设施 — 引入端到端测试框架，编写关键路径 E2E 用例并集成到 CI。
+
+## Requirements
 
 ### Requirement: Playwright 框架安装与配置
 系统 SHALL 引入 `@playwright/test` 依赖并配置 `playwright.config.ts`。

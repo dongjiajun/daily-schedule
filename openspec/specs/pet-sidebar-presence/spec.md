@@ -2,6 +2,10 @@
 
 侧边栏底部迷你宠物常驻，提供始终可见的宠物存在感。
 
+## Purpose
+
+侧边栏底部迷你宠物常驻 — 提供始终可见的宠物存在感。
+
 ## Requirements
 
 ### Requirement: Mini Pet in Sidebar Footer

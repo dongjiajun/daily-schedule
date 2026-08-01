@@ -2,7 +2,11 @@
 
 自动化版本同步 — 以 `specs/openapi.yaml` 为唯一真相源。
 
-## ADDED Requirements
+## Purpose
+
+自动化版本同步 — 以 specs/openapi.yaml 为唯一真相源，将版本号同步到 backend/pom.xml 和 frontend/package.json，并在 CI 中校验一致性。
+
+## Requirements
 
 ### Requirement: Version Sync Script
 

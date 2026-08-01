@@ -2,6 +2,10 @@
 
 互动粒子爆发系统 — 短暂局部特效（爱心/星星/金币/火花）。
 
+## Purpose
+
+互动粒子爆发系统 — 短暂局部特效（爱心/星星/金币/火花）。
+
 ## Requirements
 
 ### Requirement: Particle Burst on Interaction
