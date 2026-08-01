@@ -16,8 +16,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 /opsx:new <name> → proposal → design → spec → tasks → /opsx:apply → /opsx:verify → /opsx:archive
 ```
 
-### 常用 Slash 命令
-
 | 命令 | 用途 |
 |------|------|
 | `/opsx:new <kebab-case-name>` | 创建新变更，生成目录骨架 |
@@ -30,68 +28,50 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | `/opsx:explore` | 进入探索模式，梳理需求 |
 | `/opsx:update` | 修订已有 artifacts |
 
-### 关键路径
 - **变更目录**: `openspec/changes/archive/<date>-<name>/`（proposal / design / spec / tasks）
 - **主 specs**: `openspec/specs/<capability>/spec.md`
-- **模板**: `openspec/schemas/spec-driven-custom/templates/`
 
 ## 常用命令
 
-### 首次设置
-```bash
-cd backend && mvn compile      # 确认 JDK 21 + Maven 就绪
-pnpm install                    # Node 22 + pnpm（根目录，安装所有 workspace 包）
-docker-compose up -d            # 或 Docker 一键启动全部服务
-```
-
-### Monorepo（根目录）
 ```bash
 pnpm install                    # 安装所有 workspace 依赖
 turbo run build                 # 按依赖顺序构建（shared → frontend）
 turbo run verify                # 全量 lint + build + test
-pnpm --filter @daily-schedule/shared run build   # 仅构建共享库
 ```
 
-**shared 包子路径**: `@daily-schedule/shared/holiday` 独立导出 HolidayEngine（避免 barrel export 级联加载 lunar-typescript）。`@daily-schedule/shared/pet` 独立导出 roam engine（避免 barrel export 级联）。消费方式：
+**shared 包子路径**: `@daily-schedule/shared/holiday` 独立导出 HolidayEngine、`@daily-schedule/shared/pet` 独立导出 roam engine（避免 barrel export 级联加载）。消费：
 ```typescript
 import { holidayEngine } from '@daily-schedule/shared/holiday'
 import { computeNextTarget, createDefaultConfig } from '@daily-schedule/shared/pet'
 ```
 
-### 后端（backend/）
+**后端**（`mvn clean test` 全量测试；`mvn spring-boot:run -Dspring-boot.run.profiles=dev` 启动需本地 MySQL）：
 ```bash
-mvn clean test                                   # 编译 + 全部测试
+cd backend
 mvn test -Dtest="EventApplicationServiceTest"    # 单个测试类
-mvn spring-boot:run -Dspring-boot.run.profiles=dev   # 启动（需本地 MySQL）
-mvn spring-boot:run -Dspring-boot.run.profiles=test  # 启动（MySQL daily_schedule_test，需 MySQL）
 ```
 
-### 前端（frontend/）
+**前端**（`:5173`，API 代理到 localhost:8080）：
 ```bash
-pnpm run dev          # :5173，API 代理到 localhost:8080
-pnpm run build        # tsc -b + vite build（tsc -b 自动构建 shared）
-pnpm run lint         # ESLint
-pnpm run test         # vitest 单元测试
-pnpm run test:watch   # vitest 监视模式
-pnpm run test:e2e     # Playwright E2E 测试（需先启动服务）
-pnpm run generate:api # 从 ../specs/openapi.yaml 生成 SDK
+cd frontend
+pnpm run dev          # 开发服务器
 pnpm run verify       # lint + build + test（提交前必须通过）
+pnpm run test:e2e     # Playwright E2E（需先启动前后端）
+pnpm run generate:api # 从 ../specs/openapi.yaml 生成 SDK
 ```
+
+首次设置：`cd backend && mvn compile` + `pnpm install` + `docker-compose up -d`（详见根 README 快速开始）。
 
 ## 提交前验证（CI 门禁对齐）
 
 ```bash
-cd frontend && pnpm run verify             # lint + TypeScript 检查 + 构建 + vitest
-cd backend && mvn test                      # 编译 + 单元测试（H2 内存库）
-cd frontend && npm run test:e2e             # Playwright E2E 测试（需先启动服务）
-# 或根目录全量验证：
 turbo run verify && cd backend && mvn test && cd frontend && npm run test:e2e
 ```
 
-**CI 五层门禁**: 后端 `mvn test` + 前端 `pnpm run lint` + 前端 `pnpm run test` + 前端 `pnpm run build`（含 SDK freshness check）+ 前端 `npm run test:e2e`
+**CI 五层门禁**: 后端 `mvn test` + 前端 `pnpm run lint` + `pnpm run test` + `pnpm run build`（含 SDK freshness check）+ `npm run test:e2e`
 **常见失败**: `@typescript-eslint/no-explicit-any` / `tsc -b` 类型错误 / 后端单测失败
 
-**文档检查**（每次变更后逐项确认）：
+**文档检查**（每次变更后逐项确认；不走 OpenSpec 流程的小改动（热修/文档勘误）同样适用，提交前逐项核对）：
 - 新前端组件 → `docs/frontend/component-catalog.md`
 - 新实体/表/字段 → `docs/database/schema.md` + `docs/uml/README.md`
 - 新 API 端点 → `docs/api/overview.md`
@@ -99,27 +79,25 @@ turbo run verify && cd backend && mvn test && cd frontend && npm run test:e2e
 - 版本号/测试数/模块列表变动 → `CLAUDE.md` 底部版本声明 + `README.md`
 
 ## 关键文档
-- API 契约: `specs/openapi.yaml`（**唯一真相源**）
-- 变更日志: `specs/CHANGELOG.md`
-- 架构说明: `docs/architecture.md`
-- API 规范: `docs/api/overview.md`
-- 数据库: `docs/database/schema.md`
-- UML: `docs/uml/README.md`
-- 组件清单: `docs/frontend/component-catalog.md`
+
+| 文档 | 内容 |
+|------|------|
+| `specs/openapi.yaml` | API 契约（**唯一真相源**） |
+| `specs/CHANGELOG.md` | API 变更日志 |
+| `docs/architecture.md` | 架构说明 |
+| `docs/api/overview.md` | API 规范 |
+| `docs/database/schema.md` + `docs/uml/README.md` | 数据库 + UML |
+| `docs/frontend/component-catalog.md` | 组件清单 |
+| `docs/planning/execution-plan.md` | 规划（Phase 进度，内部代号） |
 
 ## 契约驱动的 API 开发管道
 
 ```
 specs/openapi.yaml
-    │
-    ├─→ 后端: openapi-generator-maven-plugin
-    │    → target/generated-sources/openapi/
-    │       ├── api/*.java    (接口，Controller 必须实现)
-    │       └── dto/*.java    (DTO)
-    │
-    └─→ 前端: npm run generate:api (@hey-api/openapi-ts)
-         → src/api/
-            ├── sdk.gen.ts / types.gen.ts / client.gen.ts
+    ├─→ 后端: openapi-generator-maven-plugin → target/generated-sources/openapi/
+    │       └── api/*.java (接口，Controller 必须实现) + dto/*.java
+    └─→ 前端: npm run generate:api (@hey-api/openapi-ts) → src/api/
+            └── sdk.gen.ts / types.gen.ts / client.gen.ts
 ```
 
 **关键约定：**
@@ -128,7 +106,7 @@ specs/openapi.yaml
 - 自定义逻辑（token 注入、unwrap）**只能**放在 `src/lib/` 下，在 `main.tsx` 启动时注册
 - API 变更必须同步：`specs/openapi.yaml` + `specs/CHANGELOG.md` + `pom.xml` 版本 + `package.json` 版本
 
-## 架构
+## 架构（详见 docs/architecture.md）
 
 ### 后端 DDD 四层
 
@@ -141,48 +119,23 @@ specs/openapi.yaml
 
 依赖方向：API → 应用 → 领域 ← 基础设施
 
-### 前端目录结构
+### 前端（模块化架构）
+
 ```
 src/
-├── core/                    # 稳定基础设施（不可被模块直接依赖）
-│   ├── lib/                 # eventBus, moduleRegistry, utils, unwrap, authInterceptor
-│   ├── store/               # authStore, settingsStore
-│   ├── components/ui/       # shadcn/ui 基础组件
-│   ├── components/layout/   # 通用布局 (TabbedDialog)
-│   ├── hooks/               # useTheme, useNotification, useSseNotifications
-│   └── styles/              # themes.css
-├── modules/                 # 可插拔功能模块
-│   └── calendar/            # 日历模块
-│       ├── index.ts         # ModuleDefinition 导出
-│       ├── routes.tsx        # lazy 路由
-│       ├── components/      # HomePage, CalendarView, EventForm/Modal, CalendarSidebar, ManagePanel
-│       ├── hooks/           # useEvents, useCategories, useTags, useKeyboardShortcuts
-│       ├── store/           # calendarStore
-│       └── lib/             # ics.ts
-├── components/layout/       # 应用 Shell (AppShell, Sidebar, ShortcutsDialog...)
-├── pages/                   # LoginPage
-├── lib/                     # colors.ts (兼容层)
-└── api/                     # 自动生成 SDK
+├── core/       # 稳定基础设施（lib: eventBus/moduleRegistry/unwrap/authInterceptor; store: auth/settings; components/ui: shadcn; hooks: useTheme/useNotification; styles: themes.css）
+├── modules/    # 可插拔功能模块（calendar/pet/todo），各含 index.ts + routes.tsx + components/hooks/store/lib
+├── components/layout/   # AppShell, Sidebar, ShortcutsDialog
+├── pages/               # LoginPage
+├── lib/                 # colors.ts (兼容层)
+└── api/                 # 自动生成 SDK
 ```
 
-### 前端状态管理（两层分离）
-- **Zustand**（UI 状态）: `authStore`（core，token + user）、`calendarStore`（calendar 模块，视图/弹窗/筛选）、`settingsStore`（core，偏好 persist）
-- **React Query**（服务端数据）: `useEvents`/`useCategories`/`useTags` 等 hooks，文件在 `modules/calendar/hooks/`
-- **路径别名**: `@/` → `src/`
-- **模块注册**: `main.tsx` 中 `moduleRegistry.register(calendarModule)` 注册日历模块
-- **动态路由**: `App.tsx` 使用 `useRoutes(moduleRegistry.getRoutes())` 动态装配
-- **PWA**: `vite-plugin-pwa` 提供 manifest + Service Worker（autoUpdate + CacheFirst 静态资源 + NetworkOnly API）
-
-### 模块间通信（事件总线）
-- **唯一通道**: `core/lib/eventBus.ts`（EventBus 单例），模块间不直接 import store/组件
-- **事件类型**: `SystemEvent` 联合类型（定义在 `packages/shared/src/eventBus.ts`），10 种跨模块事件
-- **模块注册**: `core/lib/moduleRegistry.ts` — `ModuleRegistry` 单例，管理模块生命周期（注册/注销/路由收集/petActions/sidebarComponent）
-
-### 持久层
-- **MyBatis-Plus**: domain 定义仓储接口，infrastructure 用 PO + Mapper 实现
-- **Flyway**: `V*__*.sql` 按序执行，启动时自动迁移
-- **单元测试用 H2**: `src/test/resources/application-test.yml`，`MODE=MySQL` 兼容，**Flyway 关闭**，用 `schema-h2.sql` 初始化表结构
-- **启动用 test profile**: `src/main/resources/application-test.yml`，连接 MySQL `daily_schedule_test`（用于 CI/E2E 环境，本地启动不建议用此 profile）
+- **状态管理两层分离**: Zustand（UI 状态: authStore/calendarStore/settingsStore）+ React Query（服务端数据: useEvents/useCategories/useTags）
+- **模块间通信唯一通道**: `core/lib/eventBus.ts`（模块间不直接 import store/组件）；模块注册 `core/lib/moduleRegistry.ts`（路由收集/petActions/sidebarComponent）
+- **持久层**: MyBatis-Plus（domain 定义仓储接口，infrastructure 用 PO + Mapper 实现）；Flyway `V*__*.sql` 启动自动迁移
+- **测试**: 单元测试 H2 内存库（`src/test/resources/application-test.yml`，Flyway 关闭，`schema-h2.sql` 初始化）；启动用 test profile 连接 MySQL `daily_schedule_test`（CI/E2E 用）
+- **PWA**: `vite-plugin-pwa`（autoUpdate + CacheFirst 静态资源 + NetworkOnly API）
 
 ## 关键约定
 
@@ -202,7 +155,7 @@ src/
 - 所有业务表含 `user_id`，查询通过 `CurrentUserService` 强制按当前用户过滤
 
 ### 版本号同步
-API 契约版本号在三个文件中保持一致：`specs/openapi.yaml` → `backend/pom.xml` → `frontend/package.json`
+API 契约版本号在三个文件中保持一致：`specs/openapi.yaml` → `backend/pom.xml` → `frontend/package.json`（规划代号 v4.x 与此无关）
 
 ### 配置文件速查
 
@@ -214,10 +167,8 @@ API 契约版本号在三个文件中保持一致：`specs/openapi.yaml` → `ba
 | prod | MySQL（环境变量注入） | Docker 部署 |
 
 ## 本地环境
-- MySQL 8.0.29（服务名 `MySQL80`），root/123456
-- 开发库 `daily_schedule_dev`，测试库 `daily_schedule_test`
-- JDK 21 / Node 22
-- Swagger UI（dev）: http://localhost:8080/swagger-ui.html
+- MySQL 8.0.29（服务名 `MySQL80`），root/123456；开发库 `daily_schedule_dev`，测试库 `daily_schedule_test`
+- JDK 21 / Node 22；Swagger UI（dev）: http://localhost:8080/swagger-ui.html
 
 ## 当前版本：v3.3.0（2026-07-25）
 

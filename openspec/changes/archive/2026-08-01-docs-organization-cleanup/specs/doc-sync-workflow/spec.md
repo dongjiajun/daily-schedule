@@ -1,38 +1,13 @@
 # Doc Sync Workflow
 
-## Purpose
-
-确保代码变更后文档同步不遗漏：通过 OpenSpec tasks 模板、config rules、CLAUDE.md 检查清单三层机制约束文档更新，并规范 docs/ 目录生命周期（当前真值 vs 归档）与规划文档组织。
-
-## Requirements
-
-### Requirement: Tasks 模板强制包含文档同步阶段
-`openspec/schemas/spec-driven-custom/templates/tasks.md` SHALL 包含独立的"文档同步"阶段（非可选收尾），在契约同步之后、验证之前。
-
-#### Scenario: 新变更生成 tasks 时自动包含文档检查
-- **WHEN** 开发者通过 `/opsx:propose` 或 `/opsx:ff` 创建新变更
-- **THEN** 生成的 tasks.md 包含"文档同步"阶段，列出需检查的文档文件
-
-### Requirement: Config rules 声明文档检查规则
-`openspec/config.yaml` 的 `rules.tasks` SHALL 包含三条文档检查规则：新组件→component-catalog.md、新实体/表→schema.md、新端点→overview.md。
-
-#### Scenario: AI 在 task 生成阶段收到规则约束
-- **WHEN** AI 读取 config.yaml 的 rules.tasks 约束
-- **THEN** AI 在生成 tasks 时自动将对应的文档检查项写入任务列表
-
-### Requirement: CLAUDE.md 提交前验证包含文档检查
-CLAUDE.md 的"提交前验证"章节 SHALL 要求提交前检查 `docs/` 下文档是否需要同步更新。
-
-#### Scenario: 开发者提交前执行完整验证
-- **WHEN** 开发者在提交前阅读 CLAUDE.md 验证清单
-- **THEN** 清单明确提示"检查 docs/ 目录文档是否需要同步"
+## MODIFIED Requirements
 
 ### Requirement: docs/ 目录只保留"当前真值"
 `docs/` 目录 SHALL 仅包含反映当前代码状态的参考文档；历史决议、一次性验收报告、已完成变更的中间产物 SHALL 归档至 `openspec/changes/archive/<date>-<name>/`，而非保留在 docs/ 中。
 
 #### Scenario: 一次性验收报告归入归档
 - **GIVEN** 已完成的 `docs/phase1-verification-report.md`（结论已沉淀在 OpenSpec 归档 `2026-07-27-phase1-stability-verification`）
-- **WHEN** 执行文档组织清理
+- **WHEN** 执行本次文档组织清理
 - **THEN** 报告文件移至归档目录，docs/ 中不再保留
 
 #### Scenario: 新增一次性文档时遵循生命周期
@@ -42,9 +17,16 @@ CLAUDE.md 的"提交前验证"章节 SHALL 要求提交前检查 `docs/` 下文�
 ### Requirement: 规划文档统一收纳于 docs/planning/ 并带状态标记
 规划类文档（路线图、执行计划）SHALL 集中存放于 `docs/planning/` 目录，文件头部 SHALL 标注状态与版本说明，避免与常驻技术参考混放、避免过时不可辨。
 
-#### Scenario: 规划文档状态标记可识别时效
-- **WHEN** 读者浏览 `docs/planning/` 下文档
-- **THEN** 通过头部状态标记立即判断哪些章节已完成、哪些仍在规划，且版本号标注为内部代号
+#### Scenario: 规划文档合并与状态标记
+- **GIVEN** `docs/vision-roadmap-draft.md` 与 `docs/execution-plan.md` 内容重叠且数字过时
+- **WHEN** 执行本次清理
+- **THEN** 两文档合并为 `docs/planning/execution-plan.md`，头部标注 `状态: 📋 规划中` 及版本说明，过时的 CI 门禁数（五层）、测试数（后端 257 / 前端 166 / E2E 25）与实际一致
+
+#### Scenario: 新成员通过状态标记识别文档时效
+- **WHEN** 新成员浏览 `docs/planning/` 下文档
+- **THEN** 通过头部状态标记立即判断哪些章节已完成、哪些仍在规划
+
+## ADDED Requirements
 
 ### Requirement: CLAUDE.md 文档检查覆盖不走 OpenSpec 流程的小改动
 CLAUDE.md 的"文档检查"章节 SHALL 明确：不走 OpenSpec 流程的小改动（热修、文档勘误）同样适用文档同步检查清单，提交前逐项核对。
@@ -66,7 +48,7 @@ CLAUDE.md 的"文档检查"章节 SHALL 明确：不走 OpenSpec 流程的小改
 CLAUDE.md 篇幅 SHALL 维持在官方建议的 100-200 行范围内，只保留核心约定与高频命令，查表型与重复型信息外移或精简。
 
 #### Scenario: CLAUDE.md 行数检查
-- **GIVEN** 清理后 CLAUDE.md 为 176 行
+- **GIVEN** 清理后 CLAUDE.md 目标 ~160 行
 - **WHEN** 未来新增内容导致行数接近或超过 200 行
 - **THEN** 应优先精简/外移，而非无节制增长
 

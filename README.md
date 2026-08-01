@@ -118,8 +118,7 @@ CI 四道门禁：版本一致性检查 → 后端 `mvn test` → 前端 `pnpm r
 | [docs/database/schema.md](docs/database/schema.md) | 数据库表结构 |
 | [docs/frontend/component-catalog.md](docs/frontend/component-catalog.md) | 前端组件清单 |
 | [docs/uml/README.md](docs/uml/README.md) | UML 图 |
-| [docs/execution-plan.md](docs/execution-plan.md) | 宏观执行计划（Phase 进度） |
-| [docs/vision-roadmap-draft.md](docs/vision-roadmap-draft.md) | 愿景路线图草案 |
+| [docs/planning/execution-plan.md](docs/planning/execution-plan.md) | 宏观执行计划（Phase 进度、产品愿景） |
 | [specs/openapi.yaml](specs/openapi.yaml) | API 契约（**唯一真相源**） |
 | [specs/CHANGELOG.md](specs/CHANGELOG.md) | API 变更日志 |
 
