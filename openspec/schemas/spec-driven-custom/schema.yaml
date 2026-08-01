@@ -153,6 +153,11 @@ artifacts:
       - [ ] 9.2 cd frontend && pnpm run verify
       - [ ] 9.3 cd frontend && npm run test:e2e — Playwright E2E 全部通过
       - [ ] 9.4 Smoke test — 浏览器手工验证 mock 无法覆盖的场景
+        <!-- 删除下方示例行，逐项替换为本次变更实际影响的用户流程；无 UI 影响的变更（纯后端/纯文档）删除全部示例行后直接勾选 9.4 -->
+        - [ ] 登录 → 创建日程 → 日历视图显示
+        - [ ] 点击宠物 → 互动菜单弹出 → 喂食成功
+        - [ ] 切换日/周/月视图 → 日程正确显示
+        - [ ] 如有 mock 边界风险（Canvas/WASM/SDK），必须在此验证
       ```
     requires:
       - specs
