@@ -90,46 +90,54 @@ export function isInSoftZone(pos, zones) {
  * 确定游走模式。
  */
 export function determineMode(params) {
-    const { lastInteractionAt, hasActiveInterestPoint, isNightTime } = params;
+    const { lastInteractionAt, hasActiveZone, isNightTime } = params;
     const now = Date.now();
     const idleDuration = now - lastInteractionAt;
     if (isNightTime && idleDuration > RESTING_INTERVAL)
         return 'resting';
-    if (hasActiveInterestPoint)
+    if (hasActiveZone)
         return 'attracted';
     if (idleDuration > RESTING_INTERVAL)
         return 'resting';
     return 'wandering';
 }
 /**
- * 随机漫步：在视口内生成随机目标点，避开硬避让区。
- * 若目标落入软避让区，60% 概率重新生成。
+ * 随机漫步：生成随机目标点，避开硬避让区。
+ * soft 权重化（Decision 8）：30% 概率全域采样（保证视口覆盖）+ 70% 局部漂移（自然漫游）；
+ * 目标落入 soft 避让区时 50% 概率接受——soft 是降频区而非排斥墙，消除方向性边缘排斥。
  */
 export function computeWanderTarget(current, config) {
     const { viewport, padding } = config;
     const softZones = config.avoidZones.filter(z => z.strength === 'soft');
-    for (let attempt = 0; attempt < 5; attempt++) {
-        // 以当前位置为中心，在 100-300px 范围内随机偏移
-        const offsetX = (Math.random() - 0.5) * 400;
-        const offsetY = (Math.random() - 0.5) * 300;
-        const candidate = {
-            x: clamp(current.x + offsetX, padding, viewport.width - padding),
-            y: clamp(current.y + offsetY, padding, viewport.height - padding),
+    const sampleTarget = () => {
+        // 30% 全域采样（覆盖视口任意位置）/ 70% 以当前位置为中心的局部漂移
+        if (Math.random() < 0.3) {
+            return {
+                x: randomRange(padding, viewport.width - padding),
+                y: randomRange(padding, viewport.height - padding),
+            };
+        }
+        return {
+            x: clamp(current.x + (Math.random() - 0.5) * 400, padding, viewport.width - padding),
+            y: clamp(current.y + (Math.random() - 0.5) * 300, padding, viewport.height - padding),
         };
-        // 跳过硬避让区
+    };
+    for (let attempt = 0; attempt < 5; attempt++) {
+        const candidate = sampleTarget();
+        // 硬避让区完全拒绝
         const clamped = avoidZones(candidate, config.avoidZones);
         if (clamped.x !== candidate.x || clamped.y !== candidate.y)
             continue;
-        // 软避让区 60% 概率跳过
-        if (isInSoftZone(clamped, softZones) && Math.random() < 0.6)
+        // soft 区：50% 概率接受（降频而非排斥）
+        if (isInSoftZone(clamped, softZones) && Math.random() < 0.5)
             continue;
         return clamped;
     }
-    // fallback: 随机安全点
-    return {
+    // fallback: 全域采样（hard 推出）
+    return avoidZones({
         x: randomRange(padding, viewport.width - padding),
         y: randomRange(padding, viewport.height - padding),
-    };
+    }, config.avoidZones);
 }
 /**
  * 兴趣点吸引：向兴趣点靠近 ATTRACTION_DISTANCE 的位置。
@@ -173,6 +181,15 @@ export function computeRestingTarget(current, restingSpots) {
     return nearest;
 }
 /**
+ * 计算 Zone 的几何中心。
+ */
+export function zoneCenter(zone) {
+    return {
+        x: (zone.rect.left + zone.rect.right) / 2,
+        y: (zone.rect.top + zone.rect.bottom) / 2,
+    };
+}
+/**
  * 游走主入口：根据模式计算下一个目标位置。
  */
 export function computeNextTarget(current, config, mode, options) {
@@ -180,10 +197,15 @@ export function computeNextTarget(current, config, mode, options) {
         case 'wandering':
             return computeWanderTarget(current, config);
         case 'attracted': {
-            const ip = options?.activeInterestPoint ?? config.interestPoints[0]?.position;
-            if (!ip)
+            const zone = options?.activeZone;
+            if (!zone)
                 return computeWanderTarget(current, config);
-            return computeAttractedTarget(current, ip, config);
+            const center = zoneCenter(zone);
+            // Zone 位于 hard 避让区内 → 放弃吸引，退回 wandering
+            const inHardZone = config.avoidZones.some(z => z.strength === 'hard' && isInsideRect(center, z.rect));
+            if (inHardZone)
+                return computeWanderTarget(current, config);
+            return computeAttractedTarget(current, center, config);
         }
         case 'resting':
             return computeRestingTarget(current, config.restingSpots);
@@ -220,7 +242,6 @@ export function createDefaultConfig(viewportWidth, viewportHeight) {
     return {
         viewport: { width: viewportWidth, height: viewportHeight },
         avoidZones: [],
-        interestPoints: [],
         restingSpots: [
             { x: viewportWidth - 80, y: viewportHeight - 80 }, // 右下角
             { x: 80, y: viewportHeight - 80 }, // 左下角

@@ -1,19 +1,27 @@
+import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useMyPet } from '../hooks/usePet'
 import { usePetStore } from '../store/petStore'
+import { registerZone, updateZoneRect } from '../lib/zoneRegistry'
+import type { Zone } from '@daily-schedule/shared/pet'
 import { SvgAvatar } from './SvgAvatar'
+
+/** 宠物小窝 Zone id（RoamingPet 进窝检测据此识别） */
+export const PET_HOME_ZONE_ID = 'pet-home-spot'
 
 /**
  * 侧边栏迷你宠物 — 常驻在 Sidebar 底部。
  * 40-50px 精灵 + 心情/饱食度迷你指示点。
  * 点击跳转到 /pet 完整页面。
+ * 该区域注册为 `pet-spot` Zone（宠物小窝）——游走宠物进入即自动进窝休息。
  */
 export function SidebarPet({ onNavigate }: { onNavigate?: () => void }) {
   const navigate = useNavigate()
   const { data: pet, isLoading } = useMyPet()
   const emotionState = usePetStore((s) => s.emotionState)
   const setSelectionOpen = usePetStore((s) => s.setSelectionOpen)
+  const homeRef = useRef<HTMLDivElement>(null)
 
   const handleClick = () => {
     if (pet) {
@@ -28,8 +36,36 @@ export function SidebarPet({ onNavigate }: { onNavigate?: () => void }) {
   const moodColor = pet ? (pet.mood! >= 60 ? 'var(--color-accent, #22c55e)' : pet.mood! >= 30 ? '#eab308' : '#ef4444') : '#9ca3af'
   const hungerColor = pet ? (pet.hunger! >= 60 ? 'var(--color-accent, #22c55e)' : pet.hunger! >= 30 ? '#eab308' : '#ef4444') : '#9ca3af'
 
+  // ── 注册宠物小窝 Zone（pet-spot）──
+  // 组件生命周期 = Zone 生命周期：挂载注册、卸载注销；scroll/resize 事件驱动 rect 更新
+  useEffect(() => {
+    const el = homeRef.current
+    if (!pet || !el) return
+
+    const readRect = (): Zone['rect'] => {
+      const r = el.getBoundingClientRect()
+      return { left: r.left, top: r.top, right: r.right, bottom: r.bottom }
+    }
+
+    const unregister = registerZone({
+      id: PET_HOME_ZONE_ID,
+      type: 'pet-spot',
+      rect: readRect(),
+      weight: 1,
+    })
+
+    const refresh = () => updateZoneRect(PET_HOME_ZONE_ID, readRect())
+    window.addEventListener('scroll', refresh, true)
+    window.addEventListener('resize', refresh)
+    return () => {
+      window.removeEventListener('scroll', refresh, true)
+      window.removeEventListener('resize', refresh)
+      unregister()
+    }
+  }, [pet])
+
   return (
-    <div className="px-4 py-3 border-t border-border-subtle">
+    <div ref={homeRef} className="px-4 py-3 border-t border-border-subtle">
       <button
         onClick={handleClick}
         className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-hover transition-colors group"

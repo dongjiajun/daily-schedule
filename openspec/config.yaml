@@ -52,13 +52,16 @@ rules:
     - 必须标注对 DDD 各层的影响 (API/应用/领域/基础设施)
     - 涉及数据库变更时必须标注 Flyway 迁移版本号 (V5, V6...)
     - 标记是否为 BREAKING 变更 (影响契约兼容性)
+    - 必须按 templates/proposal.md 的结构撰写（含 Capabilities 子标题格式），不得自创章节结构
   specs:
     - 新增 API 端点时必须引用 OpenAPI schema 中的字段名和类型
     - 数据库变更必须列出表名、列名、类型、约束
+    - delta 操作块（ADDED/MODIFIED/REMOVED Requirements）必须按 templates/spec.md 格式撰写
   design:
     - 必须明确改动涉及的后端包路径 (api/controller, application, domain, infrastructure)
     - 涉及新依赖时必须说明选型理由
     - 涉及认证/权限时必须说明安全影响
+    - "Decision 必须采用 `### Decision N: <名称>` 编号 + 三段式（选择/理由/备选方案），按 templates/design.md 结构撰写"
   tasks:
     - "按 DDD 分层编排任务顺序: 数据库迁移 → 领域层 → 基础设施层 → 应用层 → API 层 → 前端"
     - API 契约变更后必须包含 "重新生成 SDK" 任务
@@ -67,3 +70,4 @@ rules:
     - 涉及新前端组件时必须在 tasks 中包含 component-catalog.md 更新
     - 涉及新实体/数据库表/字段时必须在 tasks 中包含 schema.md + uml/README.md 更新
     - 涉及新 API 端点时必须在 tasks 中包含 api/overview.md 更新
+    - 必须保持 1-9 固定分组编号（按 templates/tasks.md），无变更的分组标记 N/A 打勾，不得自创分组编号

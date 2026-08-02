@@ -13,7 +13,7 @@
 
     <groupId>com.dailyschedule</groupId>
     <artifactId>daily-schedule-backend</artifactId>
-    <version>3.3.0-SNAPSHOT</version>
+    <version>3.3.3-SNAPSHOT</version>
     <name>daily-schedule-backend</name>
     <description>日程管理系统后端</description>
 

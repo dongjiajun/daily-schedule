@@ -15,8 +15,6 @@ export interface RoamingConfig {
   viewport: { width: number; height: number }
   /** 需要避让的矩形区域（如日历网格 .rbc-month-view） */
   avoidZones: AvoidZone[]
-  /** 兴趣点：位置 + 吸引力权重 (0-1) */
-  interestPoints: InterestPoint[]
   /** 预设休息点 */
   restingSpots: Position[]
   /** 安全边距（距视口边缘的距离） */
@@ -30,11 +28,43 @@ export interface AvoidZone {
   strength: 'soft' | 'hard'
 }
 
-export interface InterestPoint {
-  position: Position
-  weight: number // 0-1, 吸引力权重
-  decayTime?: number // ms, 吸引力衰减至 0 的时间
-  createdAt?: number // timestamp
+/** 区域类型：user-interaction（用户交互）/ pet-spot（宠物专属区域）/ calendar-cell（日历格子） */
+export type ZoneType = 'user-interaction' | 'pet-spot' | 'calendar-cell'
+
+/** calendar-cell Zone 的完成度负载：当天日程完成度 */
+export interface CalendarCellPayload {
+  /** 日期标识（YYYY-MM-DD） */
+  date: string
+  /** 当天完成度百分比（0-100 整数，COMPLETED / total） */
+  completion: number
+}
+
+/**
+ * 各 Zone 类型的数据负载结构。
+ * 编译期约束：calendar-cell 必须携带完成度；其余类型无负载。
+ */
+export type ZonePayload = {
+  'user-interaction': undefined
+  'pet-spot': undefined
+  'calendar-cell': CalendarCellPayload
+}
+
+/**
+ * 类型化区域（Zone）— 替代原 InterestPoint。
+ * 矩形 + 类型 + 数据负载，供区域感知机制消费。
+ */
+export interface Zone<T extends ZoneType = ZoneType> {
+  id: string
+  type: T
+  /** 矩形边界（相对于视口） */
+  rect: { left: number; top: number; right: number; bottom: number }
+  /** 数据负载（按类型收紧：calendar-cell 携带完成度，其余无） */
+  payload?: ZonePayload[T]
+  /** 吸引力权重 (0-1) */
+  weight: number
+  /** ms 后吸引力衰减至 0 的时间 */
+  decayTime?: number
+  createdAt?: number
 }
 
 export type RoamingMode = 'wandering' | 'attracted' | 'resting' | 'idle'
@@ -140,51 +170,62 @@ export function isInSoftZone(pos: Position, zones: AvoidZone[]): boolean {
  */
 export function determineMode(params: {
   lastInteractionAt: number
-  hasActiveInterestPoint: boolean
+  hasActiveZone: boolean
   isNightTime: boolean
 }): RoamingMode {
-  const { lastInteractionAt, hasActiveInterestPoint, isNightTime } = params
+  const { lastInteractionAt, hasActiveZone, isNightTime } = params
   const now = Date.now()
   const idleDuration = now - lastInteractionAt
 
   if (isNightTime && idleDuration > RESTING_INTERVAL) return 'resting'
-  if (hasActiveInterestPoint) return 'attracted'
+  if (hasActiveZone) return 'attracted'
   if (idleDuration > RESTING_INTERVAL) return 'resting'
   return 'wandering'
 }
 
 /**
- * 随机漫步：在视口内生成随机目标点，避开硬避让区。
- * 若目标落入软避让区，60% 概率重新生成。
+ * 随机漫步：生成随机目标点，避开硬避让区。
+ * soft 权重化（Decision 8）：30% 概率全域采样（保证视口覆盖）+ 70% 局部漂移（自然漫游）；
+ * 目标落入 soft 避让区时 50% 概率接受——soft 是降频区而非排斥墙，消除方向性边缘排斥。
  */
 export function computeWanderTarget(current: Position, config: RoamingConfig): Position {
   const { viewport, padding } = config
   const softZones = config.avoidZones.filter(z => z.strength === 'soft')
+  const sampleTarget = (): Position => {
+    // 30% 全域采样（覆盖视口任意位置）/ 70% 以当前位置为中心的局部漂移
+    if (Math.random() < 0.3) {
+      return {
+        x: randomRange(padding, viewport.width - padding),
+        y: randomRange(padding, viewport.height - padding),
+      }
+    }
+    return {
+      x: clamp(current.x + (Math.random() - 0.5) * 400, padding, viewport.width - padding),
+      y: clamp(current.y + (Math.random() - 0.5) * 300, padding, viewport.height - padding),
+    }
+  }
 
   for (let attempt = 0; attempt < 5; attempt++) {
-    // 以当前位置为中心，在 100-300px 范围内随机偏移
-    const offsetX = (Math.random() - 0.5) * 400
-    const offsetY = (Math.random() - 0.5) * 300
-    const candidate: Position = {
-      x: clamp(current.x + offsetX, padding, viewport.width - padding),
-      y: clamp(current.y + offsetY, padding, viewport.height - padding),
-    }
+    const candidate = sampleTarget()
 
-    // 跳过硬避让区
+    // 硬避让区完全拒绝
     const clamped = avoidZones(candidate, config.avoidZones)
     if (clamped.x !== candidate.x || clamped.y !== candidate.y) continue
 
-    // 软避让区 60% 概率跳过
-    if (isInSoftZone(clamped, softZones) && Math.random() < 0.6) continue
+    // soft 区：50% 概率接受（降频而非排斥）
+    if (isInSoftZone(clamped, softZones) && Math.random() < 0.5) continue
 
     return clamped
   }
 
-  // fallback: 随机安全点
-  return {
-    x: randomRange(padding, viewport.width - padding),
-    y: randomRange(padding, viewport.height - padding),
-  }
+  // fallback: 全域采样（hard 推出）
+  return avoidZones(
+    {
+      x: randomRange(padding, viewport.width - padding),
+      y: randomRange(padding, viewport.height - padding),
+    },
+    config.avoidZones
+  )
 }
 
 /**
@@ -240,6 +281,16 @@ export function computeRestingTarget(current: Position, restingSpots: Position[]
 }
 
 /**
+ * 计算 Zone 的几何中心。
+ */
+export function zoneCenter(zone: Zone): Position {
+  return {
+    x: (zone.rect.left + zone.rect.right) / 2,
+    y: (zone.rect.top + zone.rect.bottom) / 2,
+  }
+}
+
+/**
  * 游走主入口：根据模式计算下一个目标位置。
  */
 export function computeNextTarget(
@@ -247,8 +298,8 @@ export function computeNextTarget(
   config: RoamingConfig,
   mode: RoamingMode,
   options?: {
-    /** 特定兴趣点（attracted 模式使用） */
-    activeInterestPoint?: Position
+    /** 活跃区域（attracted 模式使用） */
+    activeZone?: Zone
   }
 ): Position {
   switch (mode) {
@@ -256,9 +307,17 @@ export function computeNextTarget(
       return computeWanderTarget(current, config)
 
     case 'attracted': {
-      const ip = options?.activeInterestPoint ?? config.interestPoints[0]?.position
-      if (!ip) return computeWanderTarget(current, config)
-      return computeAttractedTarget(current, ip, config)
+      const zone = options?.activeZone
+      if (!zone) return computeWanderTarget(current, config)
+
+      const center = zoneCenter(zone)
+      // Zone 位于 hard 避让区内 → 放弃吸引，退回 wandering
+      const inHardZone = config.avoidZones.some(
+        z => z.strength === 'hard' && isInsideRect(center, z.rect)
+      )
+      if (inHardZone) return computeWanderTarget(current, config)
+
+      return computeAttractedTarget(current, center, config)
     }
 
     case 'resting':
@@ -302,7 +361,6 @@ export function createDefaultConfig(viewportWidth: number, viewportHeight: numbe
   return {
     viewport: { width: viewportWidth, height: viewportHeight },
     avoidZones: [],
-    interestPoints: [],
     restingSpots: [
       { x: viewportWidth - 80, y: viewportHeight - 80 },  // 右下角
       { x: 80, y: viewportHeight - 80 },                    // 左下角

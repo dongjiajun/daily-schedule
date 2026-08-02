@@ -8,6 +8,7 @@ artifacts:
     template: proposal.md
     instruction: |
       创建 proposal，阐明此变更的动机与范围。
+      **格式纪律（MUST）**：撰写前先读取模板 `templates/proposal.md`，严格按其章节结构与格式撰写（含 Capabilities 的子标题格式），不得自创章节结构。
 
       本项目是日程管理系统，采用 DDD 四层架构（API→应用→领域←基础设施）+ React 19 前端。
       API 契约驱动：specs/openapi.yaml 是唯一真相源。
@@ -32,6 +33,7 @@ artifacts:
     template: spec.md
     instruction: |
       为 proposal 中每个 capability 创建一份 spec 文件。
+      **格式纪律（MUST）**：撰写前先读取模板 `templates/spec.md`，delta 操作块（ADDED/MODIFIED/REMOVED Requirements）的格式严格按模板与指令规定执行。
 
       本项目规格要点：
       - API 端点变更必须引用 OpenAPI schema（字段名、类型、必填/可选）
@@ -59,6 +61,7 @@ artifacts:
     instruction: |
       创建设计文档，阐明如何实现变更。仅在以下情况需要：
       - 跨模块变更 / 新架构模式 / 外部依赖 / 安全/性能/迁移复杂度
+      **格式纪律（MUST）**：撰写前先读取模板 `templates/design.md`，Decision 采用 `### Decision N: <名称>` 编号 + 三段式（**选择**/**理由**/**备选方案**），章节结构按模板。
 
       本项目设计要点：
       - **DDD 分层方案**: 明确变动涉及的后端包路径
@@ -89,6 +92,7 @@ artifacts:
     template: tasks.md
     instruction: |
       拆分实现任务，按本项目 DDD 分层顺序排列：
+      **格式纪律（MUST）**：撰写前先读取模板 `templates/tasks.md`，保持 1-9 固定分组编号（数据库迁移→领域层→基础设施→应用→API→契约同步→前端→文档同步→全量验证），无变更的分组标记 N/A 打勾，不得自创分组编号。
 
       **推荐编排**: 数据库迁移 → 领域层 → 基础设施层 → 应用层 → API 层 → 前端 → 文档同步 → 全量验证
       - 涉及 API 契约变更时，确保 "重新生成 SDK" 作为独立任务

@@ -1,6 +1,7 @@
-import { useMemo, useCallback } from 'react'
+import { useEffect, useMemo, useCallback } from 'react'
 import { Calendar, dayjsLocalizer, type ToolbarProps, type View } from 'react-big-calendar'
 import _withDragAndDrop, { type withDragAndDropProps } from 'react-big-calendar/lib/addons/dragAndDrop'
+import { registerZone, removeZone, getZones } from '@/modules/pet/lib/zoneRegistry'
 
 // Vite CJS 预打包将 exports.default 包装为 ESM default，导致拿到的是
 /* { default: fn, __esModule: true } 而非函数本身，此处手动解包 */
@@ -68,6 +69,73 @@ export function CalendarView() {
   })
   const updateMutation = useUpdateEvent({ silent: true })
   const toggleStatus = useToggleEventStatus()
+
+  // ── 月视图格子注册为 calendar-cell Zones（区域感知：宠物格内互动） ──
+  // spec: pet-zone-interaction "Calendar month view registers calendar-cell zones"
+  // 注册时机：月视图可见时；视图切换/卸载注销；scroll/resize（rAF 节流）事件驱动 rect 更新；
+  // events 变化（标记完成/增删）→ effect 重跑 → 同 id 覆盖刷新完成度
+  useEffect(() => {
+    if (view !== 'month') return
+
+    // react-big-calendar 月视图：.rbc-month-view > .rbc-month-row ×6 > .rbc-row-bg > .rbc-day-bg ×7
+    // 格子无 data-date 属性，日期按"可见月起始 + 索引"映射（dayjs zh-cn 周一为周起始，与 localizer 一致）
+    const CELL_SELECTOR = '.rbc-month-view .rbc-day-bg'
+    let rafId = 0
+
+    const refresh = () => {
+      const cells = Array.from(document.querySelectorAll<HTMLElement>(CELL_SELECTOR))
+      if (cells.length === 0) return
+
+      // 完成度口径：当天 COMPLETED 数量占比（与 CalendarSidebar 同款逻辑，按天分组）
+      const byDate = new Map<string, EventResponse[]>()
+      for (const e of events ?? []) {
+        const d = dayjs(e.startTime!).format('YYYY-MM-DD')
+        if (!byDate.has(d)) byDate.set(d, [])
+        byDate.get(d)!.push(e)
+      }
+      const completionOf = (date: string): number => {
+        const list = byDate.get(date) ?? []
+        if (list.length === 0) return 0
+        return Math.round((list.filter((e) => e.status === 'COMPLETED').length / list.length) * 100)
+      }
+
+      // 可见月视图起始日：当前月第一天所在的周（周一）
+      // 显式 locale('zh-cn')：store 的 dayjs 实例创建时可能早于全局 locale 设置（weekStart 仍为周日）
+      const monthStart = dayjs(currentDate).locale('zh-cn').startOf('month').startOf('week')
+      cells.forEach((cell, i) => {
+        const date = monthStart.add(i, 'day').format('YYYY-MM-DD')
+        const rect = cell.getBoundingClientRect()
+        registerZone({
+          id: `calendar-cell-${date}`,
+          type: 'calendar-cell',
+          rect: { left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom },
+          payload: { date, completion: completionOf(date) },
+          weight: 1,
+        })
+      })
+    }
+
+    // react-big-calendar 月视图渲染是异步的，等一帧 DOM 就绪再注册
+    const readyTimer = setTimeout(refresh, 0)
+    // 事件驱动 rect 更新（rAF 节流合并高频滚动，避免 layout thrash）
+    const onScrollResize = () => {
+      cancelAnimationFrame(rafId)
+      rafId = requestAnimationFrame(refresh)
+    }
+    window.addEventListener('scroll', onScrollResize, true)
+    window.addEventListener('resize', onScrollResize)
+
+    return () => {
+      clearTimeout(readyTimer)
+      cancelAnimationFrame(rafId)
+      window.removeEventListener('scroll', onScrollResize, true)
+      window.removeEventListener('resize', onScrollResize)
+      // 注销全部 calendar-cell Zones（视图切换/卸载）
+      for (const z of getZones()) {
+        if (z.type === 'calendar-cell') removeZone(z.id)
+      }
+    }
+  }, [view, events, currentDate])
 
   const calendarEvents: CalendarEvent[] = useMemo(
     () =>

@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: 日程管理系统 API
-  version: 3.3.0
+  version: 3.3.3
   description: |
     v3.3 接口定义 — 前后端契约唯一真相源。
 

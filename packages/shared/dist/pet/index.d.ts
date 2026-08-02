@@ -1,3 +1,3 @@
-export type { Position, RoamingConfig, AvoidZone, InterestPoint, RoamingMode, } from './roaming';
-export { clampToViewport, isInsideRect, avoidZones, isInSoftZone, determineMode, computeNextTarget, computeWanderTarget, computeAttractedTarget, computeRestingTarget, randomWanderInterval, randomMoveDuration, computeFacing, createDefaultConfig, } from './roaming';
+export type { Position, RoamingConfig, AvoidZone, Zone, ZoneType, ZonePayload, CalendarCellPayload, RoamingMode, } from './roaming';
+export { clampToViewport, isInsideRect, avoidZones, isInSoftZone, determineMode, computeNextTarget, computeWanderTarget, computeAttractedTarget, computeRestingTarget, zoneCenter, randomWanderInterval, randomMoveDuration, computeFacing, createDefaultConfig, } from './roaming';
 //# sourceMappingURL=index.d.ts.map

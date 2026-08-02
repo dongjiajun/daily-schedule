@@ -1,7 +1,7 @@
 /**
  * 系统事件总线 — 模块间唯一通信通道。
  *
- * 架构约束（来自 docs/vision-roadmap-draft.md 决策 2）：
+ * 架构约束（来自 docs/planning/execution-plan.md 关键架构决策 2）：
  * - 模块间不直接 import 彼此的 store 或组件
  * - 所有跨模块行为通过类型安全的事件总线完成
  * - 每个事件有明确的发出方和可能的消费方

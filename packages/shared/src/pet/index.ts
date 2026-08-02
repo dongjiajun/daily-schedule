@@ -2,7 +2,10 @@ export type {
   Position,
   RoamingConfig,
   AvoidZone,
-  InterestPoint,
+  Zone,
+  ZoneType,
+  ZonePayload,
+  CalendarCellPayload,
   RoamingMode,
 } from './roaming'
 
@@ -16,6 +19,7 @@ export {
   computeWanderTarget,
   computeAttractedTarget,
   computeRestingTarget,
+  zoneCenter,
   randomWanderInterval,
   randomMoveDuration,
   computeFacing,

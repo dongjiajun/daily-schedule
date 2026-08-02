@@ -14,8 +14,6 @@ export interface RoamingConfig {
     };
     /** 需要避让的矩形区域（如日历网格 .rbc-month-view） */
     avoidZones: AvoidZone[];
-    /** 兴趣点：位置 + 吸引力权重 (0-1) */
-    interestPoints: InterestPoint[];
     /** 预设休息点 */
     restingSpots: Position[];
     /** 安全边距（距视口边缘的距离） */
@@ -32,9 +30,43 @@ export interface AvoidZone {
     /** 避让强度: "soft" 降低概率但仍可能进入，"hard" 完全禁止进入 */
     strength: 'soft' | 'hard';
 }
-export interface InterestPoint {
-    position: Position;
+/** 区域类型：user-interaction（用户交互）/ pet-spot（宠物专属区域）/ calendar-cell（日历格子） */
+export type ZoneType = 'user-interaction' | 'pet-spot' | 'calendar-cell';
+/** calendar-cell Zone 的完成度负载：当天日程完成度 */
+export interface CalendarCellPayload {
+    /** 日期标识（YYYY-MM-DD） */
+    date: string;
+    /** 当天完成度百分比（0-100 整数，COMPLETED / total） */
+    completion: number;
+}
+/**
+ * 各 Zone 类型的数据负载结构。
+ * 编译期约束：calendar-cell 必须携带完成度；其余类型无负载。
+ */
+export type ZonePayload = {
+    'user-interaction': undefined;
+    'pet-spot': undefined;
+    'calendar-cell': CalendarCellPayload;
+};
+/**
+ * 类型化区域（Zone）— 替代原 InterestPoint。
+ * 矩形 + 类型 + 数据负载，供区域感知机制消费。
+ */
+export interface Zone<T extends ZoneType = ZoneType> {
+    id: string;
+    type: T;
+    /** 矩形边界（相对于视口） */
+    rect: {
+        left: number;
+        top: number;
+        right: number;
+        bottom: number;
+    };
+    /** 数据负载（按类型收紧：calendar-cell 携带完成度，其余无） */
+    payload?: ZonePayload[T];
+    /** 吸引力权重 (0-1) */
     weight: number;
+    /** ms 后吸引力衰减至 0 的时间 */
     decayTime?: number;
     createdAt?: number;
 }
@@ -65,12 +97,13 @@ export declare function isInSoftZone(pos: Position, zones: AvoidZone[]): boolean
  */
 export declare function determineMode(params: {
     lastInteractionAt: number;
-    hasActiveInterestPoint: boolean;
+    hasActiveZone: boolean;
     isNightTime: boolean;
 }): RoamingMode;
 /**
- * 随机漫步：在视口内生成随机目标点，避开硬避让区。
- * 若目标落入软避让区，60% 概率重新生成。
+ * 随机漫步：生成随机目标点，避开硬避让区。
+ * soft 权重化（Decision 8）：30% 概率全域采样（保证视口覆盖）+ 70% 局部漂移（自然漫游）；
+ * 目标落入 soft 避让区时 50% 概率接受——soft 是降频区而非排斥墙，消除方向性边缘排斥。
  */
 export declare function computeWanderTarget(current: Position, config: RoamingConfig): Position;
 /**
@@ -82,11 +115,15 @@ export declare function computeAttractedTarget(current: Position, interestPoint:
  */
 export declare function computeRestingTarget(current: Position, restingSpots: Position[]): Position;
 /**
+ * 计算 Zone 的几何中心。
+ */
+export declare function zoneCenter(zone: Zone): Position;
+/**
  * 游走主入口：根据模式计算下一个目标位置。
  */
 export declare function computeNextTarget(current: Position, config: RoamingConfig, mode: RoamingMode, options?: {
-    /** 特定兴趣点（attracted 模式使用） */
-    activeInterestPoint?: Position;
+    /** 活跃区域（attracted 模式使用） */
+    activeZone?: Zone;
 }): Position;
 /**
  * 生成随机游走间隔 (ms)。
