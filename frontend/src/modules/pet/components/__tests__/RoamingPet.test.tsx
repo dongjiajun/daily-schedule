@@ -3,8 +3,10 @@ import { render, fireEvent, act } from '@testing-library/react'
 import { clearZones, getZones, registerZone } from '../../lib/zoneRegistry'
 import { usePetStore } from '../../store/petStore'
 
+// 模块级常量 pet：引用稳定（贴近 React Query structural sharing——数据未变时 data 引用不变）
+const MOCK_PET = { id: 1, name: '豆豆', mood: 'happy', energy: 80 }
 vi.mock('../../hooks/usePet', () => ({
-  useMyPet: () => ({ data: { id: 1, name: '豆豆', mood: 'happy', energy: 80 }, isLoading: false }),
+  useMyPet: () => ({ data: MOCK_PET, isLoading: false }),
 }))
 
 vi.mock('framer-motion', () => ({
@@ -89,7 +91,7 @@ describe('RoamingPet', () => {
     expect(zones[0].rect).toMatchObject({ left: 140, top: 90, right: 260, bottom: 210 })
   })
 
-  it('Zone 携带 decayTime 自动衰减移除', () => {
+  it('Zone 携带 decayTime（45s 保鲜期）到期后读取不可见', () => {
     vi.spyOn(Math, 'random').mockReturnValue(0.1)
     render(<RoamingPet />)
 
@@ -99,10 +101,38 @@ describe('RoamingPet', () => {
     })
     expect(getZones()).toHaveLength(1)
 
+    // 保鲜期内仍可见（15s < 45s）
     act(() => {
       vi.advanceTimersByTime(15_000)
     })
+    expect(getZones()).toHaveLength(1)
+
+    // 超过 45s 保鲜期 → 惰性过期
+    act(() => {
+      vi.advanceTimersByTime(30_000)
+    })
     expect(getZones()).toHaveLength(0)
+  })
+
+  // ── 渲染解耦（spec: Roam cadence survives re-render）──
+  it('渲染不重排游走 timer（tick 节奏稳定，不被渲染清掉重排）', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5) // wander interval = 20s
+    const clearSpy = vi.spyOn(globalThis, 'clearTimeout')
+    render(<RoamingPet />)
+
+    // 第一 tick（20s）：scheduleWander 递归时清理旧 timer 恰 1 次
+    // 若渲染触发 effect 重排（旧行为：tick 内 setPosition → 渲染 → cleanup 清 timer 重排），
+    // clearTimeout 计数会多出 cleanup + 重排开头 2 次
+    act(() => {
+      vi.advanceTimersByTime(20_000)
+    })
+    expect(clearSpy).toHaveBeenCalledTimes(1)
+
+    // 第二 tick 在下一个 20s 执行（中间 22.5s idleVariant 递归清理 +1，40s 处第二 tick 递归清理 +1）
+    act(() => {
+      vi.advanceTimersByTime(20_000)
+    })
+    expect(clearSpy).toHaveBeenCalledTimes(3)
   })
 
   // ── 小窝进窝休息（pet-spot Zone）──

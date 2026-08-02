@@ -44,6 +44,11 @@
 - **THEN** 宠物活动范围 SHALL 不因 soft 区而持续压缩到角落——soft 区只是降频区，不是排斥墙
 - **THEN** hard 避让区目标 SHALL 继续完全拒绝
 
+#### Scenario: Roam cadence survives re-render
+- **WHEN** 宠物游走中且发生与游走无关的渲染（宠物数据轮询刷新 / 情绪变化 / hover 浮窗）
+- **THEN** 游走 tick 间隔 SHALL 不被重置或拉长——渲染 SHALL NOT 清除或重排游走 timer
+- **THEN** 游走节奏保持 10-30s 随机间隔，仅由游走循环自身驱动
+
 ### Requirement: Interest Point Attraction
 宠物 SHALL 对用户行为产生兴趣，基于 Zone 区域感知机制主动靠近活跃区域。
 
@@ -52,6 +57,8 @@
 - **THEN** 宠物 50% 概率创建 `user-interaction` 类型 Zone 并向其靠近
 - **THEN** 靠近距离不超过光标 100px 范围
 - **THEN** 兴趣区域吸引力随时间衰减（decayTime 后移除）
+- **THEN** 保鲜期（decayTime）SHALL 覆盖最大游走间隔（45s > 30s tick + 移动余量）——宠物在任意 tick 都能感知到未过期的兴趣区
+- **THEN** 衰减判定 SHALL 在宠物感知（游走 tick 读取 Zone 列表）时惰性执行，到期后宠物下一 tick 感知不到该 Zone 并恢复 `wandering`
 
 #### Scenario: Approach active content
 - **WHEN** 用户点击/输入页面元素

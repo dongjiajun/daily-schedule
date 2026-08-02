@@ -70,7 +70,7 @@ export function ShibaInu({ emotion, size = 100, className }: Props) {
       <ellipse cx="50" cy="64" rx="16" ry="13" fill="#FFF7ED" />
 
       {/* ── 尾巴 (卷曲) ── */}
-      <g transform={`rotate(${tailAngle}, 74, 60)`}>
+      <g transform={`rotate(${tailAngle} 74 60)`}>
         <path d="M74 60 Q84 52 78 40 Q74 34 68 38" stroke="#F4A261" strokeWidth="5" strokeLinecap="round" fill="none" />
         <ellipse cx="68" cy="38" rx="3.5" ry="3" fill="#E76F51" />
       </g>
@@ -82,13 +82,14 @@ export function ShibaInu({ emotion, size = 100, className }: Props) {
       <ellipse cx="50" cy="43" rx="16" ry="14" fill="#FFF7ED" />
 
       {/* ── 左耳 (三角立耳) ── */}
-      <g transform={`rotate(${leftEarRotate}, 30, 20)`}>
+      {/* SVG transform 属性角度不允许带单位（'0deg' 非法），渲染时剥离 */}
+      <g transform={`rotate(${parseFloat(leftEarRotate)} 30 20)`}>
         <polygon points="28,26 24,6 36,20" fill="#F4A261" />
         <polygon points="28,24 26,10 34,20" fill="#FCA5A5" />
       </g>
 
       {/* ── 右耳 ── */}
-      <g transform={`rotate(${rightEarRotate}, 70, 20)`}>
+      <g transform={`rotate(${parseFloat(rightEarRotate)} 70 20)`}>
         <polygon points="72,26 76,6 64,20" fill="#F4A261" />
         <polygon points="72,24 74,10 66,20" fill="#FCA5A5" />
       </g>

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback, useState } from 'react'
+import { useEffect, useRef, useCallback, useMemo, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useMyPet } from '../hooks/usePet'
 import { usePetStore } from '../store/petStore'
@@ -38,7 +38,6 @@ export function RoamingPet() {
   const isResting = usePetStore((s) => s.isResting)
   const startResting = usePetStore((s) => s.startResting)
   const wakeUp = usePetStore((s) => s.wakeUp)
-  const lastInteractionTime = usePetStore((s) => s.lastInteractionTime)
   const setEmotion = usePetStore((s) => s.setEmotion)
   const showBubble = usePetStore((s) => s.showBubble)
 
@@ -117,7 +116,9 @@ export function RoamingPet() {
       type: 'user-interaction',
       rect: { left: x - 60, top: y - 60, right: x + 60, bottom: y + 60 },
       weight: 1,
-      decayTime: 15_000,
+      // 保鲜期 > 最大游走 tick（30s）+ 移动时长（8s）余量：任意 tick 都能感知到未过期的兴趣区
+      // 衰减判定在读取时惰性执行（zoneRegistry.getZones），到期后下一 tick 自然消失
+      decayTime: 45_000,
       createdAt: Date.now(),
     })
 
@@ -220,12 +221,16 @@ export function RoamingPet() {
   // ── 游走循环（使用 ref 打破递归 useCallback 的 ESLint 警告） ──
   const scheduleWanderRef = useRef<() => void>(() => {})
 
+  // 游走节奏与渲染解耦：tick 回调经 store.getState() 读取实时状态（position/交互时间/休息态），
+  // useCallback 依赖收敛为稳定引用（Zustand actions + useCallback([]) 函数）→ 渲染（refetch/情绪/hover）
+  // 不再重建 scheduleWander、不清 timer 重排，tick 间隔保持纯 10-30s 随机（spec: Roam cadence survives re-render）
   const scheduleWander = useCallback(() => {
     if (wanderTimerRef.current) clearTimeout(wanderTimerRef.current)
 
     const interval = randomWanderInterval()
     wanderTimerRef.current = setTimeout(() => {
-      // 每次循环取最新 Zone 列表（移除后立即失效）
+      // 每次循环取最新状态与 Zone 列表（移除后立即失效）
+      const { position, lastInteractionTime, isResting } = usePetStore.getState()
       const activeZones = getZones().filter(z => z.type === 'user-interaction')
       const homeZone = getZones().find(z => z.type === 'pet-spot') ?? null
       const inHome = homeZone ? isInsideRect(position, homeZone.rect) : false
@@ -237,7 +242,7 @@ export function RoamingPet() {
 
       // 进窝边沿检测：仅当"上一 tick 不在窝内 && 当前在窝内 && 未休息"才进窝
       // 防止唤醒后 position 仍在窝内时下一 tick 立即再次进窝（须先离开窝区才可再进窝）
-      // 注意：用本地 resting 同步进窝后的状态（闭包 isResting 是排 timer 时的旧值，
+      // 注意：用本地 resting 同步进窝后的状态（getState 读到的 isResting 是进窝前一刻的值，
       // 若直接用于下方分支判断会走 wandering 分支覆盖进窝）
       let resting = isResting
       const wasInHome = wasInHomeRef.current
@@ -297,7 +302,7 @@ export function RoamingPet() {
 
       scheduleWanderRef.current()
     }, interval)
-  }, [position, lastInteractionTime, isResting, setFacing, setPosition, startResting, wakeUp, startPacing, stopPacing])
+  }, [startResting, wakeUp, setFacing, setPosition, startPacing, stopPacing])
 
   // 保持 ref 与最新 scheduleWander 同步
   useEffect(() => {
@@ -376,8 +381,10 @@ export function RoamingPet() {
 
   // ── 移动时长 ──
   // 往返中（格内互动）用快速动画匹配 1.5-4.5s 往返节奏；休息时慢速
-  const moveDuration = randomMoveDuration(
-    isResting ? 0.5 : pacingCellId ? 0.3 : 1
+  // useMemo 固定同一状态区间内的时长：渲染（position 变化/refetch）不再重随机导致动画时长抖动
+  const moveDuration = useMemo(
+    () => randomMoveDuration(isResting ? 0.5 : pacingCellId ? 0.3 : 1),
+    [isResting, pacingCellId]
   )
 
   return (

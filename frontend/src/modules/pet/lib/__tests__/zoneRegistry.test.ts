@@ -60,18 +60,54 @@ describe('zoneRegistry', () => {
     expect(getZones()).toHaveLength(0)
   })
 
-  it('should auto-remove zone after decayTime', () => {
+  it('should lazily expire zone after decayTime (on read, not by timer)', () => {
     vi.useFakeTimers()
-    registerZone(baseZone('z1', { decayTime: 15_000 }))
+    registerZone(baseZone('z1', { decayTime: 15_000, createdAt: Date.now() }))
     expect(getZones()).toHaveLength(1)
-    vi.advanceTimersByTime(15_000)
+    // 未过期：读取仍可见
+    vi.advanceTimersByTime(10_000)
+    expect(getZones()).toHaveLength(1)
+    // 超过保鲜期：读取时惰性过期，条目不可见
+    vi.advanceTimersByTime(5_000)
     expect(getZones()).toHaveLength(0)
+    vi.useRealTimers()
+  })
+
+  it('should purge expired entries on read (no residue)', () => {
+    vi.useFakeTimers()
+    registerZone(baseZone('z1', { decayTime: 15_000, createdAt: Date.now() }))
+    vi.advanceTimersByTime(16_000)
+    expect(getZones()).toHaveLength(0) // 读取即清理
+    // 后续注册的新条目不受旧过期条目影响
+    registerZone(baseZone('z2'))
+    expect(getZones()).toHaveLength(1)
+    expect(getZones()[0].id).toBe('z2')
     vi.useRealTimers()
   })
 
   it('should keep zone without decayTime indefinitely', () => {
     registerZone(baseZone('z1'))
     expect(getZones()).toHaveLength(1)
+  })
+
+  it('should not expire zone with decayTime but missing createdAt (defensive)', () => {
+    vi.useFakeTimers()
+    registerZone(baseZone('z1', { decayTime: 15_000 }))
+    vi.advanceTimersByTime(20_000)
+    expect(getZones()).toHaveLength(1)
+    vi.useRealTimers()
+  })
+
+  it('should not delete re-registered zone when previous decay would have elapsed', () => {
+    vi.useFakeTimers()
+    registerZone(baseZone('z1', { decayTime: 15_000, createdAt: Date.now() }))
+    // 同 id 覆盖为无 decay 的新条目（覆盖语义）
+    registerZone(baseZone('z1'))
+    vi.advanceTimersByTime(20_000)
+    // 旧条目的衰减定时器不存在了——新条目不得被误删
+    expect(getZones()).toHaveLength(1)
+    expect(getZones()[0].weight).toBe(1)
+    vi.useRealTimers()
   })
 
   it('should return array-level isolated snapshot (add/remove does not affect registry)', () => {

@@ -46,6 +46,12 @@
 - **THEN** 视图切换（月→周/日/议程）或组件卸载时 SHALL 注销全部 calendar-cell Zones
 - **THEN** 滚动或视口尺寸变化时 SHALL 按事件驱动约束更新格子矩形
 
+#### Scenario: Zone expiry is lazily evaluated on read
+- **WHEN** 注册带 `decayTime` 与 `createdAt` 的 Zone，且自创建已超过保鲜期
+- **THEN** 宠物感知（游走 tick 读取 Zone 列表）SHALL 不可见该 Zone——过期判定 SHALL 在读取时惰性执行，不依赖定时器硬删
+- **THEN** 已过期的 Zone 条目 SHALL 在读取时被清理，不残留注册表
+- **THEN** 未携带 `decayTime` 的 Zone（如 `pet-spot`、`calendar-cell`）SHALL 不过期
+
 ### Requirement: Geometric Zone Detection
 宠物进入/离开 Zone 的检测 SHALL 基于缓存的矩形做纯数学相交判断，不引入逐帧 DOM 查询。
 

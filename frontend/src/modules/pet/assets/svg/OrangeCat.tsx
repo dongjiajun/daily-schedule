@@ -71,7 +71,7 @@ export function OrangeCat({ emotion, size = 100, className }: Props) {
       <ellipse cx="50" cy="65" rx="18" ry="14" fill="#FDE68A" />
 
       {/* ── 尾巴 ── */}
-      <g transform={`rotate(${tailAngle}, 72, 68)`}>
+      <g transform={`rotate(${tailAngle} 72 68)`}>
         <path d="M72 68 Q82 58 78 48 Q76 42 72 44" stroke="#F59E0B" strokeWidth="5" strokeLinecap="round" fill="none" />
         <ellipse cx="72" cy="44" rx="3" ry="2.5" fill="#D97706" />
       </g>
@@ -80,13 +80,14 @@ export function OrangeCat({ emotion, size = 100, className }: Props) {
       <ellipse cx="50" cy="38" rx="22" ry="20" fill="#F59E0B" />
 
       {/* ── 左耳 ── */}
-      <g transform={`rotate(${leftEarRotate}, 33, 22)`}>
+      {/* SVG transform 属性角度不允许带单位（'0deg' 非法），渲染时剥离 */}
+      <g transform={`rotate(${parseFloat(leftEarRotate)} 33 22)`}>
         <polygon points="30,25 28,10 38,22" fill="#F59E0B" />
         <polygon points="31,23 30,14 36,22" fill="#FCA5A5" />
       </g>
 
       {/* ── 右耳 ── */}
-      <g transform={`rotate(${rightEarRotate}, 67, 22)`}>
+      <g transform={`rotate(${parseFloat(rightEarRotate)} 67 22)`}>
         <polygon points="70,25 72,10 62,22" fill="#F59E0B" />
         <polygon points="69,23 70,14 64,22" fill="#FCA5A5" />
       </g>

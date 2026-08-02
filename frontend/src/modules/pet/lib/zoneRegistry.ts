@@ -9,28 +9,32 @@ const zones = new Map<string, Zone>()
 
 /**
  * 注册 Zone；同 id 覆盖旧条目。
- * Zone 携带 decayTime 时自动定时衰减移除（吸引力随时间衰减）。
- * @returns 注销函数（调用后移除该 Zone，并清除衰减计时器）
+ * Zone 携带 decayTime 时按"惰性过期"衰减：读取时（getZones）按 createdAt + decayTime
+ * 过滤过期条目，不依赖 setTimeout 硬删——保证宠物在任意游走 tick 都能感知到未过期的 Zone
+ * （保鲜期须覆盖最大 tick 间隔），且覆盖注册时不会残留旧衰减定时器误删新条目。
+ * @returns 注销函数（调用后移除该 Zone）
  */
 export function registerZone(zone: Zone): () => void {
   zones.set(zone.id, zone)
 
-  let decayTimer: ReturnType<typeof setTimeout> | null = null
-  if (zone.decayTime) {
-    decayTimer = setTimeout(() => {
-      zones.delete(zone.id)
-    }, zone.decayTime)
-  }
-
   return () => {
-    if (decayTimer) clearTimeout(decayTimer)
     zones.delete(zone.id)
   }
 }
 
-/** 获取当前全部 Zone 快照 */
+/** 获取当前全部 Zone 快照（惰性过期：读取时过滤并清理已过期的衰减 Zone） */
 export function getZones(): Zone[] {
-  return Array.from(zones.values())
+  const now = Date.now()
+  const result: Zone[] = []
+  for (const [id, z] of zones) {
+    // decayTime 存在但 createdAt 缺失时视为不过期（防御性兼容）
+    if (z.decayTime && z.createdAt && z.createdAt + z.decayTime <= now) {
+      zones.delete(id)
+    } else {
+      result.push(z)
+    }
+  }
+  return result
 }
 
 /** 事件驱动更新 Zone 矩形（滚动/缩放后由调用方触发） */
