@@ -52,11 +52,13 @@
 - [ ] 7.7 运行 `npm run test:e2e` 确认 E2E 全部通过
 
 ## 8. 文档同步
-<!-- 每次变更必须逐项确认，无变更则打勾通过 -->
-- [ ] 8.1 是否有新前端组件？→ 更新 `docs/frontend/component-catalog.md`
-- [ ] 8.2 是否有新实体/表/字段？→ 更新 `docs/database/schema.md` + `docs/uml/README.md`
-- [ ] 8.3 是否有新 API 端点？→ 更新 `docs/api/overview.md`
-- [ ] 8.4 是否有架构/模块变动？→ 更新 `docs/architecture.md` + `CLAUDE.md`
+<!-- 逐项评估：未触及的文档类别也必须写明"现有描述已核对仍准确"，不得仅以"无新增"标记 N/A -->
+- [ ] 8.1 `docs/frontend/component-catalog.md` — 涉及组件/目录（新增**或修改**）？→ 更新；未触及 → 核对结论
+- [ ] 8.2 `docs/database/schema.md` + `docs/uml/README.md` — 涉及表/字段/领域模型（新增**或修改**）？→ 更新；未触及 → 核对结论
+- [ ] 8.3 `docs/api/overview.md` — 涉及端点/契约（新增**或修改**）？→ 更新；未触及 → 核对结论
+- [ ] 8.4 `docs/architecture.md` + `CLAUDE.md` — 涉及架构/模块/版本/测试规模？→ 更新；未触及 → 核对结论
+- [ ] 8.5 `README.md` — 涉及版本/功能清单？→ 更新；未触及 → 核对结论
+- [ ] 8.6 运行 `node scripts/docs-check.mjs` — 文档一致性检查通过
 
 ## 9. 全量验证
 - [ ] 9.1 `cd backend && mvn test` — 后端单元测试全部通过

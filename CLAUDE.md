@@ -71,12 +71,13 @@ turbo run verify && cd backend && mvn test && cd frontend && npm run test:e2e
 **CI 五层门禁**: 后端 `mvn test` + 前端 `pnpm run lint` + `pnpm run test` + `pnpm run build`（含 SDK freshness check）+ `npm run test:e2e`
 **常见失败**: `@typescript-eslint/no-explicit-any` / `tsc -b` 类型错误 / 后端单测失败
 
-**文档检查**（每次变更后逐项确认；不走 OpenSpec 流程的小改动（热修/文档勘误）同样适用，提交前逐项核对）：
-- 新前端组件 → `docs/frontend/component-catalog.md`
-- 新实体/表/字段 → `docs/database/schema.md` + `docs/uml/README.md`
-- 新 API 端点 → `docs/api/overview.md`
-- 架构/模块变动 → `docs/architecture.md` + `CLAUDE.md`
+**文档检查**（每次变更后逐项确认——未触及的类别须写明"现有描述已核对仍准确"，不得仅以"无新增"跳过；不走 OpenSpec 流程的小改动（热修/文档勘误）同样适用，提交前逐项核对）：
+- 组件/目录（新增**或修改**）→ `docs/frontend/component-catalog.md`
+- 表/字段/领域模型（新增**或修改**）→ `docs/database/schema.md` + `docs/uml/README.md`
+- API 端点/契约（新增**或修改**）→ `docs/api/overview.md`
+- 架构/模块/测试规模变动 → `docs/architecture.md` + `CLAUDE.md`
 - 版本号/测试数/模块列表变动 → `CLAUDE.md` 底部版本声明 + `README.md`
+- **自动化验证**: 提交前运行 `pnpm run docs:check`（`scripts/docs-check.mjs`）——版本声明/端点覆盖/结构计数与代码不一致会非零退出（CI version-check job 已接入）
 
 ## 关键文档
 
@@ -173,4 +174,4 @@ API 契约版本号在三个文件中保持一致：`specs/openapi.yaml` → `ba
 ## 当前版本：v3.3.4（2026-08-02）
 
 核心能力：Event 状态闭环 + 日历拖拽改期/拉伸时长 + 标签筛选 + 5 套主题 + 节日主题自动切换 + 特效系统（5 种）+ 键盘快捷键 + JWT 自动续签 + SSE 提醒推送 + ICS 导出 + PWA + 移动端适配 + 宠物养成（区域感知游走/小窝进窝休息/日程框互动/情绪/粒子；健壮性：兴趣区惰性过期 + 游走节奏与渲染解耦）+ 任务看板（三列看板+列表+拖拽）
-测试覆盖：37 类 257 用例（后端 H2）+ 45 文件 195 用例（前端 vitest）+ 11 文件 33 用例（Playwright E2E）
+测试覆盖：37 类 257 用例（后端 H2，`<!-- DOCS-CHECK: backend-test-classes=37 -->`）+ 45 文件 195 用例（前端 vitest，`<!-- DOCS-CHECK: frontend-test-files=45 -->`）+ 10 文件 33 用例（Playwright E2E，`<!-- DOCS-CHECK: e2e-files=10 -->`）

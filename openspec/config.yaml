@@ -67,7 +67,10 @@ rules:
     - API 契约变更后必须包含 "重新生成 SDK" 任务
     - 每个后端任务完成后应包含对应的测试任务
     - 前端任务必须包含 vitest 单元测试更新 + Playwright E2E 测试更新 (`e2e/*.spec.ts`)
-    - 涉及新前端组件时必须在 tasks 中包含 component-catalog.md 更新
-    - 涉及新实体/数据库表/字段时必须在 tasks 中包含 schema.md + uml/README.md 更新
-    - 涉及新 API 端点时必须在 tasks 中包含 api/overview.md 更新
+    - "涉及新前端组件或修改现有组件行为时必须在 tasks 中包含 component-catalog.md 更新"
+    - "涉及新实体/数据库表/字段或修改表结构/领域模型时必须在 tasks 中包含 schema.md + uml/README.md 更新"
+    - "涉及新 API 端点或修改现有端点时必须在 tasks 中包含 api/overview.md 更新"
+    - "涉及架构/模块结构/测试规模/版本号变更时必须包含 architecture.md + CLAUDE.md + README.md 更新"
+    - "8. 文档同步阶段的条目必须逐项评估（未触及的文档类别须写明'现有描述已核对仍准确'结论），不得仅以'无新增'标记 N/A"
+    - "文档同步阶段必须包含运行 `node scripts/docs-check.mjs` 且通过的验证条目"
     - 必须保持 1-9 固定分组编号（按 templates/tasks.md），无变更的分组标记 N/A 打勾，不得自创分组编号

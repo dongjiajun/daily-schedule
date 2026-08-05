@@ -25,6 +25,9 @@ jobs:
       - name: Check version consistency
         run: ./scripts/sync-version.sh --check
 
+      - name: Check docs consistency
+        run: node scripts/docs-check.mjs
+
   backend:
     name: Backend (Maven compile)
     runs-on: ubuntu-latest

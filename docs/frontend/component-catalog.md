@@ -41,7 +41,7 @@ ErrorBoundary（最外层错误捕获）
 frontend/src/
 ├── core/                    # 稳定基础设施
 │   ├── components/
-│   │   ├── ui/              # shadcn/ui 基础组件（9 个）
+│   │   ├── ui/              # shadcn/ui 基础组件（9 个，<!-- DOCS-CHECK: ui-components=9 -->）
 │   │   └── layout/          # 通用布局组件
 │   │       └── TabbedDialog.tsx   # 通用标签对话框容器
 │   ├── hooks/               # 跨模块共享 hooks
@@ -58,7 +58,8 @@ frontend/src/
 │   │   ├── authStore.ts
 │   │   └── settingsStore.ts
 │   └── styles/
-│       └── themes.css       # 5 套主题定义
+│       ├── themes.css       # 5 套主题定义（<!-- DOCS-CHECK: theme-sets=5 -->）
+│       └── holiday-themes.css # 18 套节日主题（<!-- DOCS-CHECK: holiday-themes=18 -->）
 │
 ├── modules/                 # 可插拔功能模块
 │   └── calendar/
@@ -81,6 +82,19 @@ frontend/src/
 │       │   └── calendarStore.ts
 │       └── lib/
 │           └── ics.ts
+│   └── pet/                  # 宠物模块
+│       ├── components/       # RoamingPet/PetAvatar/SvgAvatar/PetBubble/
+│       │                     #   PetStatus/PetSelection/ParticleBurst/
+│       │                     #   SidebarPet/PetPage
+│       ├── hooks/usePet.ts
+│       ├── lib/zoneRegistry.ts   # 兴趣区注册表（user-interaction/pet-spot/calendar-cell）
+│       └── store/petStore.ts
+│   └── todo/                 # 任务看板模块
+│       ├── components/       # TodoPage/TaskToolbar/BoardView/TaskColumn/
+│       │                     #   TaskCard/ListView/TaskRow/TaskForm
+│       ├── hooks/useTasks.ts
+│       ├── lib/taskEvents.ts # 任务事件定义（task:completed/created）
+│       └── store/todoStore.ts
 │
 ├── components/layout/        # 应用 Shell 布局组件
 │   ├── AppShell.tsx
@@ -109,7 +123,7 @@ frontend/src/
 
 ### 核心容器（Core Components）
 
-- **ErrorBoundary** (`core/components/layout/ErrorBoundary.tsx`) — React 错误边界，支持静默模式
+- **ErrorBoundary** (`components/layout/ErrorBoundary.tsx`) — React 错误边界，支持静默模式
 - **TabbedDialog** (`core/components/layout/TabbedDialog.tsx`) — 通用标签对话框容器，支持受控/非受控模式，供各模块复用
 
 ### 特效组件 (core/components/effects/)
@@ -203,6 +217,7 @@ frontend/src/
 | modules/calendar/lib/ics.ts | iCalendar (.ics) 导出：当前视图日程一键导出，可导入系统日历 |
 | lib/colors.ts | PRESET_COLORS 共享常量（9 个色板预设值） |
 | core/styles/themes.css | 主题 Token 定义：5 套预设 × 27 个 CSS 自定义属性 |
+| core/styles/holiday-themes.css | 节日主题：18 套节日配色（`[data-theme="holiday-<id>"]`），由 holidayEngine 在 auto 模式激活 |
 | core/lib/unwrap.ts | hey-api 响应错误统一抛出（带后端 message），修复"失败也弹成功"的问题 |
 
 ## 自动生成代码

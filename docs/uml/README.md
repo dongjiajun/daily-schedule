@@ -1,5 +1,7 @@
 # UML 设计图
 
+> **领域模型图用于表达实体关系与字段，方法签名以代码为准**（仅修改方法签名而不改实体关系时不必更新本图）。
+
 ## 领域模型
 
 ```
@@ -189,23 +191,14 @@ Scheduler     Repository     Channel    SseEmitter    Browser
 │ + createdAt: LocalDateTime                       │
 │ + updatedAt: LocalDateTime                       │
 ├──────────────────────────────────────────────────┤
-│ + feed(item, quantity): InteractionResult        │
-│ + play(): InteractionResult                      │
-│ + updateMood(delta): void                        │
-└──────────────┬───────────────────────────────────┘
-               │ has
-┌──────────────▼───────────────────┐
-│        PetInteraction            │
-├──────────────────────────────────┤
-│ + id: Long                       │
-│ + petId: Long (FK)               │
-│ + type: FEED / PLAY              │
-│ + quantity: Integer              │
-│ + moodChange: Integer            │
-│ + hungerChange: Integer          │
-│ + experienceGain: Integer        │
-│ + createdAt: LocalDateTime       │
-└──────────────────────────────────┘
+│ + isValid(): boolean                             │
+│ + applyInteraction(InteractionResult): void      │
+│ + applyDecay(moodDelta, hungerDelta): void       │
+└──────────────────────────────────────────────────┘
+               │ belongs to (user_id, 每用户一只)
+
+   说明：互动记录 `pet_interactions` 仅为持久化表，领域层不设实体——
+   互动效果由应用层计算为 `InteractionResult` 值对象后由 `Pet.applyInteraction()` 应用。
 
 ┌──────────────────────────────────┐
 │          ShopItem                 │
@@ -241,4 +234,8 @@ Scheduler     Repository     Channel    SseEmitter    Browser
 │ + isValid(): boolean                             │
 │ + moveToStatus(status): void                     │
 └──────────────────────────────────────────────────┘
+
+               │ belongs to (user_id)
+               │ N:M Tag — 关联表 task_tags（task_id + tag_id）
+               │   （写路径 tagIds，读路径投影 tags，与 Event 同模式）
 ```

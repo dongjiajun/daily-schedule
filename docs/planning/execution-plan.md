@@ -1,7 +1,7 @@
 # 宏观执行计划（含产品愿景）
 
 > **状态**: 📋 Phase 2 规划中（Phase 0-1 已完成）
-> **版本说明**: v4.0/v4.5/v5.0 为**内部规划代号**，与实际契约版本号（v3.x，specs/openapi.yaml ↔ pom.xml ↔ package.json 三处同步）独立演进。当前实际版本: **v3.3.0**（2026-07-25）。
+> **版本说明**: v4.0/v4.5/v5.0 为**内部规划代号**，与实际契约版本号（v3.x，specs/openapi.yaml ↔ pom.xml ↔ package.json 三处同步）独立演进。当前实际版本: **v3.3.4**（2026-08-02）。
 > **来源**: 合并自原 `execution-plan.md` + `vision-roadmap-draft.md`（2026-08-01，docs-organization-cleanup）
 
 ---
@@ -12,7 +12,7 @@
 
 ### 产品定位转变
 
-| 维度 | 当前 (v3.3.0) | 目标 |
+| 维度 | 当前 (v3.3.4) | 目标 |
 |------|------------|------|
 | 产品类型 | 单一日程管理工具 | 多模块个人管理中心 |
 | 驱动力 | 理性驱动（"应该管理日程"） | 情感驱动 + 理性支撑（"宠物陪我一起成长"） |
@@ -114,7 +114,7 @@ Monorepo（Turborepo + shared 包）、模块注册中心 + 事件总线、`core
 - **M1.1 宠物后端**（pets/pet_accessories/pet_interactions 表，GET/POST /pets/me、/feed、/play、/shop）
 - **M1.2 宠物前端 v1**（PetAvatar、PetBubble、事件总线联动）
 - **M1.3 国际节日引擎**（四层节日数据，lunar-typescript）
-- **M1.4 节日主题 + 特效**（12+ 节日 CSS 变量、雪花/烟花/花瓣/灯笼/枫叶 5 种特效）
+- **M1.4 节日主题 + 特效**（18 套节日主题 `holiday-themes.css`；4 种特效组件：雪花/花瓣（纯 CSS）+ 烟花/灯笼（tsParticles）；`leaf`/`heart` 仅存在于 EffectType 类型定义，无实现组件）
 - **M1.5 任务看板模块**（tasks/task_tags 表、Kanban CRUD + 拖拽 + 宠物联动）
 - **M1.6 稳定性** — Go/No-Go: **GO**（详见归档 `2026-07-27-phase1-stability-verification`）
 - 超出计划的实际变更: `fix-module-routing-and-ui`、`pet-v2-roaming-animation`（游走动画 + SVG 插画 + 粒子）、`polish-task-board-ui`（看板 UI 统一）

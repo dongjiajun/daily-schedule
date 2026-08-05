@@ -1,64 +1,54 @@
 # 数据库设计
 
-> 当前状态: v3.3.0，对应 Flyway 迁移 V1–V6  
+> 当前状态: v3.3.4，对应 Flyway 迁移 V1–V6  
 > 迁移脚本: `backend/src/main/resources/db/migration/`
 
 ## ER 图
 
 ```
-┌──────────────┐
-│     user     │
-├──────────────┤
-│ id (PK)      │────────────────────────────────────────────┐
-│ username     │                                            │
-│ email        │                                            │
-│ display_name │                                            │
-│ avatar_url   │                                            │
-│ password_    │                                            │
-│   hash       │                                            │
-│ status       │                                            │
-│ last_login   │                                            │
-│   _at        │                                            │
-│ created_at   │                                            │
-│ updated_at   │                                            │
-└──────────────┘                                            │
-                                                            │
-┌──────────┐       ┌──────────────┐       ┌──────────┐      │
-│ category │       │    event     │       │   tag    │      │
-├──────────┤       ├──────────────┤       ├──────────┤      │
-│ id (PK)  │──┐    │ id (PK)      │    ┌──│ id (PK)  │      │
-│ name     │  └───>│ category_id  │    │  │ name     │      │
-│ color    │       │   (FK)       │    │  │ color    │      │
-│ desc     │       │ title        │    │  │ user_id  │<──┐  │
-│ user_id  │<──┐   │ description  │    │  │ created  │   │  │
-│ created  │   │   │ start_time   │    │  │ updated  │   │  │
-│ updated  │   │   │ end_time     │    │  └──────────┘   │  │
-└──────────┘   │   │ all_day      │    │       │          │  │
-               │   │ location     │    │       │          │  │
-               │   │ color        │    │       │          │  │
-               │   │ reminder_    │    │       │          │  │
-               │   │   minutes    │    │       │          │  │
-               │   │ status       │    │       │          │  │
-               │   │ last_        │    │       │          │  │
-               │   │   reminded   │    │       │          │  │
-               │   │ user_id      │<───┤       │          │  │
-               │   │ created_at   │    │  ┌────┘          │  │
-               │   │ updated_at   │    │  │  ┌────────────┘  │
-               │   └──────────────┘    │  │  │               │
-               │        │              │  │  │               │
-               │        │  ┌───────────┘  │  │               │
-               │        │  │ ┌────────────┘  │               │
-               │   ┌────▼──▼─┐               │               │
-               │   │event_tag │               │               │
-               │   ├──────────┤               │               │
-               │   │event_id  │               │               │
-               │   │tag_id    │               │               │
-               │   └──────────┘               │               │
-               │                              │               │
-               └──────────────────────────────┘               │
-                                                              │
-  所有业务表通过 user_id 外键关联 user，查询时强制按当前用户过滤。 │
-  每个用户内，category.name 和 tag.name 唯一。                  │
+┌───────────────────────────────────────────────┐
+│                    user                       │
+├───────────────────────────────────────────────┤
+│ id (PK) · username · email · display_name     │
+│ avatar_url · password_hash · status           │
+│ last_login_at · created_at · updated_at       │
+└───────────────────┬───────────────────────────┘
+                    │ 1:N 归属 — 各业务表均含
+                    │ user_id（索引关联，非外键约束）
+   ┌────────────┬───┴─────┬────────────┬───────────────┐
+   ▼            ▼         ▼            ▼               ▼
+┌──────────┐ ┌────────┐ ┌────────┐ ┌────────┐      ┌─────────┐
+│ category │ │ event  │ │  tag   │ │  pets  │      │  tasks  │
+├──────────┤ ├────────┤ ├────────┤ ├────────┤      ├─────────┤
+│ id (PK)  │ │ id (PK)│ │ id (PK)│ │ id (PK)│      │ id (PK) │
+│ name     │ │ title  │ │ name   │ │ species│      │ title   │
+│ color    │ │ start_ │ │ color  │ │ name   │      │ status  │
+│ desc     │ │ time   │ │ user_id│ │ user_id│      │ priority│
+│ user_id  │ │ user_id│ │        │ │ current│      │ sort_   │
+│ created_ │ │        │ │        │ │ _access│      │ order   │
+│ at       │ │        │ │        │ │ ory(FK)│      │ user_id │
+│ updated_ │ │        │ │        │ │        │      │         │
+│ at       │ │        │ │        │ │        │      │         │
+└──────────┘ └────────┘ └────────┘ └────────┘      └─────────┘
+
+关联表（复合主键，N:M）：
+  event_tag:  event_id (PK, FK→event ON DELETE CASCADE)
+              tag_id   (PK, FK→tag   ON DELETE CASCADE)
+              — event N:M tag
+
+  task_tags:  task_id (PK, FK→tasks ON DELETE CASCADE)
+              tag_id  (PK, FK→tag   ON DELETE CASCADE)
+              — tasks N:M tag
+
+一对一/一对多：
+  pets 1:N pet_interactions（pet_id FK→pets ON DELETE CASCADE）
+  pets.current_accessory FK→pet_accessories ON DELETE SET NULL（物品目录）
+
+  event.category_id FK→category ON DELETE SET NULL
+
+  所有业务表通过 user_id 索引关联 user（非外键约束），
+  查询时强制按当前用户过滤。
+  每个用户内，category.name 和 tag.name 唯一（(user_id, name) 唯一索引）。
 ```
 
 ## 表结构
@@ -88,7 +78,7 @@
 | name | VARCHAR(50) | NOT NULL | |
 | color | VARCHAR(50) | | '#1890ff' |
 | description | VARCHAR(200) | | |
-| user_id | BIGINT | NOT NULL, FK → user | v2.0 新增 |
+| user_id | BIGINT | NOT NULL, 索引（无外键约束） | v2.0 新增 |
 | created_at | DATETIME | NOT NULL | NOW() |
 | updated_at | DATETIME | NOT NULL | NOW() ON UPDATE |
 
@@ -101,7 +91,7 @@
 | id | BIGINT | PK, AUTO | |
 | name | VARCHAR(30) | NOT NULL | |
 | color | VARCHAR(50) | | '#1890ff' |
-| user_id | BIGINT | NOT NULL, FK → user | v2.0 新增 |
+| user_id | BIGINT | NOT NULL, 索引（无外键约束） | v2.0 新增 |
 | created_at | DATETIME | NOT NULL | NOW() |
 | updated_at | DATETIME | NOT NULL | NOW() ON UPDATE |
 
@@ -122,7 +112,7 @@
 | reminder_minutes | INT | | NULL | 提醒提前分钟数 |
 | status | VARCHAR(20) | NOT NULL | 'PLANNED' | v3.1 新增；PLANNED/COMPLETED/CANCELLED |
 | category_id | BIGINT | FK → category ON DELETE SET NULL | NULL | |
-| user_id | BIGINT | NOT NULL, FK → user | v2.0 新增 | |
+| user_id | BIGINT | NOT NULL, 索引（无外键约束） | v2.0 新增 | |
 | last_reminded_at | DATETIME | | NULL | v2.0 新增；提醒幂等标记 |
 | created_at | DATETIME | NOT NULL | NOW() | |
 | updated_at | DATETIME | NOT NULL | NOW() ON UPDATE | |

@@ -51,12 +51,12 @@
 - **注册/登录**: `POST /api/v1/auth/register` 与 `POST /api/v1/auth/login`
 - **密码**: BCrypt 加密存储
 - **数据隔离**: 所有业务表含 `user_id`，查询强制按当前用户过滤
-- **前端**: token 存 localStorage，`client.gen.ts` 自动附加 `Authorization: Bearer` 头
+- **前端**: token 存 localStorage，`core/lib/authInterceptor.ts`（main.tsx 启动时注册到 hey-api 客户端）自动附加 `Authorization: Bearer` 头
 
-## 响应契约（v1.1）
+## 响应契约
 
 - **成功响应**直接返回业务数据：单条对象 / 列表数组；HTTP 状态码承载语义（200/201/204）。
-- **错误响应**统一为 `ApiResponse { code, message }`（400/404/500）。
+- **错误响应**统一为 `ApiResponse { code, message }`（400/401/403/404/409/500）。
 - **SSE 通道** `/api/v1/sse/notifications` 已纳入 OpenAPI 契约；命名事件 `connect` / `reminder` / `heartbeat`，`reminder.data` 为 `ReminderEvent` JSON。
 - 变更历史与版本号管理见 `specs/CHANGELOG.md`。
 
@@ -93,7 +93,7 @@ Scheduler (30s fixedDelay, Clock-injected)
    └─ 标记已提醒：markReminded(id, now)  写入 last_reminded_at
 ```
 
-`BrowserNotificationService` 通过 `SseEmitterManager.sendToUser` 按 userId 推送 SSE，前端 `useSseNotifications` 通过 `?token=` 查询参数传递 JWT，指数退避自动重连。
+`BrowserNotificationService` 通过 `SseEmitterManager.sendToUser` 按 userId 推送 SSE，前端 `useSseNotifications` 依赖登录时下发的 `dsa_sse_session` HttpOnly Cookie 自动认证（v3.0+ 不再使用 `?token=` 查询参数），指数退避自动重连。
 
 ## 缓存
 
@@ -138,7 +138,8 @@ daily-schedule/
 │       └── api/              # 自动生成的 API SDK
 ├── packages/
 │   └── shared/               # @daily-schedule/shared — 跨平台共享库
-│       └── src/              # 类型定义、EventBus、业务常量
+│       └── src/              # 类型定义、EventBus、业务常量、
+│                             #   holiday/（节日引擎）、pet/（游走引擎）
 ├── docs/                     # 项目文档
 └── specs/                    # API 契约 + 变更日志
 ```
@@ -172,7 +173,7 @@ daily-schedule/
 |------|------|------|
 | API | `api/controller/`, `api/assembler/`, `api/exception/` | REST 端点、DTO 转换、全局异常处理（7 个 Controller） |
 | 应用 | `application/event/`, `application/category/`, `application/tag/`, `application/pet/`, `application/todo/`, `application/auth/` | 用例编排、重名校验、缓存注解 |
-| 领域 | `domain/event/`, `domain/category/`, `domain/tag/`, `domain/user/`, `domain/pet/`, `domain/task/`, `domain/notification/` | 业务实体与规则（33+ 文件）、仓储接口 |
+| 领域 | `domain/event/`, `domain/category/`, `domain/tag/`, `domain/user/`, `domain/pet/`, `domain/task/`, `domain/notification/` | 业务实体与规则（28 个文件，`<!-- DOCS-CHECK: domain-files=28 -->`）、仓储接口 |
 | 基础设施 | `infrastructure/persistence/`, `infrastructure/security/`, `infrastructure/config/`, `infrastructure/scheduled/`, `infrastructure/notification/` | 持久化、JWT/认证、缓存配置、调度、SSE |
 
 ## 前端模块架构（core + modules）
@@ -198,10 +199,10 @@ ModuleDefinition {
 
 ## 测试
 
-- **后端**: 37 个测试类，257 个用例，0 失败。H2 内存数据库（MySQL 兼容模式）。
-- **前端**: 43 个测试文件，166 个用例，0 失败。vitest + jsdom。
-- **E2E**: 8 条 Playwright 用例（auth/calendar/task/pet），CI 集成。webServer 复用后台启动的后端 + 自动启动前端 Vite。
-- **CI**: GitHub Actions 四道门禁 — 版本检查 → 后端 mvn test → 前端 lint → test → build（含 SDK freshness）
+- **后端**: 37 个测试类，257 个用例，0 失败。H2 内存数据库（MySQL 兼容模式）。`<!-- DOCS-CHECK: backend-test-classes=37 -->`
+- **前端**: 45 个测试文件，195 个用例，0 失败。vitest + jsdom。`<!-- DOCS-CHECK: frontend-test-files=45 -->`
+- **E2E**: 10 个 spec 文件，33 条 Playwright 用例（auth/calendar/task/pet），CI 集成。webServer 复用后台启动的后端 + 自动启动前端 Vite。`<!-- DOCS-CHECK: e2e-files=10 -->`
+- **CI**: GitHub Actions — version-check（版本 + 文档一致性）→ backend mvn test → frontend lint → test → build（含 SDK freshness）三道阻断门禁 + E2E（`continue-on-error` 软性，不阻断）
 - **运行**: `cd backend && mvn test` / `cd frontend && pnpm run test`
 
 ## 容器化部署
@@ -213,5 +214,5 @@ docker-compose up -d   # MySQL 8.0 + 后端 8080 + 前端 :5173
 ## 设计文档
 
 - `specs/openapi.yaml` — API 契约（唯一真相源）
-- `openspec/specs/` — 50 个能力规格文档
+- `openspec/specs/` — 51 个能力规格文档（`<!-- DOCS-CHECK: specs-count=51 -->`）
 - `docs/planning/execution-plan.md` — 产品愿景与路线图（规划）

@@ -1,7 +1,7 @@
 # API 规范
 
 > **唯一真相源**: `specs/openapi.yaml`  
-> **当前 API 版本**: 3.3.0  
+> **当前 API 版本**: 3.3.4  
 > **变更历史**: `specs/CHANGELOG.md`  
 > 本文档提供叙事性说明与使用示例；Schema 细节与端点定义以 OpenAPI 文件为准。
 
@@ -205,7 +205,7 @@ GET /api/v1/sse/notifications
 
 ### 查看宠物 `GET /pets/me`
 
-返回完整 PetProfile（id / species / name / experience / level / mood / hunger / coins / lastInteractedAt / createdAt）。无宠物时返回 404。
+返回完整 PetProfile（id / species / name / experience / level / mood / hunger / coins / currentAccessory / lastInteractedAt / createdAt）。无宠物时返回 404。
 
 ### 更新宠物 `PUT /pets/me`
 
