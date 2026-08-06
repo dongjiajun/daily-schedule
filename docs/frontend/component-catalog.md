@@ -171,8 +171,8 @@ frontend/src/
 
 ### SVG 宠物资产 (`modules/pet/assets/svg/`)
 
-- **OrangeCat** — 橘猫：7 种情绪状态的表情/姿态变化（idle/happy/sad/hungry/sleepy/excited/surprised/idle_variant）
-- **ShibaInu** — 柴犬：同上 7 种情绪
+- **OrangeCat** — 橘猫：8 种情绪状态的表情/姿态变化（idle/happy/sad/hungry/sleepy/excited/surprised/idle_variant，与 `EmotionState` 类型一致）
+- **ShibaInu** — 柴犬：同上 8 种情绪
 
 ### 认证模块
 
