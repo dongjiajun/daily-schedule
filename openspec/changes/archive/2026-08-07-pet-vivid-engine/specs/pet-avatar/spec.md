@@ -5,24 +5,7 @@
 
 ## Requirements
 
-### Requirement: SVG 插画 + CSS 动画层渲染
-系统 SHALL 使用 `SvgAvatar`（按 species 选择 `OrangeCat`/`ShibaInu` SVG 插画组件）渲染宠物形象，插画内嵌 CSS 动画层响应 petStore 的 `action` 与 `emotionState`：action 驱动连续动画（呼吸/眨眼/步伐/睡眠），emotionState 切换脸部参数（嘴型/眼睛/耳朵/尾巴角度）。
-
-#### Scenario: 正常状态展示 idle 动画
-- **WHEN** 宠物 mood ≥ 60 且 hunger ≥ 50，且无事件触发
-- **THEN** 宠物展示 idle 表情 + idle 呼吸/眨眼动画
-
-#### Scenario: 饥饿状态
-- **WHEN** 宠物 hunger < 30
-- **THEN** 宠物切换为 hungry 表情（嘴型与瞳孔变化）
-
-#### Scenario: 事件触发 happy
-- **WHEN** 收到 `event:completed` 或 `event:created` 事件
-- **THEN** 宠物切换为 happy 表情，5 秒后恢复 idle
-
-#### Scenario: 走路时开心表情并存
-- **WHEN** 宠物在移动中（action=walk）且情绪为 happy（完成日程后）
-- **THEN** 步伐动画与 happy 脸部表情同时呈现（动作与表情正交）
+## ADDED Requirements
 
 ### Requirement: 连续动画（Action 驱动的 CSS 动画层）
 SVG 插画 SHALL 内嵌 CSS 动画层，按 `data-action` 属性驱动连续动画：idle→呼吸循环 + 周期性眨眼（3-5s 一次）；walk→步伐摆动 + 身体起伏；rest→下坐 + 尾巴慢摆；sleep→闭眼 + 蜷缩 + Zzz 循环气泡；jump→抛物线离地。
@@ -53,6 +36,27 @@ SVG 插画 SHALL 内嵌 CSS 动画层，按 `data-action` 属性驱动连续动�
 #### Scenario: 跳跃时阴影变化
 - **WHEN** 宠物 jump
 - **THEN** 阴影缩小 30% 且透明度降低，模拟离地
+
+## MODIFIED Requirements
+
+### Requirement: SVG 插画 + CSS 动画层渲染
+系统 SHALL 使用 `SvgAvatar`（按 species 选择 `OrangeCat`/`ShibaInu` SVG 插画组件）渲染宠物形象，插画内嵌 CSS 动画层响应 petStore 的 `action` 与 `emotionState`：action 驱动连续动画（呼吸/眨眼/步伐/睡眠），emotionState 切换脸部参数（嘴型/眼睛/耳朵/尾巴角度）。
+
+#### Scenario: 正常状态展示 idle 动画
+- **WHEN** 宠物 mood ≥ 60 且 hunger ≥ 50，且无事件触发
+- **THEN** 宠物展示 idle 表情 + idle 呼吸/眨眼动画
+
+#### Scenario: 饥饿状态
+- **WHEN** 宠物 hunger < 30
+- **THEN** 宠物切换为 hungry 表情（嘴型与瞳孔变化）
+
+#### Scenario: 事件触发 happy
+- **WHEN** 收到 `event:completed` 或 `event:created` 事件
+- **THEN** 宠物切换为 happy 表情，5 秒后恢复 idle
+
+#### Scenario: 走路时开心表情并存
+- **WHEN** 宠物在移动中（action=walk）且情绪为 happy（完成日程后）
+- **THEN** 步伐动画与 happy 脸部表情同时呈现（动作与表情正交）
 
 ### Requirement: 响应式尺寸
 宠物形象 SHALL 在悬浮面板中为 100×100px，在详情页（PetPage）中为 200×200px，侧边栏迷你宠物为 40-50px。

@@ -1,17 +1,23 @@
 /**
  * 橘猫 SVG 插画 — 程序化几何图形组合。
- * 支持 7 种情绪状态的表情/姿态变化。
+ * 支持 8 种情绪状态的表情/姿态变化 + Action 驱动的 CSS 动画层
+ * （idle 呼吸/眨眼、walk 步伐、rest 尾巴慢摆、sleep 蜷缩+Zzz、jump 离地）。
  */
-import type { EmotionState } from '../../store/petStore'
+import type { EmotionState, PetAction } from '../../store/petStore'
+import { ANIMATION_CSS } from './animations'
 
 interface Props {
   emotion: EmotionState
   size?: number
   className?: string
+  /** 动作维度（与情绪正交） */
+  action?: PetAction
 }
 
-export function OrangeCat({ emotion, size = 100, className }: Props) {
+export function OrangeCat({ emotion, size = 100, className, action = 'idle' }: Props) {
   const scale = size / 100
+  // sleep 动作覆盖为 sleepy 表情参数（闭眼/蜷嘴/尾巴低垂），无需外部 setEmotion
+  const displayEmotion = action === 'sleep' ? 'sleepy' : emotion
 
   // ── 表情参数 ───────────────────────────────────
   const mouthPath = {
@@ -23,7 +29,7 @@ export function OrangeCat({ emotion, size = 100, className }: Props) {
     sleepy: 'M44 56 Q50 59 56 56',
     excited: 'M38 50 Q50 68 62 50',
     surprised: 'M42 53 Q50 68 58 53',
-  }[emotion] ?? 'M42 55 Q50 62 58 55'
+  }[displayEmotion] ?? 'M42 55 Q50 62 58 55'
 
   const eyeStyle = {
     idle: { rx: 4, ry: 5 },
@@ -34,10 +40,10 @@ export function OrangeCat({ emotion, size = 100, className }: Props) {
     sleepy: { rx: 5, ry: 2 },
     excited: { rx: 4, ry: 6 },
     surprised: { rx: 6, ry: 6 },
-  }[emotion] ?? { rx: 4, ry: 5 }
+  }[displayEmotion] ?? { rx: 4, ry: 5 }
 
-  const leftEarRotate = emotion === 'sad' ? '-15deg' : emotion === 'excited' ? '5deg' : '0deg'
-  const rightEarRotate = emotion === 'sad' ? '15deg' : emotion === 'excited' ? '-5deg' : '0deg'
+  const leftEarRotate = displayEmotion === 'sad' ? '-15deg' : displayEmotion === 'excited' ? '5deg' : '0deg'
+  const rightEarRotate = displayEmotion === 'sad' ? '15deg' : displayEmotion === 'excited' ? '-5deg' : '0deg'
 
   const tailAngle = {
     idle: 20,
@@ -48,110 +54,126 @@ export function OrangeCat({ emotion, size = 100, className }: Props) {
     excited: 60,
     surprised: 40,
     idle_variant: 30,
-  }[emotion] ?? 20
+  }[displayEmotion] ?? 20
 
   // ── 瞳孔可见性（sleepy 半闭眼） ───────────────
-  const pupilOpacity = emotion === 'sleepy' ? 0.4 : 1
+  const pupilOpacity = displayEmotion === 'sleepy' ? 0.4 : 1
+  // 睡眠表现：emotion=sleepy 或 action=sleep 都显示 Zzz 气泡（由动画驱动循环）
+  const showSleepBubble = displayEmotion === 'sleepy' || action === 'sleep'
 
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 100 100"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className={className}
-      style={{ transform: `scale(${scale})`, transformOrigin: 'top left' }}
-      aria-label={`橘猫 — ${emotion}`}
-    >
-      {/* ── 身体 ── */}
-      <ellipse cx="50" cy="58" rx="28" ry="25" fill="#F59E0B" />
+    <>
+      <style>{ANIMATION_CSS}</style>
+      <svg
+        width={size}
+        height={size}
+        viewBox="0 0 100 100"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        className={className}
+        data-action={action}
+        style={{ transform: `scale(${scale})`, transformOrigin: 'top left' }}
+        aria-label={`橘猫 — ${emotion}`}
+      >
+        {/* 跳跃位移层（jump 时整体离地） */}
+        <g className="pet-jumpable">
+          {/* ── 呼吸层（身体 + 肚皮 + 前爪 + 头） ── */}
+          <g className="pet-body">
+            {/* ── 身体 ── */}
+            <ellipse cx="50" cy="58" rx="28" ry="25" fill="#F59E0B" />
 
-      {/* ── 肚皮 ── */}
-      <ellipse cx="50" cy="65" rx="18" ry="14" fill="#FDE68A" />
+            {/* ── 肚皮 ── */}
+            <ellipse cx="50" cy="65" rx="18" ry="14" fill="#FDE68A" />
 
-      {/* ── 尾巴 ── */}
-      <g transform={`rotate(${tailAngle} 72 68)`}>
-        <path d="M72 68 Q82 58 78 48 Q76 42 72 44" stroke="#F59E0B" strokeWidth="5" strokeLinecap="round" fill="none" />
-        <ellipse cx="72" cy="44" rx="3" ry="2.5" fill="#D97706" />
-      </g>
+            {/* ── 前爪（walk 步伐交替） ── */}
+            <ellipse className="pet-leg-l" cx="38" cy="80" rx="8" ry="5" fill="#F59E0B" />
+            <ellipse className="pet-leg-r" cx="62" cy="80" rx="8" ry="5" fill="#F59E0B" />
 
-      {/* ── 头 ── */}
-      <ellipse cx="50" cy="38" rx="22" ry="20" fill="#F59E0B" />
+            {/* ── 爪垫 ── */}
+            <ellipse className="pet-leg-l" cx="35" cy="81" rx="1.5" ry="1" fill="#FCA5A5" />
+            <ellipse className="pet-leg-l" cx="38" cy="82" rx="1.5" ry="1" fill="#FCA5A5" />
+            <ellipse className="pet-leg-l" cx="41" cy="81" rx="1.5" ry="1" fill="#FCA5A5" />
+            <ellipse className="pet-leg-r" cx="59" cy="81" rx="1.5" ry="1" fill="#FCA5A5" />
+            <ellipse className="pet-leg-r" cx="62" cy="82" rx="1.5" ry="1" fill="#FCA5A5" />
+            <ellipse className="pet-leg-r" cx="65" cy="81" rx="1.5" ry="1" fill="#FCA5A5" />
 
-      {/* ── 左耳 ── */}
-      {/* SVG transform 属性角度不允许带单位（'0deg' 非法），渲染时剥离 */}
-      <g transform={`rotate(${parseFloat(leftEarRotate)} 33 22)`}>
-        <polygon points="30,25 28,10 38,22" fill="#F59E0B" />
-        <polygon points="31,23 30,14 36,22" fill="#FCA5A5" />
-      </g>
+            {/* ── 头 ── */}
+            <ellipse cx="50" cy="38" rx="22" ry="20" fill="#F59E0B" />
 
-      {/* ── 右耳 ── */}
-      <g transform={`rotate(${parseFloat(rightEarRotate)} 67 22)`}>
-        <polygon points="70,25 72,10 62,22" fill="#F59E0B" />
-        <polygon points="69,23 70,14 64,22" fill="#FCA5A5" />
-      </g>
+            {/* ── 左耳 ── */}
+            <g transform={`rotate(${parseFloat(leftEarRotate)} 33 22)`}>
+              <polygon points="30,25 28,10 38,22" fill="#F59E0B" />
+              <polygon points="31,23 30,14 36,22" fill="#FCA5A5" />
+            </g>
 
-      {/* ── 脸部条纹 ── */}
-      <path d="M44 28 L44 36" stroke="#D97706" strokeWidth="1.5" strokeLinecap="round" />
-      <path d="M50 27 L50 35" stroke="#D97706" strokeWidth="1.5" strokeLinecap="round" />
-      <path d="M56 28 L56 36" stroke="#D97706" strokeWidth="1.5" strokeLinecap="round" />
+            {/* ── 右耳 ── */}
+            <g transform={`rotate(${parseFloat(rightEarRotate)} 67 22)`}>
+              <polygon points="70,25 72,10 62,22" fill="#F59E0B" />
+              <polygon points="69,23 70,14 64,22" fill="#FCA5A5" />
+            </g>
 
-      {/* ── 左眼 ── */}
-      <ellipse cx="41" cy="36" {...eyeStyle} fill="white" />
-      {emotion !== 'sleepy' && <ellipse cx="41" cy="36" rx="2.5" ry="2.5" fill="#1C1917" opacity={pupilOpacity} />}
+            {/* ── 脸部条纹 ── */}
+            <path d="M44 28 L44 36" stroke="#D97706" strokeWidth="1.5" strokeLinecap="round" />
+            <path d="M50 27 L50 35" stroke="#D97706" strokeWidth="1.5" strokeLinecap="round" />
+            <path d="M56 28 L56 36" stroke="#D97706" strokeWidth="1.5" strokeLinecap="round" />
 
-      {/* ── 右眼 ── */}
-      <ellipse cx="59" cy="36" {...eyeStyle} fill="white" />
-      {emotion !== 'sleepy' && <ellipse cx="59" cy="36" rx="2.5" ry="2.5" fill="#1C1917" opacity={pupilOpacity} />}
+            {/* ── 左眼（眨眼动画层） ── */}
+            <g className="pet-eyes">
+              <ellipse cx="41" cy="36" {...eyeStyle} fill="white" />
+              {displayEmotion !== 'sleepy' && <ellipse cx="41" cy="36" rx="2.5" ry="2.5" fill="#1C1917" opacity={pupilOpacity} />}
+            </g>
 
-      {/* ── 鼻子 ── */}
-      <ellipse cx="50" cy="44" rx="2.5" ry="2" fill="#FCA5A5" />
+            {/* ── 右眼 ── */}
+            <g className="pet-eyes">
+              <ellipse cx="59" cy="36" {...eyeStyle} fill="white" />
+              {displayEmotion !== 'sleepy' && <ellipse cx="59" cy="36" rx="2.5" ry="2.5" fill="#1C1917" opacity={pupilOpacity} />}
+            </g>
 
-      {/* ── 嘴巴 ── */}
-      <path d={mouthPath} stroke="#1C1917" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+            {/* ── 鼻子 ── */}
+            <ellipse cx="50" cy="44" rx="2.5" ry="2" fill="#FCA5A5" />
 
-      {/* ── 胡须 ── */}
-      <line x1="28" y1="42" x2="18" y2="40" stroke="#D97706" strokeWidth="0.8" strokeLinecap="round" />
-      <line x1="28" y1="45" x2="18" y2="46" stroke="#D97706" strokeWidth="0.8" strokeLinecap="round" />
-      <line x1="72" y1="42" x2="82" y2="40" stroke="#D97706" strokeWidth="0.8" strokeLinecap="round" />
-      <line x1="72" y1="45" x2="82" y2="46" stroke="#D97706" strokeWidth="0.8" strokeLinecap="round" />
+            {/* ── 嘴巴 ── */}
+            <path d={mouthPath} stroke="#1C1917" strokeWidth="1.5" strokeLinecap="round" fill="none" />
 
-      {/* ── 前爪 ── */}
-      <ellipse cx="38" cy="80" rx="8" ry="5" fill="#F59E0B" />
-      <ellipse cx="62" cy="80" rx="8" ry="5" fill="#F59E0B" />
+            {/* ── 胡须 ── */}
+            <line x1="28" y1="42" x2="18" y2="40" stroke="#D97706" strokeWidth="0.8" strokeLinecap="round" />
+            <line x1="28" y1="45" x2="18" y2="46" stroke="#D97706" strokeWidth="0.8" strokeLinecap="round" />
+            <line x1="72" y1="42" x2="82" y2="40" stroke="#D97706" strokeWidth="0.8" strokeLinecap="round" />
+            <line x1="72" y1="45" x2="82" y2="46" stroke="#D97706" strokeWidth="0.8" strokeLinecap="round" />
+          </g>
 
-      {/* ── 爪垫 ── */}
-      <ellipse cx="35" cy="81" rx="1.5" ry="1" fill="#FCA5A5" />
-      <ellipse cx="38" cy="82" rx="1.5" ry="1" fill="#FCA5A5" />
-      <ellipse cx="41" cy="81" rx="1.5" ry="1" fill="#FCA5A5" />
-      <ellipse cx="59" cy="81" rx="1.5" ry="1" fill="#FCA5A5" />
-      <ellipse cx="62" cy="82" rx="1.5" ry="1" fill="#FCA5A5" />
-      <ellipse cx="65" cy="81" rx="1.5" ry="1" fill="#FCA5A5" />
+          {/* ── 尾巴（外层 CSS 慢摆 + 内层 emotion 角度） ── */}
+          <g className="pet-tail">
+            <g transform={`rotate(${tailAngle} 72 68)`}>
+              <path d="M72 68 Q82 58 78 48 Q76 42 72 44" stroke="#F59E0B" strokeWidth="5" strokeLinecap="round" fill="none" />
+              <ellipse cx="72" cy="44" rx="3" ry="2.5" fill="#D97706" />
+            </g>
+          </g>
 
-      {/* ── Emotion Effects ── */}
-      {emotion === 'happy' && (
-        <>
+          {/* ── Zzz 睡眠气泡（action=sleep 时循环上飘） ── */}
+          {showSleepBubble && (
+            <>
+              <text className="pet-sleep-bubble" x="68" y="30" fontSize="9" fill="#9CA3AF">Z</text>
+              <text className="pet-sleep-bubble" x="74" y="22" fontSize="7" fill="#D1D5DB">z</text>
+              <text className="pet-sleep-bubble" x="79" y="15" fontSize="5" fill="#E5E7EB">z</text>
+            </>
+          )}
+        </g>
+
+        {/* ── Emotion Effects ── */}
+        {emotion === 'happy' && (
           <text x="58" y="18" fontSize="10" fill="#FBBF24">✦</text>
-        </>
-      )}
-      {emotion === 'excited' && (
-        <>
-          <text x="55" y="14" fontSize="12" fill="#F59E0B">✦</text>
-          <text x="70" y="22" fontSize="8" fill="#FCD34D">✦</text>
-        </>
-      )}
-      {emotion === 'surprised' && (
-        <>
+        )}
+        {displayEmotion === 'excited' && (
+          <>
+            <text x="55" y="14" fontSize="12" fill="#F59E0B">✦</text>
+            <text x="70" y="22" fontSize="8" fill="#FCD34D">✦</text>
+          </>
+        )}
+        {emotion === 'surprised' && (
           <text x="60" y="12" fontSize="10" fill="#F87171">!</text>
-        </>
-      )}
-      {emotion === 'sleepy' && (
-        <>
-          <text x="65" y="32" fontSize="8" fill="#9CA3AF">Z</text>
-          <text x="72" y="24" fontSize="6" fill="#D1D5DB">z</text>
-        </>
-      )}
-    </svg>
+        )}
+      </svg>
+    </>
   )
 }
