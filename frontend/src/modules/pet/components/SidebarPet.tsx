@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { useMyPet } from '../hooks/usePet'
 import { usePetStore } from '../store/petStore'
 import { registerZone, updateZoneRect } from '../lib/zoneRegistry'
+import { statusColor } from '../lib/statusColor'
 import type { Zone } from '@daily-schedule/shared/pet'
 import { SvgAvatar } from './SvgAvatar'
 
@@ -32,9 +33,9 @@ export function SidebarPet({ onNavigate }: { onNavigate?: () => void }) {
     }
   }
 
-  // 心情/饱食度颜色（主题化，但保底硬编码）
-  const moodColor = pet ? (pet.mood! >= 60 ? 'var(--color-accent, #22c55e)' : pet.mood! >= 30 ? '#eab308' : '#ef4444') : '#9ca3af'
-  const hungerColor = pet ? (pet.hunger! >= 60 ? 'var(--color-accent, #22c55e)' : pet.hunger! >= 30 ? '#eab308' : '#ef4444') : '#9ca3af'
+  // 心情/饱食度颜色（共享三段色函数）
+  const moodColor = pet ? statusColor(pet.mood!) : '#9ca3af'
+  const hungerColor = pet ? statusColor(pet.hunger!) : '#9ca3af'
 
   // ── 注册宠物小窝 Zone（pet-spot）──
   // 组件生命周期 = Zone 生命周期：挂载注册、卸载注销；scroll/resize 事件驱动 rect 更新

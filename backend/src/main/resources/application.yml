@@ -25,3 +25,10 @@ springdoc:
     path: /api-docs
   swagger-ui:
     path: /swagger-ui.html
+
+# 宠物状态衰减（每小时速率；调度间隔由 @Scheduled fixedRateString 读取）
+pet:
+  decay:
+    intervalMs: 600000
+    moodPerHour: 1.0
+    hungerPerHour: 1.5

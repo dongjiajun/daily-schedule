@@ -3,6 +3,7 @@ package com.dailyschedule.domain.pet;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
 
@@ -73,7 +74,7 @@ class PetDomainServiceTest {
     }
 
     @Test
-    @DisplayName("衰减 → 1 小时 → mood-2 hunger-3")
+    @DisplayName("衰减 → 1 小时 → 默认速率 mood-1 hunger-1")
     void decay_afterOneHour() {
         Pet pet = new Pet();
         pet.setMood(100);
@@ -81,8 +82,37 @@ class PetDomainServiceTest {
         pet.setLastInteractedAt(LocalDateTime.now().minusHours(1));
 
         domainService.decay(pet);
+        assertThat(pet.getMood()).isEqualTo(99);
+        assertThat(pet.getHunger()).isEqualTo(99);
+    }
+
+    @Test
+    @DisplayName("衰减 → 2 小时 → 默认速率 mood-2 hunger-3（floor(2×1.5)=3）")
+    void decay_afterTwoHours() {
+        Pet pet = new Pet();
+        pet.setMood(100);
+        pet.setHunger(100);
+        pet.setLastInteractedAt(LocalDateTime.now().minusHours(2));
+
+        domainService.decay(pet);
         assertThat(pet.getMood()).isEqualTo(98);
         assertThat(pet.getHunger()).isEqualTo(97);
+    }
+
+    @Test
+    @DisplayName("衰减 → 自定义速率注入生效")
+    void decay_customRates() {
+        ReflectionTestUtils.setField(domainService, "moodPerHour", 4.0);
+        ReflectionTestUtils.setField(domainService, "hungerPerHour", 6.0);
+
+        Pet pet = new Pet();
+        pet.setMood(100);
+        pet.setHunger(100);
+        pet.setLastInteractedAt(LocalDateTime.now().minusHours(1));
+
+        domainService.decay(pet);
+        assertThat(pet.getMood()).isEqualTo(96);
+        assertThat(pet.getHunger()).isEqualTo(94);
     }
 
     @Test

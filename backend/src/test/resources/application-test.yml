@@ -14,3 +14,9 @@ spring:
 mybatis-plus:
   configuration:
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+pet:
+  decay:
+    intervalMs: 600000
+    moodPerHour: 1.0
+    hungerPerHour: 1.5

@@ -23,6 +23,7 @@ const EMOJI_MAP: Record<ParticleType, string[]> = {
   stars: ['⭐', '🌟', '✨', '💫'],
   coins: ['🪙', '💰', '💎'],
   sparkles: ['✨', '⚡', '💥', '🔥'],
+  food: ['🍖', '🍗', '🦴', '🥕'],
 }
 
 /** 使用种子生成伪随机数（避免 Math.random() 在 render 中被 ESLint 拒绝） */

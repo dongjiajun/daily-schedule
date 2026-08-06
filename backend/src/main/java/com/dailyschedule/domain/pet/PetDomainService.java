@@ -1,5 +1,6 @@
 package com.dailyschedule.domain.pet;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
@@ -7,6 +8,14 @@ import java.time.LocalDateTime;
 
 @Component
 public class PetDomainService {
+
+    /** 心情每小时衰减量（配置化，默认 1.0/小时） */
+    @Value("${pet.decay.moodPerHour:1.0}")
+    private double moodPerHour = 1.0;
+
+    /** 饱腹每小时衰减量（配置化，默认 1.5/小时） */
+    @Value("${pet.decay.hungerPerHour:1.5}")
+    private double hungerPerHour = 1.5;
 
     /**
      * 执行互动操作并返回结果。
@@ -42,7 +51,7 @@ public class PetDomainService {
 
     /**
      * 计算时间衰减量。
-     * mood 每小时衰减 2，hunger 每小时衰减 3，均不得低于 0。
+     * mood/hunger 按配置的小时速率衰减（默认 1.0/1.5 每小时），均不得低于 0。
      */
     public void decay(Pet pet) {
         LocalDateTime now = LocalDateTime.now();
@@ -53,8 +62,8 @@ public class PetDomainService {
         if (elapsedMinutes < 1) return;
 
         double hours = elapsedMinutes / 60.0;
-        int moodDecay = -(int) Math.floor(hours * 2);
-        int hungerDecay = -(int) Math.floor(hours * 3);
+        int moodDecay = -(int) Math.floor(hours * moodPerHour);
+        int hungerDecay = -(int) Math.floor(hours * hungerPerHour);
 
         pet.applyDecay(moodDecay, hungerDecay);
     }

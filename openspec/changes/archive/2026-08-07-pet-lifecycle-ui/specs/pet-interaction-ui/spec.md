@@ -5,6 +5,25 @@
 
 ## Requirements
 
+## ADDED Requirements
+
+### Requirement: 互动反馈浮动数值
+互动与购买成功后 SHALL 从宠物位置显示浮动数值反馈（如 `+25 心情`、`+20 饱腹`、`-10 金币`），数值取变化量非零项，1.4s 内上飘淡出。
+
+#### Scenario: 喂食后显示浮动数值
+- **WHEN** 用户喂食成功，InteractionResult 返回 `moodChange=5, hungerChange=20, coinChange=-10`
+- **THEN** 从宠物位置依次上飘 `+5 心情`、`+20 饱腹`、`-10 金币` 三个浮动数值，1.4s 后消失
+
+#### Scenario: 玩耍后显示浮动数值
+- **WHEN** 用户玩耍成功，InteractionResult 返回 `moodChange=25, hungerChange=-10, experienceGain=15`
+- **THEN** 显示 `+25 心情`、`-10 饱腹`、`+15 经验` 浮动数值
+
+#### Scenario: 购买后显示浮动数值
+- **WHEN** 用户购买成功，PurchaseResult 返回 `totalCost=10, newCoins=90`
+- **THEN** 显示 `-10 金币` 浮动数值
+
+## MODIFIED Requirements
+
 ### Requirement: 互动菜单弹出
 用户 SHALL 能通过宠物 hover 浮窗的"互动"按钮或宠物详情页打开互动菜单 Popover，包含"喂食"和"玩耍"两个操作；点击宠物形象本体 SHALL 保留摸头即时反馈（hearts 粒子 + 气泡），不弹菜单。
 
@@ -46,18 +65,3 @@
 #### Scenario: 专注币不足
 - **WHEN** 用户专注币 < 物品价格
 - **THEN** 购买按钮 disabled，tooltip 显示"专注币不足"
-
-### Requirement: 互动反馈浮动数值
-互动与购买成功后 SHALL 从宠物位置显示浮动数值反馈（如 `+25 心情`、`+20 饱腹`、`-10 金币`），数值取变化量非零项，1.4s 内上飘淡出。
-
-#### Scenario: 喂食后显示浮动数值
-- **WHEN** 用户喂食成功，InteractionResult 返回 `moodChange=5, hungerChange=20, coinChange=-10`
-- **THEN** 从宠物位置依次上飘 `+5 心情`、`+20 饱腹`、`-10 金币` 三个浮动数值，1.4s 后消失
-
-#### Scenario: 玩耍后显示浮动数值
-- **WHEN** 用户玩耍成功，InteractionResult 返回 `moodChange=25, hungerChange=-10, experienceGain=15`
-- **THEN** 显示 `+25 心情`、`-10 饱腹`、`+15 经验` 浮动数值
-
-#### Scenario: 购买后显示浮动数值
-- **WHEN** 用户购买成功，PurchaseResult 返回 `totalCost=10, newCoins=90`
-- **THEN** 显示 `-10 金币` 浮动数值

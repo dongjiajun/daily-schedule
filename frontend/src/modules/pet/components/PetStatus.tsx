@@ -1,4 +1,5 @@
 import type { PetProfile } from '@/api/types.gen'
+import { statusColor } from '../lib/statusColor'
 
 interface PetStatusProps {
   pet: PetProfile | undefined
@@ -24,8 +25,8 @@ export function PetStatus({ pet, isLoading }: PetStatusProps) {
         <span>❤️</span>
         <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
           <div
-            className="h-full rounded-full transition-all duration-500 bg-accent"
-            style={{ width: `${pet.mood ?? 0}%`, opacity: Math.max(0.3, (pet.mood ?? 0) / 100) }}
+            className="h-full rounded-full transition-all duration-500"
+            style={{ width: `${pet.mood ?? 0}%`, backgroundColor: statusColor(pet.mood ?? 0), opacity: Math.max(0.3, (pet.mood ?? 0) / 100) }}
           />
         </div>
         <span className="w-7 text-right tabular-nums text-foreground-secondary">{pet.mood}</span>
@@ -34,8 +35,8 @@ export function PetStatus({ pet, isLoading }: PetStatusProps) {
         <span>🍖</span>
         <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
           <div
-            className="h-full rounded-full transition-all duration-500 bg-accent"
-            style={{ width: `${pet.hunger ?? 0}%`, opacity: Math.max(0.3, (pet.hunger ?? 0) / 100) }}
+            className="h-full rounded-full transition-all duration-500"
+            style={{ width: `${pet.hunger ?? 0}%`, backgroundColor: statusColor(pet.hunger ?? 0), opacity: Math.max(0.3, (pet.hunger ?? 0) / 100) }}
           />
         </div>
         <span className="w-7 text-right tabular-nums text-foreground-secondary">{pet.hunger}</span>

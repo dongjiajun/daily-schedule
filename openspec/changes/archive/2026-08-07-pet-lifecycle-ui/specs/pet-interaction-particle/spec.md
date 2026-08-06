@@ -8,6 +8,8 @@
 
 ## Requirements
 
+## MODIFIED Requirements
+
 ### Requirement: Particle Burst on Interaction
 宠物互动 SHALL 触发短暂粒子爆发特效，从宠物位置发射。粒子类型与互动行为 SHALL 按映射矩阵对应：摸头→hearts、玩耍/完成→stars、喂食→food、购买→coins。
 
