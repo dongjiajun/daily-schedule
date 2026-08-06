@@ -88,7 +88,8 @@ frontend/src/
 │       │                     #   SidebarPet/PetPage
 │       ├── hooks/usePet.ts
 │       ├── lib/zoneRegistry.ts   # 兴趣区注册表（user-interaction/pet-spot/calendar-cell）
-│       └── store/petStore.ts
+│       ├── lib/statusColor.ts    # 状态三段色共享函数
+│       └── store/petStore.ts     # 含浮动数值反馈（feedbackTrigger）+ 动作维度（action）
 │   └── todo/                 # 任务看板模块
 │       ├── components/       # TodoPage/TaskToolbar/BoardView/TaskColumn/
 │       │                     #   TaskCard/ListView/TaskRow/TaskForm
@@ -156,16 +157,19 @@ frontend/src/
 
 ### 宠物模块 (`modules/pet/`)
 
-- **RoamingPet** (`modules/pet/components/RoamingPet.tsx`) — v2 游走宠物：以独立角色精灵在页面自由漫步，`pointer-events:none` 穿透，点击摸头/双击玩耍，hover 状态浮窗；朝向翻转（scaleX）仅作用于宠物身体，气泡/hover 浮窗文字保持正读；鼠标停留/点击/输入触发兴趣区域（Zone）吸引
+- **RoamingPet** (`modules/pet/components/RoamingPet.tsx`) — v2 游走宠物：以独立角色精灵在页面自由漫步，`pointer-events:none` 穿透，点击摸头/双击玩耍（jump 动作），hover 状态浮窗（含"互动"按钮打开 PetMenu）；朝向翻转（scaleX）仅作用于宠物身体，气泡/hover 浮窗文字保持正读；鼠标停留/点击/输入触发兴趣区域（Zone）吸引；渲染浮动数值反馈（FloatingText）；**action 接线**：移动→walk、进窝→sleep（蜷缩+Zzz）、双击→jump、移动结束 `onAnimationComplete` 回 idle/sleep；**格内物理状态机**（rAF 帧循环，替换旧左右横移）：进格→贴边行走（四边吸附点绕边）/重力下沉/吸附落定/偶尔跳跃（sin 抛物线），完成度决定风格（快=绕圈+跳跃+happy / 慢=贴底边+idle_variant），会话超时（快 10s/慢 15s）或离开格子强制退出恢复游走
 - **ZoneRegistry** (`modules/pet/lib/zoneRegistry.ts`) — 区域注册表：Zone 生命周期管理（注册/更新/移除/decay 自动衰减），类型化区域（user-interaction/pet-spot/calendar-cell）供区域感知机制消费
-- **PetAvatar** (`modules/pet/components/PetAvatar.tsx`) — 宠物形象渲染器：优先 Lottie 动画（计划中），当前使用 SVG 插画（SvgAvatar）
-- **SvgAvatar** (`modules/pet/components/SvgAvatar.tsx`) — SVG 插画引擎：根据 species + emotionState 选择对应插画（橘猫/柴犬 × 8 种情绪）
+- **PetAvatar** (`modules/pet/components/PetAvatar.tsx`) — 宠物形象渲染器：SVG 插画（SvgAvatar）+ 地面阴影椭圆（jump 时缩小变淡）；从 petStore 读 emotionState + action 双维
+- **SvgAvatar** (`modules/pet/components/SvgAvatar.tsx`) — SVG 插画引擎：根据 species + emotionState + action 选择对应插画（橘猫/柴犬 × 8 种情绪 × 6 种动作）；`data-action` 属性驱动 CSS 动画层（呼吸/眨眼/步伐/蜷缩/Zzz/跳跃）
 - **PetBubble** (`modules/pet/components/PetBubble.tsx`) — 宠物对话气泡，毛玻璃主题风格
-- **PetStatus** (`modules/pet/components/PetStatus.tsx`) — 宠物状态展示：心情/饱食度进度条（bg-accent）+ 代币/等级
+- **PetStatus** (`modules/pet/components/PetStatus.tsx`) — 宠物状态展示：心情/饱食度进度条（三段色 statusColor：≥60 绿 / 30-59 黄 / <30 红）+ 代币/等级
 - **PetSelection** (`modules/pet/components/PetSelection.tsx`) — 宠物创建选择 Dialog：物种选择 + 命名
-- **ParticleBurst** (`modules/pet/components/ParticleBurst.tsx`) — 粒子爆发特效：hearts/stars/coins/sparkles，从指定坐标发射+扩散+淡出
-- **SidebarPet** (`modules/pet/components/SidebarPet.tsx`) — 侧边栏迷你宠物：40-50px 精灵 + 心情/饱食度指示点，点击跳转 /pet；挂载时注册 `pet-spot` Zone（id `pet-home-spot`）作为宠物小窝，scroll/resize 事件驱动 rect 更新，卸载注销
-- **PetPage** (`modules/pet/components/PetPage.tsx`) — /pet 独立页面，大面积展示宠物详情
+- **ParticleBurst** (`modules/pet/components/ParticleBurst.tsx`) — 粒子爆发特效：hearts/stars/coins/sparkles/food，从指定坐标发射+扩散+淡出
+- **FloatingText** (`modules/pet/components/FloatingText.tsx`) — 浮动数值反馈：互动/购买结果（+N 心情/饱腹/经验/金币）从宠物位置向上飘散+淡出，good 绿 / bad 红
+- **PetMenu** (`modules/pet/components/PetMenu.tsx`) — 互动菜单 Popover：玩耍（免费）/ 喂食 / 商店 tab（食物列表复用 FoodActionList）；金币不足禁用+tooltip；成功 → 浮动数值 + 粒子 + toast
+- **FoodActionList** (`modules/pet/components/FoodActionList.tsx`) — 食物/商品操作列表（PetMenu 与 PetPage 共享）：mode=feed 走 `interact FEED`、mode=shop 走 `purchase`，均即时消费
+- **SidebarPet** (`modules/pet/components/SidebarPet.tsx`) — 侧边栏迷你宠物：40-50px 精灵 + 心情/饱食度指示点（三段色 statusColor），点击跳转 /pet；挂载时注册 `pet-spot` Zone（id `pet-home-spot`）作为宠物小窝，scroll/resize 事件驱动 rect 更新，卸载注销
+- **PetPage** (`modules/pet/components/PetPage.tsx`) — /pet 完整宠物面板：大头像 + PetStatus + 互动按钮（PetMenu）+ 喂食区 + 商店区 + 宠物信息卡
 
 - **游走引擎** (`packages/shared/src/pet/roaming.ts`) — 纯逻辑游走算法：随机漫步（含逃逸机制，防边缘排斥困角）/Zone 区域吸引/边界避让/休息点选择，Web 与小程序共享
 

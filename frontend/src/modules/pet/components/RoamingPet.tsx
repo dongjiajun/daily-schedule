@@ -6,7 +6,9 @@ import { PetAvatar } from './PetAvatar'
 import { PetBubble } from './PetBubble'
 import { PetStatus } from './PetStatus'
 import { PetSelection } from './PetSelection'
+import { PetMenu } from './PetMenu'
 import { ParticleBurst } from './ParticleBurst'
+import { FloatingText } from './FloatingText'
 import {
   determineMode,
   computeNextTarget,
@@ -16,9 +18,27 @@ import {
   createDefaultConfig,
   isInsideRect,
   zoneCenter,
+  cellEdges,
+  nextClingPoint,
+  applyGravity,
+  hopOffset,
+  createCellStyle,
+  cellSessionDuration,
+  randomRange,
 } from '@daily-schedule/shared/pet'
-import type { RoamingConfig, AvoidZone, Zone, CalendarCellPayload } from '@daily-schedule/shared/pet'
+import type { RoamingConfig, AvoidZone, Zone, CalendarCellPayload, Position, CellClingPoint, CellStyle } from '@daily-schedule/shared/pet'
 import { registerZone, getZones } from '../lib/zoneRegistry'
+
+/** 匀速移动一步（dt 毫秒），不超过目标 */
+function moveToward(current: Position, target: Position, speed: number, dt: number): Position {
+  const dx = target.x - current.x
+  const dy = target.y - current.y
+  const dist = Math.hypot(dx, dy)
+  const step = (speed * dt) / 1000
+  if (dist <= step) return { ...target }
+  const ratio = step / dist
+  return { x: current.x + dx * ratio, y: current.y + dy * ratio }
+}
 
 /**
  * 游走宠物 — 替代 PetPanel 的 v2 角色式宠物。
@@ -39,12 +59,17 @@ export function RoamingPet() {
   const startResting = usePetStore((s) => s.startResting)
   const wakeUp = usePetStore((s) => s.wakeUp)
   const setEmotion = usePetStore((s) => s.setEmotion)
+  const setAction = usePetStore((s) => s.setAction)
   const showBubble = usePetStore((s) => s.showBubble)
 
   const [hovered, setHovered] = useState(false)
 
   const particleTrigger = usePetStore((s) => s.particleTrigger)
   const clearParticleTrigger = usePetStore((s) => s.clearParticleTrigger)
+  const feedbackTrigger = usePetStore((s) => s.feedbackTrigger)
+  const clearFeedback = usePetStore((s) => s.clearFeedback)
+
+  const [menuOpen, setMenuOpen] = useState(false)
 
   const configRef = useRef<RoamingConfig>(createDefaultConfig(window.innerWidth, window.innerHeight))
   const wanderTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -53,12 +78,22 @@ export function RoamingPet() {
   // 进窝边沿守卫：记录上一 tick 是否在小窝内，仅"进入边沿"才触发进窝休息
   const wasInHomeRef = useRef(false)
 
-  // ── 格内往返（calendar-cell 互动） ──
-  const pacingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const pacingZoneRef = useRef<Zone | null>(null)
-  const pacingDirRef = useRef<1 | -1>(1)
-  const pacingActiveRef = useRef(false)
-  /** 最近一次自动停止往返的格子（同格子不重复往返，须先离开才可再次往返） */
+  // ── 格内物理状态机（calendar-cell 互动，rAF 帧循环） ──
+  const cellPhysicsRef = useRef<{
+    rafId: number | null
+    zone: Zone
+    style: CellStyle
+    state: 'enter' | 'cling' | 'walk' | 'hop'
+    current: Position
+    target: CellClingPoint | null
+    landY: number
+    edges: CellClingPoint[]
+    visited: Set<CellClingPoint>
+    clingUntil: number
+    hopStart: number
+    sessionStart: number
+  } | null>(null)
+  /** 最近一次格内互动的格子（同格子不重复互动，须先离开才可再次） */
   const lastPacedCellRef = useRef<string | null>(null)
   const [pacingCellId, setPacingCellId] = useState<string | null>(null)
 
@@ -161,61 +196,137 @@ export function RoamingPet() {
     }
   }, [])
 
-  // ── 格内往返（calendar-cell 互动） ──
-  // 宠物进入日期格子后格内左右交替走动；完成度决定速度/情绪（≥50% 快+happy / <50% 慢+懒散）
-  // 往返自驱动（timer 自己 setPosition）→ 用"进入边沿"启动 + 有限次数后自动停止恢复游走
-  const startPacing = useCallback((zone: Zone) => {
-    if (pacingActiveRef.current) return // 已在往返中（进入边沿防抖）
-    if (pacingTimerRef.current) clearTimeout(pacingTimerRef.current)
-    pacingZoneRef.current = zone
-    pacingDirRef.current = 1
-    pacingActiveRef.current = true
-    setPacingCellId(zone.id)
-
-    const completion = (zone.payload as CalendarCellPayload | undefined)?.completion ?? 0
-    const fast = completion >= 50
-    const interval = fast ? 1500 + Math.random() * 1000 : 3000 + Math.random() * 1500
-    const maxPaces = fast ? 8 : 5 // 快节奏多走几趟
-
-    let paces = 0
-    const pace = () => {
-      const z = pacingZoneRef.current
-      if (!z) {
-        pacingActiveRef.current = false
-        return
-      }
-      paces++
-      if (paces > maxPaces) {
-        // 往返结束 → 恢复游走；记录本格子防立即重启（须先离开格子才可再次往返）
-        pacingActiveRef.current = false
-        pacingZoneRef.current = null
-        pacingTimerRef.current = null
-        lastPacedCellRef.current = z.id
-        setPacingCellId(null)
-        return
-      }
-      const r = z.rect
-      const margin = Math.min(20, (r.right - r.left) * 0.15)
-      const targetX = pacingDirRef.current === 1 ? r.right - margin : r.left + margin
-      const targetY = r.top + (r.bottom - r.top) / 2
-      pacingDirRef.current = (pacingDirRef.current * -1) as 1 | -1
-
-      const store = usePetStore.getState()
-      store.setFacing(computeFacing(store.position.x, targetX))
-      store.setPosition({ x: targetX, y: targetY })
-      store.setEmotion(fast ? 'happy' : 'idle_variant', interval + 500)
-
-      pacingTimerRef.current = setTimeout(pace, interval)
-    }
-    pacingTimerRef.current = setTimeout(pace, interval)
+  // ── 格内物理状态机（calendar-cell 互动，rAF 帧循环） ──
+  // 贴边行走 / 重力下沉 / 吸附落定 / 偶尔跳跃；完成度决定风格（快=绕圈+跳跃+happy / 慢=贴底边+懒散）
+  // 帧循环仅格内激活；离开格子/会话超时/组件卸载强制退出并恢复游走
+  const exitCellPhysics = useCallback(() => {
+    const ph = cellPhysicsRef.current
+    if (!ph) return
+    if (ph.rafId) cancelAnimationFrame(ph.rafId)
+    cellPhysicsRef.current = null
+    setPacingCellId(null)
+    // 记录刚互动过的格子：同格子不立即重启（须先离开格子在可再次互动）
+    lastPacedCellRef.current = ph.zone.id
+    usePetStore.getState().setAction('idle')
+    // 游走 tick 保持心跳（格内期间跳过目标设置），下一 tick 自然恢复游走
   }, [])
 
-  const stopPacing = useCallback(() => {
-    if (pacingTimerRef.current) clearTimeout(pacingTimerRef.current)
-    pacingTimerRef.current = null
-    pacingZoneRef.current = null
-    pacingActiveRef.current = false
-    setPacingCellId(null)
+  // 帧循环自引用：useCallback 内访问自身会触发 react-hooks/immutability（声明前访问），
+  // 用 ref 持有最新 tick（与 scheduleWanderRef 同模式）
+  const cellPhysicsTickRef = useRef<((now: number) => void) | null>(null)
+  const cellPhysicsTick = useCallback((now: number) => {
+    const ph = cellPhysicsRef.current
+    if (!ph) return
+    const { zone, style } = ph
+    const r = zone.rect
+    const completion = (zone.payload as CalendarCellPayload | undefined)?.completion ?? 0
+    const marginY = Math.min(20, (r.bottom - r.top) * 0.15)
+
+    // 会话超时强制退出（防卡死）
+    if (now - ph.sessionStart > cellSessionDuration(completion)) {
+      exitCellPhysics()
+      return
+    }
+
+    switch (ph.state) {
+      case 'enter': {
+        // 从当前位置向格中心偏下移动（落地感）
+        const target = { x: (r.left + r.right) / 2, y: r.top + (r.bottom - r.top) * 0.65 }
+        ph.current = moveToward(ph.current, target, 80, 16)
+        if (Math.hypot(target.x - ph.current.x, target.y - ph.current.y) < 2) {
+          ph.state = 'cling'
+          ph.clingUntil = now + randomRange(style.clingDuration[0], style.clingDuration[1])
+        }
+        break
+      }
+      case 'cling': {
+        // 重力下沉贴底边（水平保持吸附点）
+        ph.current = applyGravity(ph.current, r, marginY)
+        if (now >= ph.clingUntil) {
+          const store = usePetStore.getState()
+          if (Math.random() < style.hopChance) {
+            // 贴边跳跃（sin 抛物线，复用 jump 动画与影子）
+            ph.state = 'hop'
+            ph.hopStart = now
+            ph.landY = ph.current.y
+            store.setAction('jump')
+          } else {
+            // 走向下一个吸附点（绕边不回头）
+            ph.state = 'walk'
+            ph.target = nextClingPoint(ph.current, ph.edges, ph.visited)
+            store.setAction('walk')
+            store.setFacing(computeFacing(ph.current.x, ph.target.x))
+          }
+        }
+        break
+      }
+      case 'walk': {
+        const target = ph.target!
+        ph.current = moveToward(ph.current, target, style.walkSpeed, 16)
+        if (Math.hypot(target.x - ph.current.x, target.y - ph.current.y) < 4) {
+          // 吸附落定：位置吸附到边线 + 短停留
+          ph.current = { ...target }
+          ph.state = 'cling'
+          ph.clingUntil = now + randomRange(style.clingDuration[0], style.clingDuration[1])
+        }
+        break
+      }
+      case 'hop': {
+        const t = (now - ph.hopStart) / 600
+        if (t >= 1) {
+          ph.current.y = ph.landY
+          ph.state = 'cling'
+          ph.clingUntil = now + randomRange(style.clingDuration[0], style.clingDuration[1])
+          usePetStore.getState().setAction('pace')
+        } else {
+          ph.current.y = ph.landY + hopOffset(t)
+        }
+        break
+      }
+    }
+
+    // 离开格子 → 退出格内互动恢复游走（实际离开，重置"刚互动过"标记）
+    if (!isInsideRect(ph.current, r)) {
+      lastPacedCellRef.current = null
+      exitCellPhysics()
+      return
+    }
+
+    const store = usePetStore.getState()
+    store.setPosition(ph.current)
+    ph.rafId = requestAnimationFrame((t) => cellPhysicsTickRef.current?.(t))
+  }, [exitCellPhysics])
+
+  // 保持 ref 与最新 tick 同步
+  useEffect(() => {
+    cellPhysicsTickRef.current = cellPhysicsTick
+  })
+
+  const startCellPhysics = useCallback((zone: Zone) => {
+    if (cellPhysicsRef.current) return // 已在格内互动中（进入边沿防抖）
+    const completion = (zone.payload as CalendarCellPayload | undefined)?.completion ?? 0
+    const style = createCellStyle(completion)
+    const edges = cellEdges(zone.rect, style.bottomOnly)
+    const store = usePetStore.getState()
+
+    cellPhysicsRef.current = {
+      rafId: null,
+      zone,
+      style,
+      state: 'enter',
+      current: { ...store.position },
+      target: null,
+      landY: 0,
+      edges,
+      visited: new Set(),
+      clingUntil: 0,
+      hopStart: 0,
+      sessionStart: performance.now(),
+    }
+    setPacingCellId(zone.id)
+    store.setAction('pace')
+    store.setEmotion(style.emotion, cellSessionDuration(completion))
+    cellPhysicsRef.current.rafId = requestAnimationFrame((t) => cellPhysicsTickRef.current?.(t))
   }, [])
 
   // ── 游走循环（使用 ref 打破递归 useCallback 的 ESLint 警告） ──
@@ -250,24 +361,32 @@ export function RoamingPet() {
       if (inHome && !wasInHome && !resting) {
         startResting()
         resting = true
+        // 进窝即睡：sleep 动作（SVG 层闭眼+蜷缩+Zzz）——不用 setEmotion（会重置 isResting）
+        setAction('sleep')
       }
 
-      // 格内互动：进入 calendar-cell Zone（未进窝/未休息/未往返/非刚往返过的格子）→ 启动往返，跳过游走目标设置
-      // 往返 timer 独立驱动格子内移动（有限次数后自动停止，同格子须先离开才可再次往返）
+      // 格内互动进行中：tick 保持心跳但跳过游走目标设置（位置由 rAF 帧循环驱动）
+      if (cellPhysicsRef.current) {
+        scheduleWanderRef.current()
+        return
+      }
+
+      // 格内互动：进入 calendar-cell Zone（未进窝/未休息/未在格内互动/非刚互动过的格子）→ 启动格内物理状态机
+      // rAF 帧循环独立驱动格内移动（贴边/重力/吸附/跳跃）；会话超时/离开格子自动退出恢复游走
       const cellZone = getZones().find(
         (z) => z.type === 'calendar-cell' && isInsideRect(position, z.rect)
       )
       if (
-        cellZone && !inHome && !resting && !pacingActiveRef.current &&
+        cellZone && !inHome && !resting && !cellPhysicsRef.current &&
         cellZone.id !== lastPacedCellRef.current
       ) {
-        startPacing(cellZone)
+        startCellPhysics(cellZone)
         scheduleWanderRef.current()
         return
       }
-      if (!cellZone) {
-        stopPacing()
-        lastPacedCellRef.current = null // 已离开格子，重置"刚往返过"标记
+      if (!cellZone && cellPhysicsRef.current) {
+        exitCellPhysics()
+        lastPacedCellRef.current = null // 已离开格子，重置"刚互动过"标记
       }
 
       let target: ReturnType<typeof computeNextTarget>
@@ -281,6 +400,7 @@ export function RoamingPet() {
             : computeNextTarget(position, configRef.current, 'resting')
       } else if (mode === 'resting') {
         // 无交互 2 分钟（在窝外）：走向小窝休息，无小窝时 fallback 既有 resting 目标
+        // 走路中保持 walk（汇合处设置）；到达后 onAnimationComplete 因 isResting=true 回 sleep
         target = homeZone
           ? zoneCenter(homeZone)
           : computeNextTarget(position, configRef.current, 'resting')
@@ -298,11 +418,13 @@ export function RoamingPet() {
 
       const newFacing = computeFacing(position.x, target.x)
       setFacing(newFacing)
+      // 移动中 = 走路动作（resting 原地不动或 mode==='idle' 时不设）
+      if (target.x !== position.x || target.y !== position.y) setAction('walk')
       setPosition(target)
 
       scheduleWanderRef.current()
     }, interval)
-  }, [startResting, wakeUp, setFacing, setPosition, startPacing, stopPacing])
+  }, [startResting, wakeUp, setFacing, setPosition, setAction, startCellPhysics, exitCellPhysics])
 
   // 保持 ref 与最新 scheduleWander 同步
   useEffect(() => {
@@ -317,10 +439,10 @@ export function RoamingPet() {
     }
   }, [pet, scheduleWander])
 
-  // 组件卸载时清理往返 timer
+  // 组件卸载时清理格内帧循环
   useEffect(() => {
-    return () => stopPacing()
-  }, [stopPacing])
+    return () => exitCellPhysics()
+  }, [exitCellPhysics])
 
   // ── 空闲小动作 ──
   useEffect(() => {
@@ -366,8 +488,9 @@ export function RoamingPet() {
     e.stopPropagation()
     wakeUp()
     setEmotion('excited', 4000)
+    setAction('jump', 600) // 跳起 + 影子缩小变淡
     showBubble('一起玩！🎾')
-  }, [wakeUp, setEmotion, showBubble])
+  }, [wakeUp, setEmotion, setAction, showBubble])
 
   const handleMouseEnter = useCallback(() => {
     // 清除旧的 hover 计时器
@@ -406,11 +529,31 @@ export function RoamingPet() {
             )}
           </AnimatePresence>
 
+          {/* 浮动数值反馈 — 互动/购买结果（喂食/玩耍/购买成功） */}
+          <AnimatePresence>
+            {feedbackTrigger && (
+              <FloatingText
+                key={feedbackTrigger.timestamp}
+                origin={{ x: position.x, y: position.y - 50 }}
+                items={feedbackTrigger.items}
+                onDone={() => clearFeedback()}
+              />
+            )}
+          </AnimatePresence>
+
+          {/* 互动菜单（hover 浮窗按钮打开） */}
+          <PetMenu open={menuOpen} onOpenChange={setMenuOpen} />
+
           {/* 宠物本体 */}
           <motion.div
             data-pet="roaming"
             animate={{ x: position.x, y: position.y }}
             transition={{ duration: moveDuration / 1000, ease: 'easeInOut' }}
+            onAnimationComplete={() => {
+              // 移动结束：休息中回 sleep，否则回 idle（getState 读取避免旧闭包）
+              const s = usePetStore.getState()
+              s.setAction(s.isResting ? 'sleep' : 'idle')
+            }}
             className="fixed z-40 select-none"
             style={{ pointerEvents: 'none' }}
             initial={{ x: window.innerWidth / 2, y: window.innerHeight / 2 }}
@@ -447,6 +590,16 @@ export function RoamingPet() {
                     style={{ pointerEvents: 'none' }}
                   >
                     <PetStatus pet={pet} isLoading={false} />
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setMenuOpen(true)
+                      }}
+                      className="mt-2 w-full rounded-lg bg-accent text-accent-fg text-xs py-1.5 hover:bg-accent-hover transition-colors"
+                      style={{ pointerEvents: 'auto' }}
+                    >
+                      🎾 互动
+                    </button>
                   </motion.div>
                 )}
               </AnimatePresence>

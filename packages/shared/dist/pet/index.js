@@ -1,2 +1,3 @@
 export { clampToViewport, isInsideRect, avoidZones, isInSoftZone, determineMode, computeNextTarget, computeWanderTarget, computeAttractedTarget, computeRestingTarget, zoneCenter, randomWanderInterval, randomMoveDuration, computeFacing, createDefaultConfig, } from './roaming';
+export { cellEdges, nextClingPoint, snapToEdge, applyGravity, hopOffset, createCellStyle, cellSessionDuration, randomRange, } from './cellPhysics';
 //# sourceMappingURL=index.js.map

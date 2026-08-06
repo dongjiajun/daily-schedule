@@ -1,11 +1,19 @@
 import { create } from 'zustand'
 
 export type EmotionState = 'idle' | 'idle_variant' | 'happy' | 'sad' | 'hungry' | 'sleepy' | 'excited' | 'surprised'
-export type ParticleType = 'hearts' | 'stars' | 'coins' | 'sparkles'
+/** 动作维度（与 emotion 正交）：idle=呼吸眨眼 / walk=步伐 / pace=格内往返 / rest=下坐 / sleep=蜷缩+Zzz / jump=跳跃 */
+export type PetAction = 'idle' | 'walk' | 'pace' | 'rest' | 'sleep' | 'jump'
+export type ParticleType = 'hearts' | 'stars' | 'coins' | 'sparkles' | 'food'
 
 export interface Position {
   x: number
   y: number
+}
+
+/** 浮动数值反馈项（如 "+20 饱腹"） */
+export interface FeedbackItem {
+  text: string
+  tone: 'good' | 'bad'
 }
 
 interface PetStore {
@@ -16,11 +24,14 @@ interface PetStore {
   previousEmotion: EmotionState | null
   stateTimer: ReturnType<typeof setTimeout> | null
 
+  // ── 动作维度（与情绪正交） ──
+  action: PetAction
+  actionTimer: ReturnType<typeof setTimeout> | null
+
   // ── 气泡 ──
   bubbleMessage: string | null
 
-  // ── 菜单/选择 ──
-  menuOpen: boolean
+  // ── 选择 ──
   selectionOpen: boolean
 
   // ── 游走 ──
@@ -31,6 +42,9 @@ interface PetStore {
 
   // ── 粒子触发器（事件总线驱动） ──
   particleTrigger: { type: ParticleType; timestamp: number } | null
+
+  // ── 浮动数值反馈（互动/购买结果驱动） ──
+  feedbackTrigger: { items: FeedbackItem[]; timestamp: number } | null
 
   // ── 主动行为 ──
   idleVariantTimer: ReturnType<typeof setTimeout> | null
@@ -45,12 +59,14 @@ interface PetStore {
   incrementCombo: () => void
   resetCombo: () => void
 
+  // ── 动作 Actions ──
+  setAction: (action: PetAction, duration?: number) => void
+
   // ── 气泡 Actions ──
   showBubble: (msg: string) => void
   clearBubble: () => void
 
-  // ── 菜单/选择 Actions ──
-  setMenuOpen: (open: boolean) => void
+  // ── 选择 Actions ──
   setSelectionOpen: (open: boolean) => void
 
   // ── 游走 Actions ──
@@ -64,6 +80,10 @@ interface PetStore {
   triggerParticle: (type: ParticleType) => void
   clearParticleTrigger: () => void
 
+  // ── 浮动数值反馈 ──
+  triggerFeedback: (items: FeedbackItem[]) => void
+  clearFeedback: () => void
+
   // ── 生命周期 ──
   reset: () => void
 }
@@ -74,9 +94,10 @@ export const usePetStore = create<PetStore>((set, get) => ({
   emotionState: 'idle',
   previousEmotion: null,
   stateTimer: null,
+  action: 'idle',
+  actionTimer: null,
 
   bubbleMessage: null,
-  menuOpen: false,
   selectionOpen: false,
 
   position: { x: 100, y: 100 },
@@ -85,6 +106,7 @@ export const usePetStore = create<PetStore>((set, get) => ({
   isResting: false,
 
   particleTrigger: null,
+  feedbackTrigger: null,
 
   idleVariantTimer: null,
   lastInteractionTime: Date.now(),
@@ -122,6 +144,20 @@ export const usePetStore = create<PetStore>((set, get) => ({
     })
   },
 
+  // ── 动作 ──
+  setAction: (action, duration) => {
+    const current = get()
+    if (current.actionTimer) clearTimeout(current.actionTimer)
+
+    const newTimer = duration
+      ? setTimeout(() => {
+          set({ action: 'idle', actionTimer: null })
+        }, duration)
+      : null
+
+    set({ action, actionTimer: newTimer })
+  },
+
   incrementCombo: () => {
     const newCombo = get().comboCount + 1
     set({ comboCount: newCombo })
@@ -147,8 +183,7 @@ export const usePetStore = create<PetStore>((set, get) => ({
 
   clearBubble: () => set({ bubbleMessage: null }),
 
-  // ── 菜单/选择 ──
-  setMenuOpen: (open) => set({ menuOpen: open }),
+  // ── 选择 ──
   setSelectionOpen: (open) => set({ selectionOpen: open }),
 
   // ── 游走 ──
@@ -162,18 +197,24 @@ export const usePetStore = create<PetStore>((set, get) => ({
   triggerParticle: (type) => set({ particleTrigger: { type, timestamp: Date.now() } }),
   clearParticleTrigger: () => set({ particleTrigger: null }),
 
+  // ── 浮动数值反馈 ──
+  triggerFeedback: (items) => set({ feedbackTrigger: { items, timestamp: Date.now() } }),
+  clearFeedback: () => set({ feedbackTrigger: null }),
+
   // ── 生命周期 ──
   reset: () => {
     const current = get()
     if (current.stateTimer) clearTimeout(current.stateTimer)
+    if (current.actionTimer) clearTimeout(current.actionTimer)
     if (current.idleVariantTimer) clearTimeout(current.idleVariantTimer)
     set({
       animationState: 'idle',
       emotionState: 'idle',
       previousEmotion: null,
       stateTimer: null,
+      action: 'idle',
+      actionTimer: null,
       bubbleMessage: null,
-      menuOpen: false,
       selectionOpen: false,
       position: { x: 100, y: 100 },
       targetPosition: null,
@@ -182,6 +223,8 @@ export const usePetStore = create<PetStore>((set, get) => ({
       idleVariantTimer: null,
       lastInteractionTime: Date.now(),
       comboCount: 0,
+      particleTrigger: null,
+      feedbackTrigger: null,
     })
   },
 }))

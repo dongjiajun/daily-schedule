@@ -12,10 +12,46 @@ describe('petStore', () => {
     expect(s.emotionState).toBe('idle')
     expect(s.animationState).toBe('idle')
     expect(s.bubbleMessage).toBeNull()
-    expect(s.menuOpen).toBe(false)
     expect(s.selectionOpen).toBe(false)
     expect(s.comboCount).toBe(0)
     expect(s.isResting).toBe(false)
+    expect(s.feedbackTrigger).toBeNull()
+  })
+
+  it('setAction 定时后自动回 idle', () => {
+    usePetStore.getState().setAction('jump', 600)
+    expect(usePetStore.getState().action).toBe('jump')
+
+    vi.advanceTimersByTime(600)
+    expect(usePetStore.getState().action).toBe('idle')
+  })
+
+  it('action 与 emotion 正交并存', () => {
+    const store = usePetStore.getState()
+    store.setAction('walk')
+    store.setEmotion('happy', 3000)
+    expect(usePetStore.getState().action).toBe('walk')
+    expect(usePetStore.getState().emotionState).toBe('happy')
+  })
+
+  it('reset 清理 action 状态', () => {
+    usePetStore.getState().setAction('sleep')
+    usePetStore.getState().reset()
+    expect(usePetStore.getState().action).toBe('idle')
+  })
+
+  it('triggerFeedback 设置并清除浮动数值', () => {
+    usePetStore.getState().triggerFeedback([
+      { text: '+20 饱腹', tone: 'good' },
+      { text: '-10 金币', tone: 'bad' },
+    ])
+    const trigger = usePetStore.getState().feedbackTrigger
+    expect(trigger).not.toBeNull()
+    expect(trigger!.items).toHaveLength(2)
+    expect(trigger!.items[0].text).toBe('+20 饱腹')
+
+    usePetStore.getState().clearFeedback()
+    expect(usePetStore.getState().feedbackTrigger).toBeNull()
   })
 
   it('setEmotion 定时后自动回 idle', () => {

@@ -25,3 +25,16 @@ export {
   computeFacing,
   createDefaultConfig,
 } from './roaming'
+
+export type { CellClingPoint, CellStyle } from './cellPhysics'
+
+export {
+  cellEdges,
+  nextClingPoint,
+  snapToEdge,
+  applyGravity,
+  hopOffset,
+  createCellStyle,
+  cellSessionDuration,
+  randomRange,
+} from './cellPhysics'

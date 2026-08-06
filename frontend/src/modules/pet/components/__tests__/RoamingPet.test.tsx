@@ -7,6 +7,9 @@ import { usePetStore } from '../../store/petStore'
 const MOCK_PET = { id: 1, name: '豆豆', mood: 'happy', energy: 80 }
 vi.mock('../../hooks/usePet', () => ({
   useMyPet: () => ({ data: MOCK_PET, isLoading: false }),
+  useInteract: () => ({ mutate: vi.fn(), isPending: false }),
+  useShopItems: () => ({ data: [], isLoading: false }),
+  usePurchase: () => ({ mutate: vi.fn(), isPending: false }),
 }))
 
 vi.mock('framer-motion', () => ({
@@ -149,6 +152,19 @@ describe('RoamingPet', () => {
       vi.advanceTimersByTime(20_000)
     })
     expect(usePetStore.getState().isResting).toBe(true)
+    // 进窝即睡：sleep 动作（SVG 层闭眼+蜷缩+Zzz，无需 emotion）
+    expect(usePetStore.getState().action).toBe('sleep')
+  })
+
+  it('移动 tick 设 walk 动作', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.2) // tick 间隔 = 10s + 0.2×20s = 14s
+    render(<RoamingPet />)
+
+    act(() => {
+      vi.advanceTimersByTime(14_000)
+    })
+    // 全域采样目标 != 初始 {100,100} → 移动中 = walk
+    expect(usePetStore.getState().action).toBe('walk')
   })
 
   it('唤醒后 position 仍在小窝内时不立即再次进窝（边沿守卫）', () => {
@@ -195,8 +211,8 @@ describe('RoamingPet', () => {
   // 格子 {300,200,500,400}；Math.random=0.5 → fast interval=2000ms / slow interval=3750ms
   const CELL_RECT = { left: 300, top: 200, right: 500, bottom: 400 }
 
-  it('进入 calendar-cell 格子后格内左右往返（完成度高 → happy + 快）', () => {
-    vi.spyOn(Math, 'random').mockReturnValue(0.5)
+  it('进入 calendar-cell 格子后启动格内物理状态机（pace + happy + 落地）', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5) // tick 间隔 20s；cling 停留 900ms
     registerZone({
       id: 'calendar-cell-2026-08-01',
       type: 'calendar-cell',
@@ -206,7 +222,7 @@ describe('RoamingPet', () => {
     })
     render(<RoamingPet />)
 
-    // 把宠物移入格子中心 → 游走 tick 检测到进入 → 启动往返
+    // 把宠物移入格子中心 → 游走 tick 检测到进入 → 启动格内状态机
     act(() => {
       usePetStore.getState().setPosition({ x: 400, y: 300 })
     })
@@ -214,21 +230,23 @@ describe('RoamingPet', () => {
       vi.advanceTimersByTime(20_000)
     })
 
-    // 第一次往返：方向右 → 格子右缘内侧 x=480
-    act(() => {
-      vi.advanceTimersByTime(2_000)
-    })
-    expect(usePetStore.getState().position).toMatchObject({ x: 480, y: 300 })
+    // 启动即 pace 动作 + happy 情绪（完成度 80 ≥ 50）
+    expect(usePetStore.getState().action).toBe('pace')
     expect(usePetStore.getState().emotionState).toBe('happy')
 
-    // 第二次往返：方向左 → 格子左缘内侧 x=320
+    // rAF 帧推进：enter 阶段向格中心偏下移动（80px/s × 0.5s = 40px → y 300→330）
     act(() => {
-      vi.advanceTimersByTime(2_000)
+      vi.advanceTimersByTime(500)
     })
-    expect(usePetStore.getState().position).toMatchObject({ x: 320, y: 300 })
+    const pos = usePetStore.getState().position
+    expect(pos.x).toBeCloseTo(400, 0)
+    expect(pos.y).toBeGreaterThan(300)
+    // 位置始终在格子内
+    expect(pos.x).toBeGreaterThanOrEqual(CELL_RECT.left)
+    expect(pos.x).toBeLessThanOrEqual(CELL_RECT.right)
   })
 
-  it('完成度低 → 慢速 + 懒散情绪（idle_variant）', () => {
+  it('完成度低 → 懒散情绪 + 贴底边（bottomOnly 风格）', () => {
     vi.spyOn(Math, 'random').mockReturnValue(0.5)
     registerZone({
       id: 'calendar-cell-2026-08-02',
@@ -245,21 +263,17 @@ describe('RoamingPet', () => {
     act(() => {
       vi.advanceTimersByTime(20_000)
     })
-
-    // 慢速 interval=3750ms：2s 时未移动（仍中心），3.75s 时移动
-    act(() => {
-      vi.advanceTimersByTime(2_000)
-    })
-    expect(usePetStore.getState().position).toMatchObject({ x: 400, y: 300 })
-
-    act(() => {
-      vi.advanceTimersByTime(2_000) // 累计 4s > 3.75s → 第一次往返已执行
-    })
-    expect(usePetStore.getState().position.x).toBe(480)
     expect(usePetStore.getState().emotionState).toBe('idle_variant')
+
+    // 推进 3s：enter 落地 + cling 重力下沉 → 贴底边（y ≈ 400-30=370）
+    act(() => {
+      vi.advanceTimersByTime(3_000)
+    })
+    const pos = usePetStore.getState().position
+    expect(pos.y).toBeGreaterThan(350) // 已下沉至底边附近
   })
 
-  it('往返自动停止后同格子不立即重启（离开格子后可再次往返）', () => {
+  it('格内互动超时强制退出（恢复游走，同格子不立即重启）', () => {
     vi.spyOn(Math, 'random').mockReturnValue(0.5)
     registerZone({
       id: 'calendar-cell-2026-08-03',
@@ -274,40 +288,22 @@ describe('RoamingPet', () => {
       usePetStore.getState().setPosition({ x: 400, y: 300 })
     })
     act(() => {
-      vi.advanceTimersByTime(20_000) // 启动往返
+      vi.advanceTimersByTime(20_000) // 启动格内互动
     })
+    expect(usePetStore.getState().action).not.toBe('idle')
 
-    // fast maxPaces=8 → 8 次往返后自动停止（9×2000ms）
+    // fast 会话上限 10s → 超时强制退出：action 回 idle，游走恢复
     act(() => {
-      vi.advanceTimersByTime(18_000)
+      vi.advanceTimersByTime(11_000)
     })
-    const stoppedAt = usePetStore.getState().position
+    expect(usePetStore.getState().action).toBe('idle')
+    expect(usePetStore.getState().emotionState).toBe('idle') // happy 定时同步到期
 
-    // 往返已停止且同格子不立即重启：位置静止（不再 320↔480 交替）
-    act(() => {
-      vi.advanceTimersByTime(10_000)
-    })
-    expect(usePetStore.getState().position).toEqual(stoppedAt)
-
-    // 宠物离开格子（模拟游走目标出格）→ 游走 tick 重置防重启标记
-    act(() => {
-      usePetStore.getState().setPosition({ x: 800, y: 600 })
-    })
+    // 下一个游走 tick（20s）：位置仍在格子内但同格子不立即重启（lastPacedCellRef）
     act(() => {
       vi.advanceTimersByTime(20_000)
     })
-
-    // 再次进入格子 → 可再次往返（最后一次 pace 目标 x=480）
-    act(() => {
-      usePetStore.getState().setPosition({ x: 400, y: 300 })
-    })
-    act(() => {
-      vi.advanceTimersByTime(20_000)
-    })
-    act(() => {
-      vi.advanceTimersByTime(2_000)
-    })
-    expect(usePetStore.getState().position).toMatchObject({ x: 480, y: 300 })
+    expect(usePetStore.getState().action).not.toBe('pace')
   })
 
   it('进窝休息优先于格内往返（重叠区域不往返）', () => {
