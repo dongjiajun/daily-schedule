@@ -21,6 +21,16 @@ describe('cellEdges — 四边吸附点采样', () => {
     expect(edges.filter((e) => e.edge === 'right')).toHaveLength(2)
   })
 
+  it('边顺序为顺时针绕圈（底→右→上→左）', () => {
+    const edges = cellEdges(RECT)
+    const order = edges.map((e) => e.edge)
+    // 底 3 → 右 2 → 上 3 → 左 2
+    expect(order.slice(0, 3)).toEqual(['bottom', 'bottom', 'bottom'])
+    expect(order.slice(3, 5)).toEqual(['right', 'right'])
+    expect(order.slice(5, 8)).toEqual(['top', 'top', 'top'])
+    expect(order.slice(8, 10)).toEqual(['left', 'left'])
+  })
+
   it('吸附点在格内且内缩 margin', () => {
     const edges = cellEdges(RECT)
     for (const p of edges) {
@@ -47,16 +57,22 @@ describe('cellEdges — 四边吸附点采样', () => {
 })
 
 describe('nextClingPoint — 绕边不回头', () => {
-  it('选择最近未访问点', () => {
+  it('沿边顺序绕圈（底→右→上→左），不回头', () => {
     const edges = cellEdges(RECT)
     const visited = new Set<typeof edges[number]>()
-    // 从底边中点出发 → 最近是底边相邻点
+    // 从底边中点出发 → 第一目标为底边相邻点（index 1 附近 → 环扫取 2 或 0）
     const first = nextClingPoint({ x: 200, y: 380 }, edges, visited)
     expect(first.edge).toBe('bottom')
-    // 第二次调用不重复已访问点
-    const second = nextClingPoint({ x: first.x, y: first.y }, edges, visited)
-    expect(second).not.toBe(first)
-    expect(visited.has(second)).toBe(true)
+    // 后续沿边顺序推进：底→右→上→左（10 点绕完一轮后清空）
+    const seenOrder: string[] = [first.edge]
+    let cur = { x: first.x, y: first.y }
+    for (let i = 0; i < 9; i++) {
+      const next = nextClingPoint(cur, edges, visited)
+      seenOrder.push(next.edge)
+      cur = { x: next.x, y: next.y }
+    }
+    // 绕圈顺序包含全部四边（不只底边）
+    expect(new Set(seenOrder)).toEqual(new Set(['bottom', 'right', 'top', 'left']))
   })
 
   it('全部访问后清空重来', () => {

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, fireEvent, act } from '@testing-library/react'
+import { render, fireEvent, act, screen } from '@testing-library/react'
 import { clearZones, getZones, registerZone } from '../../lib/zoneRegistry'
 import { usePetStore } from '../../store/petStore'
 
@@ -154,6 +154,27 @@ describe('RoamingPet', () => {
     expect(usePetStore.getState().isResting).toBe(true)
     // 进窝即睡：sleep 动作（SVG 层闭眼+蜷缩+Zzz，无需 emotion）
     expect(usePetStore.getState().action).toBe('sleep')
+  })
+
+  it('hover 浮窗"回窝"按钮 → 立即回小窝睡觉', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5)
+    registerZone({ id: 'pet-home-spot', type: 'pet-spot', rect: { left: 300, top: 300, right: 500, bottom: 500 }, weight: 1 })
+    render(<RoamingPet />)
+    usePetStore.getState().setPosition({ x: 100, y: 100 })
+
+    // 悬停宠物出现浮窗
+    act(() => {
+      fireEvent.mouseEnter(document.querySelector('[data-pet="roaming"]')!.firstElementChild!)
+    })
+    act(() => {
+      fireEvent.click(screen.getByText('😴 回窝'))
+    })
+
+    const s2 = usePetStore.getState()
+    expect(s2.isResting).toBe(true)
+    expect(s2.action).toBe('sleep')
+    // 位置 = 小窝中心 {400, 400}
+    expect(s2.position).toMatchObject({ x: 400, y: 400 })
   })
 
   it('移动 tick 设 walk 动作', () => {

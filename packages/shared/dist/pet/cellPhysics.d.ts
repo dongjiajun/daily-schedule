@@ -38,7 +38,8 @@ export declare function cellEdges(rect: {
     bottom: number;
 }, bottomOnly?: boolean): CellClingPoint[];
 /**
- * 绕边不回头：选择最近的未访问吸附点（visited 为空时取最近点；全部访问后清空重来）。
+ * 绕边不回头（环形扫描）：沿边顺序（底→右→上→左）取当前位置之后的下一个未访问吸附点。
+ * 保证贴壁行走按顺时针绕圈（不会因重力贴底而总在底边打转）；全部访问后清空重来。
  */
 export declare function nextClingPoint(current: Position, edges: CellClingPoint[], visited: Set<CellClingPoint>): CellClingPoint;
 /**

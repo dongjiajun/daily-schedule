@@ -23,53 +23,60 @@ export function cellEdges(rect, bottomOnly = false) {
     const marginX = width * EDGE_MARGIN_RATIO;
     const marginY = height * EDGE_MARGIN_RATIO;
     const points = [];
-    // 底边（始终）
+    // 底边（3 点，左→右）
     for (let i = 0; i < 3; i++) {
         const t = (i + 1) / 4;
         points.push({ x: rect.left + width * t, y: rect.bottom - marginY, edge: 'bottom' });
     }
     if (bottomOnly) {
-        // 侧边下半部各 1 点（贴地懒散）
-        points.push({ x: rect.left + marginX, y: rect.bottom - height * 0.3, edge: 'left' });
+        // 侧边下半部各 1 点（贴地懒散）：右 → 左
         points.push({ x: rect.right - marginX, y: rect.bottom - height * 0.3, edge: 'right' });
+        points.push({ x: rect.left + marginX, y: rect.bottom - height * 0.3, edge: 'left' });
         return points;
     }
-    // 上边 3 点
-    for (let i = 0; i < 3; i++) {
-        const t = (i + 1) / 4;
-        points.push({ x: rect.left + width * t, y: rect.top + marginY, edge: 'top' });
-    }
-    // 左右边各 2 点（中部）
-    points.push({ x: rect.left + marginX, y: rect.top + height * 0.35, edge: 'left' });
-    points.push({ x: rect.left + marginX, y: rect.top + height * 0.65, edge: 'left' });
+    // 顺时针绕边：底 → 右 → 上 → 左（贴壁行走的路径顺序）
+    // 右边（2 点，上→下）
     points.push({ x: rect.right - marginX, y: rect.top + height * 0.35, edge: 'right' });
     points.push({ x: rect.right - marginX, y: rect.top + height * 0.65, edge: 'right' });
+    // 上边（3 点，右→左）
+    for (let i = 0; i < 3; i++) {
+        const t = (i + 1) / 4;
+        points.push({ x: rect.right - width * t, y: rect.top + marginY, edge: 'top' });
+    }
+    // 左边（2 点，上→下）
+    points.push({ x: rect.left + marginX, y: rect.top + height * 0.35, edge: 'left' });
+    points.push({ x: rect.left + marginX, y: rect.top + height * 0.65, edge: 'left' });
     return points;
 }
 /**
- * 绕边不回头：选择最近的未访问吸附点（visited 为空时取最近点；全部访问后清空重来）。
+ * 绕边不回头（环形扫描）：沿边顺序（底→右→上→左）取当前位置之后的下一个未访问吸附点。
+ * 保证贴壁行走按顺时针绕圈（不会因重力贴底而总在底边打转）；全部访问后清空重来。
  */
 export function nextClingPoint(current, edges, visited) {
-    let best = null;
-    let bestDist = Infinity;
-    for (const point of edges) {
-        if (visited.has(point))
-            continue;
+    // 找到当前最近点索引（出发点）
+    let nearestIdx = 0;
+    let nearestDist = Infinity;
+    edges.forEach((point, i) => {
         const dx = point.x - current.x;
         const dy = point.y - current.y;
         const dist = dx * dx + dy * dy;
-        if (dist < bestDist) {
-            bestDist = dist;
-            best = point;
+        if (dist < nearestDist) {
+            nearestDist = dist;
+            nearestIdx = i;
+        }
+    });
+    // 从最近点之后环形扫描第一个未访问点（沿边顺序）
+    for (let step = 1; step <= edges.length; step++) {
+        const idx = (nearestIdx + step) % edges.length;
+        const point = edges[idx];
+        if (!visited.has(point)) {
+            visited.add(point);
+            return point;
         }
     }
-    if (!best) {
-        // 全部访问过 → 清空重来（新一轮绕边）
-        visited.clear();
-        return nextClingPoint(current, edges, visited);
-    }
-    visited.add(best);
-    return best;
+    // 全部访问过 → 清空重来（新一轮绕边）
+    visited.clear();
+    return nextClingPoint(current, edges, visited);
 }
 /**
  * 吸附判定：距最近吸附点在阈值内时吸附到边线（返回吸附后位置），否则原位置。
