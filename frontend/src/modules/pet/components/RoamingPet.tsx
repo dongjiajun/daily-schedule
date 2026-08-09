@@ -677,7 +677,7 @@ export function RoamingPet() {
   // 往返中（格内互动）用快速动画匹配 1.5-4.5s 往返节奏；休息时慢速
   // useMemo 固定同一状态区间内的时长：渲染（position 变化/refetch）不再重随机导致动画时长抖动
   const moveDuration = useMemo(() => {
-    if (isResting) return randomMoveDuration(0.5)
+    if (isResting) return randomMoveDuration(0.75) // 休息慢速档 4-10.7s（≤11s），最坏时长可感知且 E2E 断言窗口有充足余量
     // 格内：rAF 帧循环驱动位置，motion 用 ~0.08s 短缓动即时跟随（长缓动会吞掉 rAF 步进）
     if (pacingCellId) return 80
     return randomMoveDuration(1)

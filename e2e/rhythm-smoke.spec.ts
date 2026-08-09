@@ -28,25 +28,33 @@ async function installClockAt(page: Parameters<Parameters<typeof test>[1]>[0]['p
 }
 
 test.describe('节律 smoke（page.clock 注入）', () => {
+  // 假时钟 + 动画真实完成（resume）流程较长：登录注册 + reload + fastForward + 等待动画/真实 tick，
+  // 并行负载下累计可超默认 30s（pet.spec 同款处理）
+  test.describe.configure({ timeout: 120_000 })
   test('夜间 23:30 → 自动走向小窝进窝睡觉（sleep 动作出现）', async ({ page }) => {
     await ensureLoggedIn(page)
     await installClockAt(page, new Date('2026-08-09T23:30:00'))
     // 推进 180s：覆盖多个游走 tick（10-30s 随机）。首个 tick 可能打哈欠（10%，冷却 10min）
     // → 下一 tick 必回窝（走向小窝 → 动画完成 → sleep）
     await page.clock.fastForward(180_000)
-    await expect(page.locator('svg[data-action="sleep"]').first()).toBeVisible({ timeout: 10_000 })
+    // 恢复真实时钟：走路动画由真实 rAF 驱动。假时钟下若 React 渲染提交落在 fastForward
+    // 窗口外，动画帧永不触发 → 动画冻结 → sleep 永远不出现（与 timeout 大小无关）
+    await page.clock.resume()
+    await expect(page.locator('svg[data-action="sleep"]').first()).toBeVisible({ timeout: 20_000 })
   })
 
   test('早晨 8:00 睡眠中 → 唤醒 + "早上好~ ☀️"气泡', async ({ page }) => {
     await ensureLoggedIn(page)
     await installClockAt(page, new Date('2026-08-09T23:30:00'))
     await page.clock.fastForward(180_000)
-    await expect(page.locator('svg[data-action="sleep"]').first()).toBeVisible({ timeout: 10_000 })
+    // 同测试 1：resume 让回窝走路动画真实完成
+    await page.clock.resume()
+    await expect(page.locator('svg[data-action="sleep"]').first()).toBeVisible({ timeout: 20_000 })
 
-    // 拨到早晨 8:00 → 下一 tick 唤醒 + 气泡
+    // 固定 Date 到早晨 8:00（setFixedTime 不影响 timers；resume 后 tick 由真实时间驱动）
+    // → 下一真实 tick（10-30s 随机）触发唤醒 + 气泡
     await page.clock.setFixedTime(new Date('2026-08-09T08:00:00'))
-    await page.clock.fastForward(30_000)
-    await expect(page.getByText('早上好~ ☀️')).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByText('早上好~ ☀️')).toBeVisible({ timeout: 40_000 })
     await expect(page.locator('svg[data-action="sleep"]').first()).not.toBeVisible()
   })
 
