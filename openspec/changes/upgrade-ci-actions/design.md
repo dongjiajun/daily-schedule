@@ -20,6 +20,11 @@
 - **理由**: 三个 v5 均为 Node 24 runtime、社区广泛验证的稳定版本（GitHub 弃用公告建议的迁移目标，setup-java 警告原文明确建议 v5）；pnpm/action-setup 行为极简（仅安装 pnpm），直接升 latest v6。不追 checkout/setup-node 的 v7——major 跳升引入的兼容差异超出本次"消除弃用警告"的最小范围。
 - **备选方案**: (a) 全部升 latest（checkout v7/setup-node v7）——行为差异风险大于收益；(b) 维持 v4 不动——时间炸弹（未来 Node 20 兼容层移除后 CI 挂）。
 
+### Decision 2（实现中发现，追加）: version-check job 禁用 setup-node v5 自动缓存
+- **选择**: `Version Sync Check` job 的 `setup-node@v5` 增加 `package-manager-cache: false`。
+- **理由**: 首次推送（run #75）中该 job 的 "Set up Node 22" 失败——`setup-node@v5` 的 breaking change：`package.json` 含 `packageManager` 字段时**自动启用依赖缓存**，该 job 无 `pnpm/action-setup` 步骤（仅跑 shell 脚本），缓存检测失败。其余 job 的 setup-node 均位于 pnpm/action-setup 之后，自动缓存正常（Frontend/Backend/E2E 均 success）。
+- **备选方案**: (a) version-check 加 pnpm/action-setup 步骤——为纯脚本 job 引入依赖安装，过度；(b) 全部禁用自动缓存——放弃其他 job 的缓存收益。
+
 ## DDD Layer Design
 无变更（纯 CI 配置）。
 

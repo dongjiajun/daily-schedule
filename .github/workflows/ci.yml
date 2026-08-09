@@ -21,6 +21,9 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: 22
+          # setup-node v5 起 package.json 含 packageManager 时自动启用缓存；
+          # 本 job 仅跑 shell 脚本且无 pnpm 步骤，禁用避免缓存检测失败
+          package-manager-cache: false
 
       - name: Check version consistency
         run: ./scripts/sync-version.sh --check
