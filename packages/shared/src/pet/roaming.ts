@@ -72,6 +72,9 @@ export interface Zone<T extends ZoneType = ZoneType> {
 
 export type RoamingMode = 'wandering' | 'attracted' | 'resting' | 'idle'
 
+/** 昼夜节律时段：night=深夜（≥23 或 <5）/ morning=早晨（7-9）/ afternoon=午后（12-14）/ daytime=其余 */
+export type DayPeriod = 'night' | 'morning' | 'afternoon' | 'daytime'
+
 // ── 常量 ─────────────────────────────────────────────────
 
 const DEFAULT_PADDING = 20
@@ -168,21 +171,36 @@ export function isInSoftZone(pos: Position, zones: AvoidZone[]): boolean {
 // ── 游走模式计算 ─────────────────────────────────────────
 
 /**
- * 确定游走模式。
+ * 按本地小时数计算节律时段（纯函数，clock injection 便于单测与小程序复用）。
+ * night ≥ 23 或 < 5；morning 7-9；afternoon 12-14；其余 daytime。
+ */
+export function computeDayPeriod(hour: number): DayPeriod {
+  if (hour >= 23 || hour < 5) return 'night'
+  if (hour >= 7 && hour <= 9) return 'morning'
+  if (hour >= 12 && hour <= 14) return 'afternoon'
+  return 'daytime'
+}
+
+/**
+ * 确定游走模式 + 节律时段。
+ * night 时段直接 resting（夜间立即回窝睡觉，不再等 2 分钟无交互——回窝路径由 UI 层执行）；
+ * 其余时段：活跃区域 > 2 分钟无交互 > 漫游。
  */
 export function determineMode(params: {
   lastInteractionAt: number
   hasActiveZone: boolean
-  isNightTime: boolean
-}): RoamingMode {
-  const { lastInteractionAt, hasActiveZone, isNightTime } = params
+  /** 本地小时数（0-23，clock injection） */
+  hour: number
+}): { mode: RoamingMode; period: DayPeriod } {
+  const { lastInteractionAt, hasActiveZone, hour } = params
   const now = Date.now()
   const idleDuration = now - lastInteractionAt
+  const period = computeDayPeriod(hour)
 
-  if (isNightTime && idleDuration > RESTING_INTERVAL) return 'resting'
-  if (hasActiveZone) return 'attracted'
-  if (idleDuration > RESTING_INTERVAL) return 'resting'
-  return 'wandering'
+  if (period === 'night') return { mode: 'resting', period }
+  if (hasActiveZone) return { mode: 'attracted', period }
+  if (idleDuration > RESTING_INTERVAL) return { mode: 'resting', period }
+  return { mode: 'wandering', period }
 }
 
 /**

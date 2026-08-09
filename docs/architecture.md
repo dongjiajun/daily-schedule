@@ -180,7 +180,7 @@ daily-schedule/
 
 - **core/** — 稳定基础设施：authStore、settingsStore、EventBus、ModuleRegistry、UI 组件、共享 hooks、节日特效
 - **modules/calendar/** — 日历模块：日历视图、事件管理、筛选、ICS 导出
-- **modules/pet/** — 宠物模块（核心差异化）：自由游走、SVG 插画、情绪状态机、动作动画层（eat 进食/小动作 stretch/yawn/scratch/look/情绪眨眼过渡）、粒子特效、事件总线联动
+- **modules/pet/** — 宠物模块（核心差异化）：自由游走、昼夜节律（夜间回窝/早晨唤醒/午后小憩/深夜提示）、SVG 插画、情绪状态机、动作动画层（eat 进食/小动作 stretch/yawn/scratch/look/情绪眨眼过渡）、粒子特效、事件总线联动
 - **modules/todo/** — 任务看板模块：三列看板 + 列表视图、拖拽排序、标签筛选
 - **ModuleRegistry** — 模块注册/注销/路由收集，`main.tsx` 启动时注册
 - **EventBus** — 同步事件总线，类型安全的 `SystemEvent` 联合类型（定义在 `@daily-schedule/shared`）
@@ -200,8 +200,8 @@ ModuleDefinition {
 ## 测试
 
 - **后端**: 37 个测试类，259 个用例，0 失败。H2 内存数据库（MySQL 兼容模式）。`<!-- DOCS-CHECK: backend-test-classes=37 -->`
-- **前端**: 48 个测试文件，228 个用例，0 失败。vitest + jsdom。`<!-- DOCS-CHECK: frontend-test-files=48 -->`
-- **E2E**: 10 个 spec 文件，35 条 Playwright 用例（auth/calendar/task/pet），CI 集成。webServer 复用后台启动的后端 + 自动启动前端 Vite。`<!-- DOCS-CHECK: e2e-files=10 -->`
+- **前端**: 48 个测试文件，232 个用例，0 失败。vitest + jsdom。`<!-- DOCS-CHECK: frontend-test-files=48 -->`
+- **E2E**: 11 个 spec 文件，39 条 Playwright 用例（auth/calendar/task/pet），CI 集成。webServer 复用后台启动的后端 + 自动启动前端 Vite。`<!-- DOCS-CHECK: e2e-files=11 -->`
 - **CI**: GitHub Actions — version-check（版本 + 文档一致性）→ backend mvn test → frontend lint → test → build（含 SDK freshness）三道阻断门禁 + E2E（`continue-on-error` 软性，不阻断）
 - **运行**: `cd backend && mvn test` / `cd frontend && pnpm run test`
 

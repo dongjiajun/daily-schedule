@@ -74,6 +74,8 @@ export interface Zone<T extends ZoneType = ZoneType> {
     createdAt?: number;
 }
 export type RoamingMode = 'wandering' | 'attracted' | 'resting' | 'idle';
+/** 昼夜节律时段：night=深夜（≥23 或 <5）/ morning=早晨（7-9）/ afternoon=午后（12-14）/ daytime=其余 */
+export type DayPeriod = 'night' | 'morning' | 'afternoon' | 'daytime';
 /**
  * 将坐标 clamp 到视口安全区域内。
  */
@@ -96,13 +98,24 @@ export declare function avoidZones(pos: Position, zones: AvoidZone[]): Position;
  */
 export declare function isInSoftZone(pos: Position, zones: AvoidZone[]): boolean;
 /**
- * 确定游走模式。
+ * 按本地小时数计算节律时段（纯函数，clock injection 便于单测与小程序复用）。
+ * night ≥ 23 或 < 5；morning 7-9；afternoon 12-14；其余 daytime。
+ */
+export declare function computeDayPeriod(hour: number): DayPeriod;
+/**
+ * 确定游走模式 + 节律时段。
+ * night 时段直接 resting（夜间立即回窝睡觉，不再等 2 分钟无交互——回窝路径由 UI 层执行）；
+ * 其余时段：活跃区域 > 2 分钟无交互 > 漫游。
  */
 export declare function determineMode(params: {
     lastInteractionAt: number;
     hasActiveZone: boolean;
-    isNightTime: boolean;
-}): RoamingMode;
+    /** 本地小时数（0-23，clock injection） */
+    hour: number;
+}): {
+    mode: RoamingMode;
+    period: DayPeriod;
+};
 /**
  * 随机漫步：生成随机目标点，避开硬避让区。
  * soft 权重化（Decision 8）：30% 概率全域采样（保证视口覆盖）+ 70% 局部漂移（自然漫游）；

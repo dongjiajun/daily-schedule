@@ -39,7 +39,8 @@ test.describe('Pet', () => {
     await page.goto('/pet')
     await expect(page.locator('svg[data-action]').first()).toBeVisible()
     const action = await page.locator('svg[data-action]').first().getAttribute('data-action')
-    expect(['idle', 'walk', 'sleep', 'jump']).toContain(action)
+    // 全动作集合：昼夜节律（小憩 rest/打哈欠 yawn/早晨 stretch）可能在任何时段出现，断言需时段免疫
+    expect(['idle', 'walk', 'pace', 'rest', 'sleep', 'jump', 'eat', 'stretch', 'yawn', 'scratch', 'look']).toContain(action)
   })
 
   test('月视图渲染时宠物正常（calendar-cell Zones 共存不崩溃）', async ({ page }) => {

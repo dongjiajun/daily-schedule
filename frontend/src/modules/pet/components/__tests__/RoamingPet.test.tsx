@@ -34,6 +34,9 @@ beforeEach(() => {
   // 重置模块级 petStore（用例间共享，游走 tick 会修改 position）
   usePetStore.getState().reset()
   vi.useFakeTimers()
+  // 固定时钟到中午 12 点（afternoon）：节律概率分支不干扰既有用例（random ≥ 0.05 不触发小憩）
+  // 节律专项用例自行 setSystemTime 覆盖
+  vi.setSystemTime(new Date('2026-08-09T12:00:00'))
 })
 
 afterEach(() => {
@@ -169,6 +172,108 @@ describe('RoamingPet', () => {
       vi.advanceTimersByTime(13_000)
     })
     expect(usePetStore.getState().action).toBe('idle') // 守卫生效：不调度小动作
+  })
+
+  // ── 昼夜节律（spec: 作息节律 + Resting Behavior 夜间回窝）──
+  it('夜间（23 点）自动走向小窝进窝睡觉（不原地硬切、不等 2 分钟）', () => {
+    vi.setSystemTime(new Date('2026-08-09T23:30:00'))
+    vi.spyOn(Math, 'random').mockReturnValue(0.5) // tick 20s；打哈欠概率 0.5 ≥ 0.1 不触发
+    registerZone({ id: 'pet-home-spot', type: 'pet-spot', rect: { left: 300, top: 300, right: 500, bottom: 500 }, weight: 1 })
+    render(<RoamingPet />)
+
+    act(() => {
+      vi.advanceTimersByTime(20_000)
+    })
+
+    const s = usePetStore.getState()
+    expect(s.isResting).toBe(true) // 夜间立即回窝（lastInteractionTime 仍是刚 render 的值，未等 2 分钟）
+    expect(s.position).toMatchObject({ x: 400, y: 400 }) // 目标 = 小窝中心（走回窝路径而非原地）
+  })
+
+  it('早晨（8 点）睡眠中醒来 + "早上好"气泡（同日不重复）', () => {
+    vi.setSystemTime(new Date('2026-08-09T08:00:00'))
+    vi.spyOn(Math, 'random').mockReturnValue(0.5) // tick 20s
+    render(<RoamingPet />)
+    act(() => {
+      usePetStore.getState().startResting()
+      usePetStore.getState().setAction('sleep')
+    })
+
+    act(() => {
+      vi.advanceTimersByTime(20_000)
+    })
+    const s = usePetStore.getState()
+    expect(s.isResting).toBe(false)
+    expect(s.action).toBe('idle')
+    expect(s.bubbleMessage).toBe('早上好~ ☀️')
+
+    // 同日再次入睡（模拟又睡回去）→ 日期守卫拦截，不重复问候
+    act(() => {
+      usePetStore.getState().startResting()
+      usePetStore.getState().setAction('sleep')
+      vi.advanceTimersByTime(20_000)
+    })
+    expect(usePetStore.getState().bubbleMessage).not.toBe('早上好~ ☀️')
+  })
+
+  it('午后（13 点）低概率小憩：rest 动作原地打盹 90s 后恢复游走', () => {
+    vi.setSystemTime(new Date('2026-08-09T13:00:00'))
+    // Math.random 消费序（实测）：render 3 次 + idleVariant（8.4s 选择/递归 interval）2 次，
+    // 第 6 次 = 小憩概率（10.8s tick）→ 0.04 < 0.05 触发；后续 interval=0.8（26s/tick，tick2 36.8s）
+    const spy = vi.spyOn(Math, 'random')
+    spy.mockReturnValueOnce(0.04).mockReturnValueOnce(0.04).mockReturnValueOnce(0.04)
+      .mockReturnValueOnce(0.04).mockReturnValueOnce(0.04).mockReturnValueOnce(0.04).mockReturnValue(0.8)
+    render(<RoamingPet />)
+
+    const before = usePetStore.getState().position
+    act(() => {
+      vi.advanceTimersByTime(11_000) // tick1（10.8s）：小憩触发
+    })
+    let s = usePetStore.getState()
+    expect(s.action).toBe('rest')
+    expect(s.isResting).toBe(false) // 小憩不置 resting（区别于夜间睡眠）
+    expect(s.position).toEqual(before) // 原地打盹
+
+    act(() => {
+      vi.advanceTimersByTime(26_000) // tick2（36.8s）：小憩中仍原地 rest
+    })
+    s = usePetStore.getState()
+    expect(s.action).toBe('rest')
+    expect(s.position).toEqual(before)
+
+    // 90s 到期（smallNapUntil=100.8s）后恢复游走（tick5 在 114.8s 游走）
+    act(() => {
+      vi.advanceTimersByTime(80_000) // 到 117s > 114.8s
+    })
+    s = usePetStore.getState()
+    expect(s.action).not.toBe('rest')
+    expect(s.position).not.toEqual(before)
+  })
+
+  it('深夜（23 点）未睡时打哈欠提示（不强制回窝），冷却期内再 tick 回窝', () => {
+    vi.setSystemTime(new Date('2026-08-09T23:30:00'))
+    // Math.random 消费序（实测）：render 3 次 + idleVariant（8.4s 选择/递归 interval）2 次，
+    // 第 6 次 = 打哈欠概率（10.8s tick）→ 0.04 < 0.1 触发；后续 interval=0.8（tick 26s，
+    // 第二次 tick 在 36.8s：概率 0.8 不触发 + 冷却拦截 → 回窝）
+    const spy = vi.spyOn(Math, 'random')
+    spy.mockReturnValueOnce(0.04).mockReturnValueOnce(0.04).mockReturnValueOnce(0.04)
+      .mockReturnValueOnce(0.04).mockReturnValueOnce(0.04).mockReturnValueOnce(0.04).mockReturnValue(0.8)
+    render(<RoamingPet />)
+
+    act(() => {
+      vi.advanceTimersByTime(11_000) // tick1（10.8s）：打哈欠
+    })
+    let s = usePetStore.getState()
+    expect(s.action).toBe('yawn')
+    expect(s.bubbleMessage).toBe('夜深啦，该睡觉了~ 😴')
+    expect(s.isResting).toBe(false) // 提示不强制回窝
+
+    // 冷却 10min 内再 tick（36.8s）：概率命中但冷却拦截 → 走夜间回窝
+    act(() => {
+      vi.advanceTimersByTime(26_000)
+    })
+    s = usePetStore.getState()
+    expect(s.isResting).toBe(true)
   })
 
   // ── 小窝进窝休息（pet-spot Zone）──

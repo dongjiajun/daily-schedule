@@ -4,6 +4,7 @@ import {
   isInsideRect,
   avoidZones,
   determineMode,
+  computeDayPeriod,
   computeWanderTarget,
   computeAttractedTarget,
   computeRestingTarget,
@@ -101,41 +102,85 @@ describe('avoidZones', () => {
   })
 })
 
+describe('computeDayPeriod（时段边界）', () => {
+  it('night: hour ≥ 23 或 < 5', () => {
+    for (const hour of [23, 0, 4]) {
+      expect(computeDayPeriod(hour)).toBe('night')
+    }
+  })
+  it('morning: 7-9', () => {
+    for (const hour of [7, 8, 9]) {
+      expect(computeDayPeriod(hour)).toBe('morning')
+    }
+  })
+  it('afternoon: 12-14', () => {
+    for (const hour of [12, 13, 14]) {
+      expect(computeDayPeriod(hour)).toBe('afternoon')
+    }
+  })
+  it('daytime: 边界外时段（5/6/10/11/15/22）', () => {
+    for (const hour of [5, 6, 10, 11, 15, 22]) {
+      expect(computeDayPeriod(hour)).toBe('daytime')
+    }
+  })
+})
+
 describe('determineMode', () => {
-  it('should return wandering when recently interacted', () => {
-    const mode = determineMode({
+  it('should return wandering when recently interacted (daytime)', () => {
+    const { mode, period } = determineMode({
       lastInteractionAt: Date.now() - 1000,
       hasActiveZone: false,
-      isNightTime: false,
+      hour: 12,
     })
     expect(mode).toBe('wandering')
+    expect(period).toBe('afternoon')
   })
 
   it('should return resting when idle > 2min', () => {
-    const mode = determineMode({
+    const { mode, period } = determineMode({
       lastInteractionAt: Date.now() - 3 * 60 * 1000,
       hasActiveZone: false,
-      isNightTime: false,
+      hour: 10,
     })
     expect(mode).toBe('resting')
+    expect(period).toBe('daytime')
   })
 
   it('should return attracted when zone active', () => {
-    const mode = determineMode({
+    const { mode, period } = determineMode({
       lastInteractionAt: Date.now() - 1000,
       hasActiveZone: true,
-      isNightTime: false,
+      hour: 12,
     })
     expect(mode).toBe('attracted')
+    expect(period).toBe('afternoon')
   })
 
-  it('should return resting at night when idle', () => {
-    const mode = determineMode({
-      lastInteractionAt: Date.now() - 3 * 60 * 1000,
+  it('night: 直接 resting（刚交互过也回窝，不等待 2 分钟）', () => {
+    const { mode, period } = determineMode({
+      lastInteractionAt: Date.now() - 1000,
       hasActiveZone: false,
-      isNightTime: true,
+      hour: 23,
     })
     expect(mode).toBe('resting')
+    expect(period).toBe('night')
+  })
+
+  it('night 时段边界（22 点 daytime / 23 点 night / 4 点 night / 5 点 daytime）', () => {
+    expect(determineMode({ lastInteractionAt: Date.now(), hasActiveZone: false, hour: 22 }).period).toBe('daytime')
+    expect(determineMode({ lastInteractionAt: Date.now(), hasActiveZone: false, hour: 23 }).period).toBe('night')
+    expect(determineMode({ lastInteractionAt: Date.now(), hasActiveZone: false, hour: 4 }).period).toBe('night')
+    expect(determineMode({ lastInteractionAt: Date.now(), hasActiveZone: false, hour: 5 }).period).toBe('daytime')
+  })
+
+  it('morning 时段输出（7-9 点）', () => {
+    const { mode, period } = determineMode({
+      lastInteractionAt: Date.now() - 1000,
+      hasActiveZone: false,
+      hour: 8,
+    })
+    expect(mode).toBe('wandering')
+    expect(period).toBe('morning')
   })
 })
 

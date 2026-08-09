@@ -114,6 +114,10 @@ export function RoamingPet() {
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   // 进窝边沿守卫：记录上一 tick 是否在小窝内，仅"进入边沿"才触发进窝休息
   const wasInHomeRef = useRef(false)
+  // 节律接线守卫：早晨问候日期（每日一次）/ 午后小憩到期时间 / 深夜打哈欠冷却（10min）
+  const lastMorningGreetRef = useRef('')
+  const smallNapUntilRef = useRef(0)
+  const yawnCooldownRef = useRef(0)
 
   // ── 格内物理状态机（calendar-cell 互动，rAF 帧循环） ──
   const cellPhysicsRef = useRef<{
@@ -436,10 +440,10 @@ export function RoamingPet() {
       const activeZones = getZones().filter(z => z.type === 'user-interaction')
       const homeZone = getZones().find(z => z.type === 'pet-spot') ?? null
       const inHome = homeZone ? isInsideRect(position, homeZone.rect) : false
-      const mode = determineMode({
+      const { mode, period } = determineMode({
         lastInteractionAt: lastInteractionTime,
         hasActiveZone: activeZones.length > 0,
-        isNightTime: new Date().getHours() >= 23,
+        hour: new Date().getHours(),
       })
 
       // 进窝边沿检测：仅当"上一 tick 不在窝内 && 当前在窝内 && 未休息"才进窝
@@ -480,6 +484,51 @@ export function RoamingPet() {
         lastPacedCellRef.current = null // 已离开格子，重置"刚互动过"标记
       }
 
+      // ── 昼夜节律接线（spec: 作息节律） ──
+      // 早晨唤醒：7-9 点且睡眠中 → 唤醒 + 问候气泡（每日一次，日期守卫）
+      if (period === 'morning' && resting) {
+        const today = new Date().toISOString().slice(0, 10)
+        if (lastMorningGreetRef.current !== today) {
+          lastMorningGreetRef.current = today
+          wakeUp()
+          resting = false
+          setAction('idle')
+          showBubble('早上好~ ☀️')
+        }
+      }
+
+      // 午后小憩中：原地打盹（rest 动作），到期恢复游走
+      if (smallNapUntilRef.current > 0) {
+        if (Date.now() >= smallNapUntilRef.current) {
+          smallNapUntilRef.current = 0 // 小憩到期
+        } else {
+          setAction('rest')
+          setPosition(position) // 原地不动
+          scheduleWanderRef.current()
+          return
+        }
+      }
+
+      // 午后小憩触发：12-14 点未休息，低概率（~5%）短暂打盹 90s（rest 区别于夜间 sleep）
+      if (period === 'afternoon' && !resting && !cellPhysicsRef.current && Math.random() < 0.05) {
+        smallNapUntilRef.current = Date.now() + 90_000
+        setAction('rest')
+        setPosition(position) // 原地打盹，不走向小窝
+        scheduleWanderRef.current()
+        return
+      }
+
+      // 深夜打哈欠提示：night 未休息，低概率（~10%，10min 冷却）——提示不强制回窝
+      if (period === 'night' && !resting && !cellPhysicsRef.current) {
+        if (Math.random() < 0.1 && Date.now() >= yawnCooldownRef.current) {
+          yawnCooldownRef.current = Date.now() + 600_000
+          setAction('yawn', 1800)
+          showBubble('夜深啦，该睡觉了~ 😴')
+          scheduleWanderRef.current()
+          return
+        }
+      }
+
       let target: ReturnType<typeof computeNextTarget>
 
       if (resting) {
@@ -515,7 +564,7 @@ export function RoamingPet() {
 
       scheduleWanderRef.current()
     }, interval)
-  }, [startResting, wakeUp, setFacing, setPosition, setAction, startCellPhysics, exitCellPhysics])
+  }, [startResting, wakeUp, setFacing, setPosition, setAction, showBubble, startCellPhysics, exitCellPhysics])
 
   // 保持 ref 与最新 scheduleWander 同步
   useEffect(() => {

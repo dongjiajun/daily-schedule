@@ -86,19 +86,35 @@ export function isInSoftZone(pos, zones) {
 }
 // ── 游走模式计算 ─────────────────────────────────────────
 /**
- * 确定游走模式。
+ * 按本地小时数计算节律时段（纯函数，clock injection 便于单测与小程序复用）。
+ * night ≥ 23 或 < 5；morning 7-9；afternoon 12-14；其余 daytime。
+ */
+export function computeDayPeriod(hour) {
+    if (hour >= 23 || hour < 5)
+        return 'night';
+    if (hour >= 7 && hour <= 9)
+        return 'morning';
+    if (hour >= 12 && hour <= 14)
+        return 'afternoon';
+    return 'daytime';
+}
+/**
+ * 确定游走模式 + 节律时段。
+ * night 时段直接 resting（夜间立即回窝睡觉，不再等 2 分钟无交互——回窝路径由 UI 层执行）；
+ * 其余时段：活跃区域 > 2 分钟无交互 > 漫游。
  */
 export function determineMode(params) {
-    const { lastInteractionAt, hasActiveZone, isNightTime } = params;
+    const { lastInteractionAt, hasActiveZone, hour } = params;
     const now = Date.now();
     const idleDuration = now - lastInteractionAt;
-    if (isNightTime && idleDuration > RESTING_INTERVAL)
-        return 'resting';
+    const period = computeDayPeriod(hour);
+    if (period === 'night')
+        return { mode: 'resting', period };
     if (hasActiveZone)
-        return 'attracted';
+        return { mode: 'attracted', period };
     if (idleDuration > RESTING_INTERVAL)
-        return 'resting';
-    return 'wandering';
+        return { mode: 'resting', period };
+    return { mode: 'wandering', period };
 }
 /**
  * 随机漫步：生成随机目标点，避开硬避让区。
