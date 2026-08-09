@@ -77,3 +77,13 @@ Playwright E2E 基础设施 — 引入端到端测试框架，编写关键路径
 - **WHEN** 推送代码触发 CI
 - **THEN** CI 中安装 Playwright → 启动前后端 → 运行 E2E → 全部通过
 - **AND** E2E 失败时 CI 标记为失败
+
+---
+
+### Requirement: 节律/时段敏感用例固定 Date 到明确时段
+涉及昼夜节律（night/morning/afternoon/daytime 判定）或依赖本地时间行为的 E2E 用例 SHALL 在场景开始前通过 `page.clock.setFixedTime()` 固定 `Date` 到明确的时段，不得依赖真实运行时刻——否则测试结果随时区/运行时段漂移（如本地凌晨运行落入 night 时段，宠物按节律回窝、格子点击吸引失效）。
+
+#### Scenario: 格内互动用例固定白天时段
+- **WHEN** E2E 用例需要验证白天行为（如点击日历格子触发宠物格内互动）
+- **THEN** 用例在交互前调用 `page.clock.setFixedTime(白天时段时间)`（仅固定 `Date`，不影响 timers）
+- **THEN** 用例断言与真实运行时刻/时区无关，本地与 CI 结果一致

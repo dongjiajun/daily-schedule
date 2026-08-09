@@ -84,6 +84,11 @@ test.describe('Pet', () => {
   test('宠物进入日历格子 → 格内互动（pace 启动 + 贴壁旋转出现）', async ({ page }) => {
     test.setTimeout(120_000) // 悬停吸引 24s + 等待绕行，总时长超默认 30s
     await ensureLoggedIn(page)
+    // 时段敏感修复：固定 Date 到白天 daytime 时段（10:00）。本地凌晨/CI 时区差异下
+    // hour<5 或 ≥23 会落入 night → 宠物按节律回窝优先（spec: Rest behavior takes precedence），
+    // 点击格子的 user-interaction 吸引被忽略 → pace 永不出现（E2E 本地凌晨必失败、CI 白天通过）。
+    // setFixedTime 仅固定 Date、不影响 timers，无假时钟动画冻结风险。
+    await page.clock.setFixedTime(new Date('2026-08-09T10:00:00'))
     // 定位月视图格子并点击中心（100% 吸引宠物进该格子）
     const cell = page.locator('.rbc-month-view .rbc-day-bg').first()
     await expect(cell).toBeVisible()
