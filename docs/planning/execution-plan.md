@@ -123,6 +123,8 @@ Monorepo（Turborepo + shared 包）、模块注册中心 + 事件总线、`core
 
 **主题**: "无处不在，深度更强"
 
+> 📋 **执行级清单**: 里程碑拆解、任务顺序与进度跟踪见 `docs/planning/phase2-execution-plan.md`（docs-check 防呆联动，全部完成后移除）。
+
 - **M2.1-2.2 微信小程序**（Week 1-8）: `packages/miniprogram/`（Taro 4.x + NutUI）、微信登录 + Flyway V7 user.openid、核心场景（日历月视图只读/任务列表/宠物互动/习惯打卡）、订阅消息替代 SSE
 - **M2.3 习惯 + 专注**（Week 5-10，并行）: 习惯（每日打卡 + 热力图 + 连续记录 + 统计分析）、专注（番茄钟 + 白噪音 + 关联日程 + 统计）
 - **M2.4 宠物 v2**（Week 8-12）: 进化（蛋 → 幼崽 → 成年 → 传说）、装扮商店 + 节日限定服装、宠物详细页面

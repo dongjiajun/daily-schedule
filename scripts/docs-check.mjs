@@ -164,9 +164,22 @@ const COUNTERS = {
   },
   'ui-components': () =>
     walk('frontend/src/core/components/ui', (f) => f.endsWith('.tsx') && !f.includes('/__tests__/')).length,
+  // Phase 2 执行规划进度：解析文档任务行（`- [ ] <kebab-name>`），与 archive 目录名（去日期前缀）求交集
+  // 文档移除后 marker 随之消失，此 counter 不会被触发（"全部执行完可移除"）
+  'phase2-changes': () => {
+    const plan = read('docs/planning/phase2-execution-plan.md')
+    const tasks = [...plan.matchAll(/^\- \[[ x]\] ([a-z][a-z0-9-]*)/gm)].map((m) => m[1])
+    const archived = fs
+      .readdirSync(path.join(ROOT, 'openspec/changes/archive'), { withFileTypes: true })
+      .filter((d) => d.isDirectory())
+      .map((d) => d.name.replace(/^\d{4}-\d{2}-\d{2}-/, ''))
+    const archSet = new Set(archived)
+    return tasks.filter((t) => archSet.has(t)).length
+  },
 }
 
-const MARKER_RE = /<!--\s*DOCS-CHECK:\s*([a-z-]+)=([\w.-]+)\s*-->/g
+// key 以字母开头，可含数字与连字符（如 phase2-changes）
+const MARKER_RE = /<!--\s*DOCS-CHECK:\s*([a-z][a-z0-9-]*)=([\w.-]+)\s*-->/g
 
 function checkCounts() {
   const docFiles = [
