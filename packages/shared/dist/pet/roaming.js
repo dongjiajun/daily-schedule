@@ -4,7 +4,6 @@
  */
 // ── 常量 ─────────────────────────────────────────────────
 const DEFAULT_PADDING = 20;
-const ATTRACTION_DISTANCE = 100; // px, 宠物靠近兴趣点的最近距离
 const RESTING_INTERVAL = 2 * 60 * 1000; // 2min 无交互后进入休息
 const WANDER_INTERVAL_MIN = 10_000;
 const WANDER_INTERVAL_MAX = 30_000;
@@ -140,26 +139,15 @@ export function computeWanderTarget(current, config) {
     }, config.avoidZones);
 }
 /**
- * 兴趣点吸引：向兴趣点靠近 ATTRACTION_DISTANCE 的位置。
+ * 兴趣点吸引：目标 = 兴趣点中心（含细微随机偏移防重叠）。
+ * 停在"兴趣点边缘"会导致宠物永远不进入日历格子（格内物理依赖 isInsideRect），
+ * 点击/悬停格子后宠物必须真正走进格子区域。
  */
-export function computeAttractedTarget(current, interestPoint, config) {
-    const dx = interestPoint.x - current.x;
-    const dy = interestPoint.y - current.y;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-    if (dist <= ATTRACTION_DISTANCE) {
-        // 已经在足够近的位置，细微偏移避免重叠
-        return clampToViewport({
-            x: interestPoint.x + randomRange(-30, 30),
-            y: interestPoint.y + randomRange(-30, 30),
-        }, config);
-    }
-    // 向兴趣点方向移动
-    const ratio = ATTRACTION_DISTANCE / dist;
-    const target = clampToViewport({
-        x: interestPoint.x - dx * ratio,
-        y: interestPoint.y - dy * ratio,
+export function computeAttractedTarget(_current, interestPoint, config) {
+    return clampToViewport({
+        x: interestPoint.x + randomRange(-10, 10),
+        y: interestPoint.y + randomRange(-10, 10),
     }, config);
-    return avoidZones(target, config.avoidZones);
 }
 /**
  * 休息点选择：选择最近的休息点。

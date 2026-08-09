@@ -35,8 +35,11 @@ export type ZoneType = 'user-interaction' | 'pet-spot' | 'calendar-cell'
 export interface CalendarCellPayload {
   /** 日期标识（YYYY-MM-DD） */
   date: string
-  /** 当天完成度百分比（0-100 整数，COMPLETED / total） */
-  completion: number
+  /**
+   * 当天完成度百分比（0-100 整数，COMPLETED / total）。
+   * null = 当天无日程（无压力 → 快风格），0 = 有日程但全部未完成（→ 慢风格）。
+   */
+  completion: number | null
 }
 
 /**
@@ -72,7 +75,6 @@ export type RoamingMode = 'wandering' | 'attracted' | 'resting' | 'idle'
 // ── 常量 ─────────────────────────────────────────────────
 
 const DEFAULT_PADDING = 20
-const ATTRACTION_DISTANCE = 100 // px, 宠物靠近兴趣点的最近距离
 const RESTING_INTERVAL = 2 * 60 * 1000 // 2min 无交互后进入休息
 const WANDER_INTERVAL_MIN = 10_000
 const WANDER_INTERVAL_MAX = 30_000
@@ -229,33 +231,19 @@ export function computeWanderTarget(current: Position, config: RoamingConfig): P
 }
 
 /**
- * 兴趣点吸引：向兴趣点靠近 ATTRACTION_DISTANCE 的位置。
+ * 兴趣点吸引：目标 = 兴趣点中心（含细微随机偏移防重叠）。
+ * 停在"兴趣点边缘"会导致宠物永远不进入日历格子（格内物理依赖 isInsideRect），
+ * 点击/悬停格子后宠物必须真正走进格子区域。
  */
 export function computeAttractedTarget(
-  current: Position,
+  _current: Position,
   interestPoint: Position,
   config: RoamingConfig
 ): Position {
-  const dx = interestPoint.x - current.x
-  const dy = interestPoint.y - current.y
-  const dist = Math.sqrt(dx * dx + dy * dy)
-
-  if (dist <= ATTRACTION_DISTANCE) {
-    // 已经在足够近的位置，细微偏移避免重叠
-    return clampToViewport({
-      x: interestPoint.x + randomRange(-30, 30),
-      y: interestPoint.y + randomRange(-30, 30),
-    }, config)
-  }
-
-  // 向兴趣点方向移动
-  const ratio = ATTRACTION_DISTANCE / dist
-  const target = clampToViewport({
-    x: interestPoint.x - dx * ratio,
-    y: interestPoint.y - dy * ratio,
+  return clampToViewport({
+    x: interestPoint.x + randomRange(-10, 10),
+    y: interestPoint.y + randomRange(-10, 10),
   }, config)
-
-  return avoidZones(target, config.avoidZones)
 }
 
 /**

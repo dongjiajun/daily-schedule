@@ -36,8 +36,11 @@ export type ZoneType = 'user-interaction' | 'pet-spot' | 'calendar-cell';
 export interface CalendarCellPayload {
     /** 日期标识（YYYY-MM-DD） */
     date: string;
-    /** 当天完成度百分比（0-100 整数，COMPLETED / total） */
-    completion: number;
+    /**
+     * 当天完成度百分比（0-100 整数，COMPLETED / total）。
+     * null = 当天无日程（无压力 → 快风格），0 = 有日程但全部未完成（→ 慢风格）。
+     */
+    completion: number | null;
 }
 /**
  * 各 Zone 类型的数据负载结构。
@@ -107,9 +110,11 @@ export declare function determineMode(params: {
  */
 export declare function computeWanderTarget(current: Position, config: RoamingConfig): Position;
 /**
- * 兴趣点吸引：向兴趣点靠近 ATTRACTION_DISTANCE 的位置。
+ * 兴趣点吸引：目标 = 兴趣点中心（含细微随机偏移防重叠）。
+ * 停在"兴趣点边缘"会导致宠物永远不进入日历格子（格内物理依赖 isInsideRect），
+ * 点击/悬停格子后宠物必须真正走进格子区域。
  */
-export declare function computeAttractedTarget(current: Position, interestPoint: Position, config: RoamingConfig): Position;
+export declare function computeAttractedTarget(_current: Position, interestPoint: Position, config: RoamingConfig): Position;
 /**
  * 休息点选择：选择最近的休息点。
  */

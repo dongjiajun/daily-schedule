@@ -267,7 +267,7 @@ describe('RoamingPet', () => {
     expect(pos.x).toBeLessThanOrEqual(CELL_RECT.right)
   })
 
-  it('完成度低 → 懒散情绪 + 贴底边（bottomOnly 风格）', () => {
+  it('完成度低 → 懒散情绪（慢风格，绕四边）', () => {
     vi.spyOn(Math, 'random').mockReturnValue(0.5)
     registerZone({
       id: 'calendar-cell-2026-08-02',
@@ -286,15 +286,151 @@ describe('RoamingPet', () => {
     })
     expect(usePetStore.getState().emotionState).toBe('idle_variant')
 
-    // 推进 3s：enter 落地 + cling 重力下沉 → 贴底边（y ≈ 400-30=370）
+    // 推进 3s：enter 落地 + 重力下沉 → 贴底边（盒子坐标 y ≈ 400-12-64=324）
     act(() => {
       vi.advanceTimersByTime(3_000)
     })
     const pos = usePetStore.getState().position
-    expect(pos.y).toBeGreaterThan(350) // 已下沉至底边附近
+    expect(pos.y).toBeGreaterThan(300) // 已下沉至底边附近（脚踩边线）
   })
 
-  it('格内互动超时强制退出（恢复游走，同格子不立即重启）', () => {
+  // ── 贴壁旋转（锚点 + 姿态）──
+  it('格内绕行出现完整贴壁姿态（底站 / 右横 -90 / 左横 +90 / 顶倒立 180）', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5)
+    registerZone({
+      id: 'calendar-cell-2026-08-06',
+      type: 'calendar-cell',
+      rect: CELL_RECT,
+      payload: { date: '2026-08-06', completion: 80 },
+      weight: 1,
+    })
+    render(<RoamingPet />)
+
+    act(() => {
+      usePetStore.getState().setPosition({ x: 400, y: 300 })
+    })
+    act(() => {
+      vi.advanceTimersByTime(20_000) // 启动格内互动
+    })
+
+    // 大步进推进帧循环（500ms/步，25s 兜底内走完至少一轮 14 点），收集翻转容器全部 rotate 姿态
+    const seen = new Set<string>()
+    for (let i = 0; i < 120; i++) {
+      act(() => {
+        vi.advanceTimersByTime(500)
+      })
+      document.querySelectorAll('[data-pet="roaming"] [style*="rotate"]').forEach((el) => {
+        const style = (el as HTMLElement).getAttribute('style') || ''
+        const m = style.match(/rotate\((-?\d+)deg\)/)
+        if (m) seen.add(m[1])
+      })
+    }
+    // 贴四边姿态：右壁 -90 / 左壁 90 / 顶边 180（底边无 rotate）
+    expect(seen.has('-90')).toBe(true)
+    expect(seen.has('90')).toBe(true)
+    expect(seen.has('180')).toBe(true)
+  })
+
+  it('贴壁姿态位置精确：脚底贴合所贴边线（右壁 x / 左壁 x / 顶边 y）', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5)
+    registerZone({
+      id: 'calendar-cell-2026-08-08',
+      type: 'calendar-cell',
+      rect: CELL_RECT,
+      payload: { date: '2026-08-08', completion: 80 },
+      weight: 1,
+    })
+    render(<RoamingPet />)
+    act(() => { usePetStore.getState().setPosition({ x: 400, y: 300 }) })
+    act(() => { vi.advanceTimersByTime(20_000) })
+
+    // 格子边线（内缩 6%）：右 488 / 左 312 / 顶 212（CELL_RECT 300,200,500,400）
+    const RIGHT_LINE = 500 - 12
+    const LEFT_LINE = 300 + 12
+    const TOP_LINE = 200 + 12
+
+    // 收集各姿态段的 position，断言脚底（姿态偏移）贴合边线
+    const rightSamples: number[] = []
+    const leftSamples: number[] = []
+    const topSamples: number[] = []
+    for (let i = 0; i < 64; i++) {
+      act(() => { vi.advanceTimersByTime(500) })
+      const pos = usePetStore.getState().position
+      const flipEl = document.querySelector('[data-pet="roaming"] [style*="scaleX"]')
+      const style = flipEl ? (flipEl as HTMLElement).getAttribute('style') || '' : ''
+      const rot = (style.match(/rotate\((-?\d+)deg\)/) || [])[1] ?? '0'
+      if (rot === '-90') rightSamples.push(pos.x + 64) // 右壁：脚底 = x + 64
+      if (rot === '90') leftSamples.push(pos.x + 26) // 左壁：脚底 = x + 26
+      if (rot === '180') topSamples.push(pos.y + 26) // 顶边：脚底 = y + 26
+    }
+    expect(rightSamples.length).toBeGreaterThan(0)
+    expect(leftSamples.length).toBeGreaterThan(0)
+    expect(topSamples.length).toBeGreaterThan(0)
+    // 契约：行走段（脚底接近边线 <2px）精确贴合（±1px）；转弯滑入末端（姿态切换）不在此列
+    const nearRight = rightSamples.filter((f) => Math.abs(f - RIGHT_LINE) < 2)
+    const nearLeft = leftSamples.filter((f) => Math.abs(f - LEFT_LINE) < 2)
+    const nearTop = topSamples.filter((f) => Math.abs(f - TOP_LINE) < 2)
+    expect(nearRight.length).toBeGreaterThan(0)
+    expect(nearLeft.length).toBeGreaterThan(0)
+    expect(nearTop.length).toBeGreaterThan(0)
+    for (const foot of nearRight) expect(foot).toBeCloseTo(RIGHT_LINE, 0)
+    for (const foot of nearLeft) expect(foot).toBeCloseTo(LEFT_LINE, 0)
+    for (const foot of nearTop) expect(foot).toBeCloseTo(TOP_LINE, 0)
+  })
+
+  it('贴壁段 facing 稳定（无镜像翻转：右壁段不反复左右切换）', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5)
+    registerZone({
+      id: 'calendar-cell-2026-08-09',
+      type: 'calendar-cell',
+      rect: CELL_RECT,
+      payload: { date: '2026-08-09', completion: 80 },
+      weight: 1,
+    })
+    render(<RoamingPet />)
+    act(() => { usePetStore.getState().setPosition({ x: 400, y: 300 }) })
+    act(() => { vi.advanceTimersByTime(20_000) })
+
+    // 收集右壁段（rot=-90）的 flip：必须恒 R（无镜像）
+    const flips = new Set<string>()
+    for (let i = 0; i < 64; i++) {
+      act(() => { vi.advanceTimersByTime(500) })
+      const flipEl = document.querySelector('[data-pet="roaming"] [style*="scaleX"]')
+      const style = flipEl ? (flipEl as HTMLElement).getAttribute('style') || '' : ''
+      const rot = (style.match(/rotate\((-?\d+)deg\)/) || [])[1] ?? '0'
+      if (rot === '-90') flips.add(style.includes('scaleX(-1)') ? 'L' : 'R')
+    }
+    expect(flips.size).toBeGreaterThan(0)
+    expect(flips.has('L')).toBe(false) // 右壁段不允许镜像翻转
+  })
+
+  it('贴壁位置锚定：宠物脚底（盒子+偏移）贴合所贴边线', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5)
+    registerZone({
+      id: 'calendar-cell-2026-08-07',
+      type: 'calendar-cell',
+      rect: CELL_RECT,
+      payload: { date: '2026-08-07', completion: 80 },
+      weight: 1,
+    })
+    render(<RoamingPet />)
+
+    act(() => {
+      usePetStore.getState().setPosition({ x: 400, y: 300 })
+    })
+    act(() => {
+      vi.advanceTimersByTime(20_000) // 启动格内互动
+    })
+
+    // 推进到落地（脚踩底边）：底边线盒子坐标 = 400-12-64 = 324
+    act(() => {
+      vi.advanceTimersByTime(1_000)
+    })
+    const grounded = usePetStore.getState().position
+    expect(grounded.y).toBeCloseTo(324, 0)
+  })
+
+  it('绕行 2 圈自然退出（28 步，<35s 兜底）+ 恢复游走不同格子不立即重启', () => {
     vi.spyOn(Math, 'random').mockReturnValue(0.5)
     registerZone({
       id: 'calendar-cell-2026-08-03',
@@ -313,18 +449,52 @@ describe('RoamingPet', () => {
     })
     expect(usePetStore.getState().action).not.toBe('idle')
 
-    // fast 会话上限 10s → 超时强制退出：action 回 idle，游走恢复
+    // 2 圈 28 步 ≈ 37s（200×200 测试格子）< 45s 兜底 → 按圈自然退出：action 回 idle（证明非兜底截断）
     act(() => {
-      vi.advanceTimersByTime(11_000)
+      vi.advanceTimersByTime(38_000) // 绕行 38s > 37s 按圈完成（< 45s 兜底）
     })
     expect(usePetStore.getState().action).toBe('idle')
-    expect(usePetStore.getState().emotionState).toBe('idle') // happy 定时同步到期
+    // 情绪断言省略：happy 情绪时长 = 45s 兜底，退出后尚未到期（idleVariantTimer 也可能已覆盖）
 
     // 下一个游走 tick（20s）：位置仍在格子内但同格子不立即重启（lastPacedCellRef）
     act(() => {
       vi.advanceTimersByTime(20_000)
     })
     expect(usePetStore.getState().action).not.toBe('pace')
+  })
+
+  it('落地后 cling 位置稳定（不再被重力拖向底部）', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5) // cling 停留 900ms
+    registerZone({
+      id: 'calendar-cell-2026-08-05',
+      type: 'calendar-cell',
+      rect: CELL_RECT,
+      payload: { date: '2026-08-05', completion: 80 },
+      weight: 1,
+    })
+    render(<RoamingPet />)
+
+    act(() => {
+      usePetStore.getState().setPosition({ x: 400, y: 300 })
+    })
+    act(() => {
+      vi.advanceTimersByTime(20_000) // 启动格内状态机
+    })
+    // enter 落向底边吸附点正上方（384ms）→ landing 重力下落（目标 y=330→324 仅 6px，~50ms）→ bounce 4 帧 → cling（~500ms 起，停留 900ms）
+    // 1000ms 时已过 bounce，处于 cling 窗口内（~500ms-1400ms）
+    act(() => {
+      vi.advanceTimersByTime(1000)
+    })
+    const settled = usePetStore.getState().position
+    expect(settled.y).toBeCloseTo(324, 0) // 底边线盒子坐标（400 - 12 margin - 64 脚高）：脚踩边线
+
+    // cling 停留期间位置完全稳定：不漂移、不上下滑（1200ms 仍在 cling 窗口内）
+    act(() => {
+      vi.advanceTimersByTime(200)
+    })
+    const stable = usePetStore.getState().position
+    expect(stable.y).toBe(settled.y)
+    expect(stable.x).toBe(settled.x)
   })
 
   it('进窝休息优先于格内往返（重叠区域不往返）', () => {

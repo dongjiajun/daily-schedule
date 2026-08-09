@@ -20,10 +20,15 @@ import {
   zoneCenter,
   cellEdges,
   nextClingPoint,
+  landSnap,
+  slideInSpeed,
   applyGravity,
   hopOffset,
   createCellStyle,
-  cellSessionDuration,
+  cellLapTarget,
+  CELL_MAX_SESSION_MS,
+  BOUNCE_INITIAL,
+  LANDING_LERP,
   randomRange,
 } from '@daily-schedule/shared/pet'
 import type { RoamingConfig, AvoidZone, Zone, CalendarCellPayload, Position, CellClingPoint, CellStyle } from '@daily-schedule/shared/pet'
@@ -38,6 +43,35 @@ function moveToward(current: Position, target: Position, speed: number, dt: numb
   if (dist <= step) return { ...target }
   const ratio = step / dist
   return { x: current.x + dx * ratio, y: current.y + dy * ratio }
+}
+
+// ── 宠物锚点修正 ──
+// position（motion.div 盒子左上角）≠ 视觉脚底。宠物 90px，SVG 内脚底在 viewBox y=85。
+// rotate 绕盒子中心（45,45）：脚底相对中心偏移 (0,19) → 旋转后偏移随姿态变化。
+// 推导（脚底相对盒子左上角）：
+//   站姿 bottom: (45, 45+19) = (45, 64)         → position = 接触点 + (0, -64)
+//   rotate(-90) 右壁: (45+19, 45) = (64, 45)    → position = 接触点 + (-64, -45)
+//   rotate(180) 顶边: (45, 45-19) = (45, 26)    → position = 接触点 + (0, -26)
+//   rotate(90) 左壁: (45-19, 45) = (26, 45)     → position = 接触点 + (-26, -45)
+// cellEdges 生成"脚底接触点"，这里转换为盒子坐标，使宠物脚真正"踩"在边线上。
+// **必须保留 edge**（贴壁旋转依赖）；角点（进入边偏移）在转弯段自然过渡。
+const PET_BOTTOM = { dx: 0, dy: -64 }
+const PET_RIGHT = { dx: -64, dy: -45 }
+const PET_TOP = { dx: 0, dy: -26 }
+const PET_LEFT = { dx: -26, dy: -45 }
+
+/** 脚底接触点 → 盒子左上角坐标（按贴的边决定偏移方向） */
+function toPetBox(pos: CellClingPoint, edge: CellClingPoint['edge']): CellClingPoint {
+  switch (edge) {
+    case 'bottom':
+      return { x: pos.x + PET_BOTTOM.dx, y: pos.y + PET_BOTTOM.dy, edge }
+    case 'right':
+      return { x: pos.x + PET_RIGHT.dx, y: pos.y + PET_RIGHT.dy, edge }
+    case 'top':
+      return { x: pos.x + PET_TOP.dx, y: pos.y + PET_TOP.dy, edge }
+    case 'left':
+      return { x: pos.x + PET_LEFT.dx, y: pos.y + PET_LEFT.dy, edge }
+  }
 }
 
 /**
@@ -85,15 +119,18 @@ export function RoamingPet() {
     rafId: number | null
     zone: Zone
     style: CellStyle
-    state: 'enter' | 'cling' | 'walk' | 'hop'
+    state: 'enter' | 'landing' | 'bounce' | 'cling' | 'walk' | 'hop'
     current: Position
     target: CellClingPoint | null
     landY: number
+    bounceY: number
     edges: CellClingPoint[]
     visited: Set<CellClingPoint>
     clingUntil: number
     hopStart: number
     sessionStart: number
+    /** 已访问吸附点数（圈数退出计数：1.5 圈 = ceil(1.5 × 点数)） */
+    stepsTaken: number
   } | null>(null)
   /** 最近一次格内互动的格子（同格子不重复互动，须先离开才可再次） */
   const lastPacedCellRef = useRef<string | null>(null)
@@ -172,7 +209,15 @@ export function RoamingPet() {
     const handlePointerDown = (e: PointerEvent) => {
       // 排除宠物本体交互（摸头/双击）
       if ((e.target as HTMLElement | null)?.closest('[data-pet="roaming"]')) return
-      if (Math.random() < 0.3) {
+      // 点击落在日历格子内 → 100% 吸引宠物进该格子（"指定格子"的直接交互：点击即引导）
+      // 清除"刚互动过"守卫：用户明确指定，即使该格子刚互动过也再次互动
+      const inCell = getZones().find(
+        (z) => z.type === 'calendar-cell' && isInsideRect({ x: e.clientX, y: e.clientY }, z.rect)
+      )
+      if (inCell) {
+        lastPacedCellRef.current = null
+      }
+      if (inCell || Math.random() < 0.3) {
         registerZone(makeZone(e.clientX, e.clientY))
       }
     }
@@ -222,56 +267,92 @@ export function RoamingPet() {
     if (!ph) return
     const { zone, style } = ph
     const r = zone.rect
-    const completion = (zone.payload as CalendarCellPayload | undefined)?.completion ?? 0
-    const marginY = Math.min(20, (r.bottom - r.top) * 0.15)
+    // 与 cellEdges 吸附点内缩一致（0.06h）：落地线 = 底边吸附点 y（盒子坐标），衔接无缝隙
+    const marginY = (r.bottom - r.top) * 0.06
+    /** 底边线（盒子坐标）：脚底接触线 + 站姿偏移 —— 宠物脚踩底边时盒子的 y */
+    const floorY = r.bottom - marginY + PET_BOTTOM.dy
+    const lapTarget = cellLapTarget(ph.edges.length)
 
-    // 会话超时强制退出（防卡死）
-    if (now - ph.sessionStart > cellSessionDuration(completion)) {
+    // 会话兜底超时强制退出（主退出机制为绕圈数，25s 防路径退化卡死）
+    if (now - ph.sessionStart > CELL_MAX_SESSION_MS) {
       exitCellPhysics()
       return
     }
 
+    // 走向下一段吸附点（沿边顺序绕圈，不回头）；贴壁旋转在目标换边时切换
+    const advanceToNext = () => {
+      const store = usePetStore.getState()
+      ph.target = nextClingPoint(ph.current, ph.edges, ph.visited)
+      setClingEdge(ph.target.edge) // 贴壁旋转（左/右壁形象横过来、顶边倒立）
+      ph.state = 'walk'
+      store.setAction('walk')
+      // facing 锁定：贴壁段（左/右/顶）x 相同或姿态旋转，computeFacing 会产生镜像抖动
+      // （scaleX(-1) 会翻转 rotate 的视觉方向 → "反复左右切换"）；统一无镜像（'right'）
+      store.setFacing(ph.target.edge === 'bottom' ? computeFacing(ph.current.x, ph.target.x) : 'right')
+    }
+
     switch (ph.state) {
       case 'enter': {
-        // 从当前位置向格中心偏下移动（落地感）
-        const target = { x: (r.left + r.right) / 2, y: r.top + (r.bottom - r.top) * 0.65 }
+        // 落向最近底边吸附点正上方（水平对齐），到达后进入重力落地
+        const snap = landSnap(ph.current, ph.edges)
+        const target = { x: snap.x, y: r.top + (r.bottom - r.top) * 0.65 }
         ph.current = moveToward(ph.current, target, 80, 16)
         if (Math.hypot(target.x - ph.current.x, target.y - ph.current.y) < 2) {
+          ph.state = 'landing'
+        }
+        break
+      }
+      case 'landing': {
+        // 重力下落（仅落地阶段）：快速 lerp 至底边线（盒子坐标 = 脚底接触线 - 脚高），到位后落定弹跳
+        ph.current = applyGravity(ph.current, r, marginY - PET_BOTTOM.dy, LANDING_LERP)
+        if (ph.current.y >= floorY - 0.5) {
+          ph.current.y = floorY
+          ph.state = 'bounce'
+          ph.bounceY = BOUNCE_INITIAL
+        }
+        break
+      }
+      case 'bounce': {
+        // 落定小弹跳：过阻尼衰减（4 → 2 → 1 → 0，每帧减半）
+        ph.current.y = floorY - ph.bounceY
+        ph.bounceY *= 0.5
+        if (ph.bounceY < 0.5) {
+          ph.current.y = floorY
           ph.state = 'cling'
           ph.clingUntil = now + randomRange(style.clingDuration[0], style.clingDuration[1])
         }
         break
       }
       case 'cling': {
-        // 重力下沉贴底边（水平保持吸附点）
-        ph.current = applyGravity(ph.current, r, marginY)
-        if (now >= ph.clingUntil) {
-          const store = usePetStore.getState()
-          if (Math.random() < style.hopChance) {
-            // 贴边跳跃（sin 抛物线，复用 jump 动画与影子）
-            ph.state = 'hop'
-            ph.hopStart = now
-            ph.landY = ph.current.y
-            store.setAction('jump')
-          } else {
-            // 走向下一个吸附点（沿边顺序绕圈，不回头）
-            ph.state = 'walk'
-            ph.target = nextClingPoint(ph.current, ph.edges, ph.visited)
-            setClingEdge(ph.target.edge) // 贴壁旋转（左/右壁形象横过来）
-            store.setAction('walk')
-            store.setFacing(computeFacing(ph.current.x, ph.target.x))
-          }
-        }
+        // 贴边停留：位置稳定不漂移（不再执行重力——顶边/侧边停留不会被拖向底部）
+        if (now >= ph.clingUntil) advanceToNext()
         break
       }
       case 'walk': {
         const target = ph.target!
-        ph.current = moveToward(ph.current, target, style.walkSpeed, 16)
-        if (Math.hypot(target.x - ph.current.x, target.y - ph.current.y) < 4) {
-          // 吸附落定：位置吸附到边线 + 短停留
-          ph.current = { ...target }
-          ph.state = 'cling'
-          ph.clingUntil = now + randomRange(style.clingDuration[0], style.clingDuration[1])
+        const dist = Math.hypot(target.x - ph.current.x, target.y - ph.current.y)
+        // 吸附滑入：接近目标（<12px）加速 ×1.6，产生"被吸过去"的过程感
+        ph.current = moveToward(ph.current, target, slideInSpeed(style.walkSpeed, dist), 16)
+        if (dist < 4) {
+          ph.current = { ...target } // 到位精确吸附
+          ph.stepsTaken++
+          if (ph.stepsTaken >= lapTarget) {
+            exitCellPhysics()
+            return
+          }
+          // 到达点概率分流：40% 跳跃 / 30% 短暂停留 / 30% 直接续走（保持绕圈连续）
+          const roll = Math.random()
+          if (roll < style.hopChance) {
+            ph.state = 'hop'
+            ph.hopStart = now
+            ph.landY = ph.current.y
+            usePetStore.getState().setAction('jump')
+          } else if (roll < style.hopChance + 0.3) {
+            ph.state = 'cling'
+            ph.clingUntil = now + randomRange(300, 600)
+          } else {
+            advanceToNext()
+          }
         }
         break
       }
@@ -279,9 +360,7 @@ export function RoamingPet() {
         const t = (now - ph.hopStart) / 600
         if (t >= 1) {
           ph.current.y = ph.landY
-          ph.state = 'cling'
-          ph.clingUntil = now + randomRange(style.clingDuration[0], style.clingDuration[1])
-          usePetStore.getState().setAction('pace')
+          advanceToNext() // 落地直接续走（不落入 cling 长停留）
         } else {
           ph.current.y = ph.landY + hopOffset(t)
         }
@@ -290,7 +369,9 @@ export function RoamingPet() {
     }
 
     // 离开格子 → 退出格内互动恢复游走（实际离开，重置"刚互动过"标记）
-    if (!isInsideRect(ph.current, r)) {
+    // 膨胀判定：贴顶边时盒子越界上方 19px、贴边时贴线——以"脚底仍贴边"为留在格内的判据
+    const exitBounds = { left: r.left - 100, top: r.top - 100, right: r.right + 100, bottom: r.bottom + 100 }
+    if (!isInsideRect(ph.current, exitBounds)) {
       lastPacedCellRef.current = null
       exitCellPhysics()
       return
@@ -308,9 +389,11 @@ export function RoamingPet() {
 
   const startCellPhysics = useCallback((zone: Zone) => {
     if (cellPhysicsRef.current) return // 已在格内互动中（进入边沿防抖）
-    const completion = (zone.payload as CalendarCellPayload | undefined)?.completion ?? 0
+    // null = 无日程（快风格）；0-100 = 完成度（<50 慢风格）
+    const completion = (zone.payload as CalendarCellPayload | undefined)?.completion ?? 50
     const style = createCellStyle(completion)
-    const edges = cellEdges(zone.rect, style.bottomOnly)
+    // 脚底接触点 → 盒子坐标（宠物脚真正踩在边线上）
+    const edges = cellEdges(zone.rect, style.bottomOnly).map((p) => toPetBox(p, p.edge))
     const store = usePetStore.getState()
 
     cellPhysicsRef.current = {
@@ -321,16 +404,18 @@ export function RoamingPet() {
       current: { ...store.position },
       target: null,
       landY: 0,
+      bounceY: 0,
       edges,
       visited: new Set(),
       clingUntil: 0,
       hopStart: 0,
       sessionStart: performance.now(),
+      stepsTaken: 0,
     }
     setPacingCellId(zone.id)
     setClingEdge('bottom')
     store.setAction('pace')
-    store.setEmotion(style.emotion, cellSessionDuration(completion))
+    store.setEmotion(style.emotion, CELL_MAX_SESSION_MS)
     cellPhysicsRef.current.rafId = requestAnimationFrame((t) => cellPhysicsTickRef.current?.(t))
   }, [])
 
@@ -576,8 +661,17 @@ export function RoamingPet() {
             onAnimationComplete={() => {
               // 格内互动中：action 由 rAF 状态机驱动（pace/walk/jump），不被动画完成重置
               if (cellPhysicsRef.current) return
-              // 移动结束：休息中回 sleep，否则回 idle（getState 读取避免旧闭包）
               const s = usePetStore.getState()
+              // 到达后立即检测是否在日历格子内 → 启动格内物理（点击"指定格子"后的即时互动，不等游走 tick）
+              // 守卫 lastPacedCellRef：点击指定时已被清除，游走路径仍防连环互动
+              const cellZone = getZones().find(
+                (z) => z.type === 'calendar-cell' && isInsideRect(s.position, z.rect)
+              )
+              if (cellZone && !s.isResting && cellZone.id !== lastPacedCellRef.current) {
+                startCellPhysics(cellZone)
+                return
+              }
+              // 移动结束：休息中回 sleep，否则回 idle（getState 读取避免旧闭包）
               s.setAction(s.isResting ? 'sleep' : 'idle')
             }}
             className="fixed z-40 select-none"
@@ -594,11 +688,15 @@ export function RoamingPet() {
               <PetBubble />
 
               {/* 宠物精灵 — 翻转仅作用于身体（scaleX 在此层，不波及气泡/hover 浮窗文字）
-                  贴壁旋转：格内贴左/右壁时形象横过来（rotate ±90°） */}
+                  贴壁旋转：底边站姿 / 左壁横（90°）/ 右壁横（-90°）/ 顶边倒立（180°），
+                  换边旋转加 0.15s 过渡避免跳变 */}
               <div style={{
                 transform:
                   (facing === 'left' ? 'scaleX(-1)' : 'scaleX(1)') +
-                  (clingEdge === 'left' ? ' rotate(90deg)' : clingEdge === 'right' ? ' rotate(-90deg)' : ''),
+                  (clingEdge === 'left' ? ' rotate(90deg)'
+                    : clingEdge === 'right' ? ' rotate(-90deg)'
+                    : clingEdge === 'top' ? ' rotate(180deg)' : ''),
+                transition: 'transform 0.15s ease',
               }}>
                 <div
                   onClick={handleClick}

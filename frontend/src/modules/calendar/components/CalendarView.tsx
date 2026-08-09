@@ -93,9 +93,10 @@ export function CalendarView() {
         if (!byDate.has(d)) byDate.set(d, [])
         byDate.get(d)!.push(e)
       }
-      const completionOf = (date: string): number => {
+      const completionOf = (date: string): number | null => {
         const list = byDate.get(date) ?? []
-        if (list.length === 0) return 0
+        // 无日程 = 无压力（快风格）；有日程但未完成 = 0（慢风格）——语义区分
+        if (list.length === 0) return null
         return Math.round((list.filter((e) => e.status === 'COMPLETED').length / list.length) * 100)
       }
 

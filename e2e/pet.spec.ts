@@ -75,4 +75,24 @@ test.describe('Pet', () => {
     }
     await expect(page.getByRole('button', { name: '喂食-小鱼干' })).toBeDisabled()
   })
+  test('宠物进入日历格子 → 格内互动（pace 启动 + 贴壁旋转出现）', async ({ page }) => {
+    test.setTimeout(120_000) // 悬停吸引 24s + 等待绕行，总时长超默认 30s
+    await ensureLoggedIn(page)
+    // 定位月视图格子并点击中心（100% 吸引宠物进该格子）
+    const cell = page.locator('.rbc-month-view .rbc-day-bg').first()
+    await expect(cell).toBeVisible()
+    const box = await cell.boundingBox()
+    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2)
+    // rbc slot 点击打开"新建日程" dialog——等其完全打开后 Esc 关闭（不影响已注册的兴趣区）
+    await page.waitForTimeout(1500)
+    await page.keyboard.press('Escape')
+
+    // 宠物被吸引（点击即 100% 兴趣区；dialog 可能短暂中断一次吸引，游走 tick 会恢复）→ 格内物理启动
+    const pace = page.locator('svg[data-action="pace"]').first()
+    await expect(pace).toBeVisible({ timeout: 45_000 })
+
+    // 贴壁旋转出现（格内绕行开始：贴边姿态由 CSS rotate 表达）
+    await expect(page.locator('[data-pet="roaming"] [style*="rotate"]').first()).toBeVisible({ timeout: 40_000 })
+  })
+
 })

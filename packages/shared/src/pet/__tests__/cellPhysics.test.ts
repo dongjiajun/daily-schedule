@@ -6,29 +6,52 @@ import {
   applyGravity,
   hopOffset,
   createCellStyle,
-  cellSessionDuration,
+  landSnap,
+  slideInSpeed,
+  cellLapTarget,
+  CELL_MAX_SESSION_MS,
 } from '../cellPhysics'
 
 const RECT = { left: 100, top: 200, right: 300, bottom: 400 }
 
-describe('cellEdges — 四边吸附点采样', () => {
-  it('默认采样 10 点（上 3 下 3 左 2 右 2）', () => {
+describe('cellEdges — 四边吸附点采样（14 点含四角）', () => {
+  it('默认采样 14 点（含四角，角点 edge 归"进入该角的边"）', () => {
     const edges = cellEdges(RECT)
-    expect(edges).toHaveLength(10)
+    expect(edges).toHaveLength(14)
+    // 各边点数 = 边点 + 离开该边的角点：bottom 3+左下角、right 2+右下角+右上角、top 3、left 2+左上角
+    expect(edges.filter((e) => e.edge === 'bottom')).toHaveLength(4)
+    expect(edges.filter((e) => e.edge === 'right')).toHaveLength(4)
     expect(edges.filter((e) => e.edge === 'top')).toHaveLength(3)
-    expect(edges.filter((e) => e.edge === 'bottom')).toHaveLength(3)
-    expect(edges.filter((e) => e.edge === 'left')).toHaveLength(2)
-    expect(edges.filter((e) => e.edge === 'right')).toHaveLength(2)
+    expect(edges.filter((e) => e.edge === 'left')).toHaveLength(3)
   })
 
-  it('边顺序为顺时针绕圈（底→右→上→左）', () => {
+  it('边顺序为顺时针绕圈（角点 edge 归"离开边"：转弯段贴线不越界）', () => {
     const edges = cellEdges(RECT)
     const order = edges.map((e) => e.edge)
-    // 底 3 → 右 2 → 上 3 → 左 2
     expect(order.slice(0, 3)).toEqual(['bottom', 'bottom', 'bottom'])
-    expect(order.slice(3, 5)).toEqual(['right', 'right'])
-    expect(order.slice(5, 8)).toEqual(['top', 'top', 'top'])
-    expect(order.slice(8, 10)).toEqual(['left', 'left'])
+    expect(order[3]).toBe('right') // 右下角（离开边 = 右壁：横躺滑入角）
+    expect(order.slice(4, 6)).toEqual(['right', 'right'])
+    expect(order[6]).toBe('right') // 右上角（离开边 = 右壁：保持横躺至顶边）
+    expect(order.slice(7, 10)).toEqual(['top', 'top', 'top'])
+    expect(order[10]).toBe('left') // 左上角（离开边 = 左壁：横躺过渡）
+    expect(order.slice(11, 13)).toEqual(['left', 'left'])
+    expect(order[13]).toBe('bottom') // 左下角（离开边 = 底边：站姿过渡）
+  })
+
+  it('任意相邻吸附点都在同一边或紧邻角点（不斜穿格内：x 或 y 至少一个相等）', () => {
+    const edges = cellEdges(RECT)
+    for (let i = 0; i < edges.length; i++) {
+      const a = edges[i]
+      const b = edges[(i + 1) % edges.length]
+      expect(a.x === b.x || a.y === b.y).toBe(true)
+    }
+  })
+
+  it('角点位于两条边的内缩交点', () => {
+    const edges = cellEdges(RECT)
+    const [br] = edges.slice(3, 4)
+    expect(br.x).toBeCloseTo(RECT.right - (RECT.right - RECT.left) * 0.06)
+    expect(br.y).toBeCloseTo(RECT.bottom - (RECT.bottom - RECT.top) * 0.06)
   })
 
   it('吸附点在格内且内缩 margin', () => {
@@ -39,9 +62,9 @@ describe('cellEdges — 四边吸附点采样', () => {
       expect(p.y).toBeGreaterThan(RECT.top)
       expect(p.y).toBeLessThan(RECT.bottom)
     }
-    // 底边点贴近底部（y = bottom - margin）
+    // 底边点贴近底部（y = bottom - margin，内缩 6%）
     const bottom = edges.find((e) => e.edge === 'bottom')!
-    expect(bottom.y).toBeCloseTo(RECT.bottom - (RECT.bottom - RECT.top) * 0.15)
+    expect(bottom.y).toBeCloseTo(RECT.bottom - (RECT.bottom - RECT.top) * 0.06)
   })
 
   it('bottomOnly 仅底边 + 侧边下半（5 点）', () => {
@@ -57,21 +80,20 @@ describe('cellEdges — 四边吸附点采样', () => {
 })
 
 describe('nextClingPoint — 绕边不回头', () => {
-  it('沿边顺序绕圈（底→右→上→左），不回头', () => {
+  it('沿边顺序绕圈（含四边与角点），不回头', () => {
     const edges = cellEdges(RECT)
     const visited = new Set<typeof edges[number]>()
-    // 从底边中点出发 → 第一目标为底边相邻点（index 1 附近 → 环扫取 2 或 0）
     const first = nextClingPoint({ x: 200, y: 380 }, edges, visited)
     expect(first.edge).toBe('bottom')
-    // 后续沿边顺序推进：底→右→上→左（10 点绕完一轮后清空）
+    // 后续沿边顺序推进：14 点绕完一轮
     const seenOrder: string[] = [first.edge]
     let cur = { x: first.x, y: first.y }
-    for (let i = 0; i < 9; i++) {
+    for (let i = 0; i < 13; i++) {
       const next = nextClingPoint(cur, edges, visited)
       seenOrder.push(next.edge)
       cur = { x: next.x, y: next.y }
     }
-    // 绕圈顺序包含全部四边（不只底边）
+    // 绕圈顺序包含全部四边（不只底边）——顶边可达
     expect(new Set(seenOrder)).toEqual(new Set(['bottom', 'right', 'top', 'left']))
   })
 
@@ -79,7 +101,6 @@ describe('nextClingPoint — 绕边不回头', () => {
     const edges = cellEdges(RECT)
     const visited = new Set(edges)
     const next = nextClingPoint({ x: 200, y: 300 }, edges, visited)
-    // visited 被清空后重新选择（能返回点）
     expect(visited.size).toBe(1)
     expect(edges).toContain(next)
   })
@@ -88,11 +109,10 @@ describe('nextClingPoint — 绕边不回头', () => {
 describe('snapToEdge — 吸附判定', () => {
   it('阈值内吸附到边线', () => {
     const edges = cellEdges(RECT)
-    const near = { x: 200, y: RECT.bottom - 25 } // 距底边吸附点 5px（< 8px 阈值）
+    const near = { x: 200, y: RECT.bottom - 15 } // 距底边吸附点 3px（< 8px 阈值）
     const { pos, snapped } = snapToEdge(near, edges)
     expect(snapped).toBe(true)
-    // 吸附到底边线（y = bottom - margin = 370）
-    expect(pos.y).toBe(RECT.bottom - 30)
+    expect(pos.y).toBe(RECT.bottom - 12)
   })
 
   it('远离吸附点不吸附', () => {
@@ -104,7 +124,36 @@ describe('snapToEdge — 吸附判定', () => {
   })
 })
 
-describe('applyGravity — 重力下沉', () => {
+describe('landSnap — 落地水平对齐', () => {
+  it('对齐到最近底边吸附点的 x', () => {
+    const edges = cellEdges(RECT)
+    // (200, 300) 距底边中点 (200, 370) 最近
+    const snap = landSnap({ x: 200, y: 300 }, edges)
+    expect(snap.x).toBe(200) // 底边中点 x=200
+    expect(snap.y).toBe(300) // y 保持不变
+  })
+
+  it('对齐到最近底边吸附点（偏离中点时）', () => {
+    const edges = cellEdges(RECT)
+    const snap = landSnap({ x: 250, y: 380 }, edges)
+    // 距 b2（x=250）最近
+    expect(snap.x).toBe(250)
+  })
+})
+
+describe('slideInSpeed — 吸附滑入加速', () => {
+  it('距目标 < 12px 加速 ×1.6', () => {
+    expect(slideInSpeed(60, 8)).toBe(96)
+    expect(slideInSpeed(25, 5)).toBe(40)
+  })
+
+  it('远离目标保持原速', () => {
+    expect(slideInSpeed(60, 20)).toBe(60)
+    expect(slideInSpeed(60, 12)).toBe(60)
+  })
+})
+
+describe('applyGravity — 重力下沉（仅落地阶段）', () => {
   it('y 向底边 lerp', () => {
     const pos = { x: 200, y: 300 }
     const next = applyGravity(pos, RECT, 30)
@@ -145,17 +194,23 @@ describe('createCellStyle — 完成度风格', () => {
     expect(style.emotion).toBe('happy')
   })
 
-  it('<50 慢风格：25px/s + 不跳跃 + 长停留 + 贴底边 + idle_variant', () => {
+  it('<50 慢风格：25px/s + 不跳跃 + 长停留 + idle_variant（同样绕四边）', () => {
     const style = createCellStyle(20)
     expect(style.walkSpeed).toBe(25)
     expect(style.hopChance).toBe(0)
     expect(style.clingDuration[1]).toBe(2000)
-    expect(style.bottomOnly).toBe(true)
+    expect(style.bottomOnly).toBe(false) // 慢风格也绕完整四边（顶边/倒立可见）
     expect(style.emotion).toBe('idle_variant')
   })
+})
 
-  it('会话时长：快 10s / 慢 15s', () => {
-    expect(cellSessionDuration(80)).toBe(10_000)
-    expect(cellSessionDuration(20)).toBe(15_000)
+describe('圈数退出与兜底', () => {
+  it('2 圈阈值 = ceil(2 × 点数)', () => {
+    expect(cellLapTarget(14)).toBe(28)
+    expect(cellLapTarget(5)).toBe(10)
+  })
+
+  it('兜底上限 45s（须 > 大格子 2 圈 ~37s，防提前踢出）', () => {
+    expect(CELL_MAX_SESSION_MS).toBe(45_000)
   })
 })
