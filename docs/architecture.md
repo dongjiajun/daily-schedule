@@ -214,5 +214,5 @@ docker-compose up -d   # MySQL 8.0 + 后端 8080 + 前端 :5173
 ## 设计文档
 
 - `specs/openapi.yaml` — API 契约（唯一真相源）
-- `openspec/specs/` — 52 个能力规格文档（`<!-- DOCS-CHECK: specs-count=52 -->`）
+- `openspec/specs/` — 53 个能力规格文档（`<!-- DOCS-CHECK: specs-count=53 -->`）
 - `docs/planning/execution-plan.md` — 产品愿景与路线图（规划）
