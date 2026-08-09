@@ -1,8 +1,8 @@
 import { create } from 'zustand'
 
 export type EmotionState = 'idle' | 'idle_variant' | 'happy' | 'sad' | 'hungry' | 'sleepy' | 'excited' | 'surprised'
-/** 动作维度（与 emotion 正交）：idle=呼吸眨眼 / walk=步伐 / pace=格内往返 / rest=下坐 / sleep=蜷缩+Zzz / jump=跳跃 */
-export type PetAction = 'idle' | 'walk' | 'pace' | 'rest' | 'sleep' | 'jump'
+/** 动作维度（与 emotion 正交）：idle=呼吸眨眼 / walk=步伐 / pace=格内往返 / rest=下坐 / sleep=蜷缩+Zzz / jump=跳跃 / eat=进食 / stretch=伸懒腰 / yawn=打哈欠 / scratch=挠耳 / look=张望 */
+export type PetAction = 'idle' | 'walk' | 'pace' | 'rest' | 'sleep' | 'jump' | 'eat' | 'stretch' | 'yawn' | 'scratch' | 'look'
 export type ParticleType = 'hearts' | 'stars' | 'coins' | 'sparkles' | 'food'
 
 export interface Position {

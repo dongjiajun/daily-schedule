@@ -26,6 +26,21 @@ describe('petStore', () => {
     expect(usePetStore.getState().action).toBe('idle')
   })
 
+  it('eat/小动作类型 setAction 定时后自动回 idle', () => {
+    const store = usePetStore.getState()
+    store.setAction('eat', 1500)
+    expect(usePetStore.getState().action).toBe('eat')
+
+    vi.advanceTimersByTime(1500)
+    expect(usePetStore.getState().action).toBe('idle')
+
+    store.setAction('yawn', 1800)
+    expect(usePetStore.getState().action).toBe('yawn')
+
+    vi.advanceTimersByTime(1800)
+    expect(usePetStore.getState().action).toBe('idle')
+  })
+
   it('action 与 emotion 正交并存', () => {
     const store = usePetStore.getState()
     store.setAction('walk')

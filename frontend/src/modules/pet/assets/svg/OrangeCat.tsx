@@ -1,7 +1,8 @@
 /**
  * 橘猫 SVG 插画 — 程序化几何图形组合。
  * 支持 8 种情绪状态的表情/姿态变化 + Action 驱动的 CSS 动画层
- * （idle 呼吸/眨眼、walk 步伐、rest 尾巴慢摆、sleep 蜷缩+Zzz、jump 离地）。
+ * （idle 呼吸/眨眼、walk 步伐、rest 尾巴慢摆、sleep 蜷缩+Zzz、jump 离地、
+ * eat 低头咀嚼、小动作 stretch/yawn/scratch/look 播放一次）。
  */
 import type { EmotionState, PetAction } from '../../store/petStore'
 import { ANIMATION_CSS } from './animations'
@@ -12,9 +13,11 @@ interface Props {
   className?: string
   /** 动作维度（与情绪正交） */
   action?: PetAction
+  /** 情绪切换眨眼过渡（data-blink 驱动 50ms 闭眼换脸） */
+  blinkNow?: boolean
 }
 
-export function OrangeCat({ emotion, size = 100, className, action = 'idle' }: Props) {
+export function OrangeCat({ emotion, size = 100, className, action = 'idle', blinkNow = false }: Props) {
   const scale = size / 100
   // sleep 动作覆盖为 sleepy 表情参数（闭眼/蜷嘴/尾巴低垂），无需外部 setEmotion
   const displayEmotion = action === 'sleep' ? 'sleepy' : emotion
@@ -72,6 +75,7 @@ export function OrangeCat({ emotion, size = 100, className, action = 'idle' }: P
         xmlns="http://www.w3.org/2000/svg"
         className={className}
         data-action={action}
+        data-blink={blinkNow ? '1' : '0'}
         style={{ transform: `scale(${scale})`, transformOrigin: 'top left' }}
         aria-label={`橘猫 — ${emotion}`}
       >
@@ -100,14 +104,14 @@ export function OrangeCat({ emotion, size = 100, className, action = 'idle' }: P
             {/* ── 头 ── */}
             <ellipse cx="50" cy="38" rx="22" ry="20" fill="#F59E0B" />
 
-            {/* ── 左耳 ── */}
-            <g transform={`rotate(${parseFloat(leftEarRotate)} 33 22)`}>
+            {/* ── 左耳（eat 时微动） ── */}
+            <g className="pet-ear-l" transform={`rotate(${parseFloat(leftEarRotate)} 33 22)`}>
               <polygon points="30,25 28,10 38,22" fill="#F59E0B" />
               <polygon points="31,23 30,14 36,22" fill="#FCA5A5" />
             </g>
 
-            {/* ── 右耳 ── */}
-            <g transform={`rotate(${parseFloat(rightEarRotate)} 67 22)`}>
+            {/* ── 右耳（eat 时微动） ── */}
+            <g className="pet-ear-r" transform={`rotate(${parseFloat(rightEarRotate)} 67 22)`}>
               <polygon points="70,25 72,10 62,22" fill="#F59E0B" />
               <polygon points="69,23 70,14 64,22" fill="#FCA5A5" />
             </g>
@@ -132,8 +136,8 @@ export function OrangeCat({ emotion, size = 100, className, action = 'idle' }: P
             {/* ── 鼻子 ── */}
             <ellipse cx="50" cy="44" rx="2.5" ry="2" fill="#FCA5A5" />
 
-            {/* ── 嘴巴 ── */}
-            <path d={mouthPath} stroke="#1C1917" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+            {/* ── 嘴巴（eat 咀嚼 / yawn 张嘴） ── */}
+            <path className="pet-mouth" d={mouthPath} stroke="#1C1917" strokeWidth="1.5" strokeLinecap="round" fill="none" />
 
             {/* ── 胡须 ── */}
             <line x1="28" y1="42" x2="18" y2="40" stroke="#D97706" strokeWidth="0.8" strokeLinecap="round" />

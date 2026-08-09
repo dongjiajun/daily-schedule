@@ -54,7 +54,7 @@ test.describe('Pet', () => {
     await expect(page.locator('svg[data-action]').first()).toBeVisible()
   })
 
-  test('PetPage 喂食闭环：专注币扣除 + 反馈 toast', async ({ page }) => {
+  test('PetPage 喂食闭环：专注币扣除 + eat 动作 + 反馈 toast', async ({ page }) => {
     await ensureLoggedIn(page)
     await page.goto('/pet')
     await expect(page.getByText(/🪙\s*100/)).toBeVisible()
@@ -63,6 +63,11 @@ test.describe('Pet', () => {
     await page.getByRole('button', { name: '喂食-小鱼干' }).click()
     await expect(page.getByText(/心情 \+5/)).toBeVisible()
     await expect(page.getByText(/🪙\s*90/)).toBeVisible()
+
+    // eat 动作：喂食成功 → 低头张嘴咀嚼（data-action="eat" 即时出现）
+    await expect(page.locator('svg[data-action="eat"]').first()).toBeVisible({ timeout: 3000 })
+    // 1.5s 后 actionTimer 自动回 idle
+    await expect(page.locator('svg[data-action="eat"]').first()).toHaveCount(0, { timeout: 3000 })
   })
 
   test('金币不足时喂食按钮禁用', async ({ page }) => {

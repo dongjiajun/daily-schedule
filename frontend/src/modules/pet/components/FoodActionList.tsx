@@ -43,6 +43,7 @@ export function FoodActionList({ mode }: FoodActionListProps) {
   const triggerParticle = usePetStore((s) => s.triggerParticle)
   const triggerFeedback = usePetStore((s) => s.triggerFeedback)
   const setEmotion = usePetStore((s) => s.setEmotion)
+  const setAction = usePetStore((s) => s.setAction)
 
   const fireFeedback = (particle: ParticleType, feedback: FeedbackItem[]) => {
     triggerParticle(particle)
@@ -55,6 +56,7 @@ export function FoodActionList({ mode }: FoodActionListProps) {
       {
         onSuccess: (result: InteractionResult) => {
           setEmotion('happy', 3000)
+          setAction('eat', 1500) // 进食动作：低头张嘴咀嚼 1.5s 后自动回 idle（actionTimer）
           fireFeedback('food', toFeedback(result.moodChange, result.hungerChange, result.experienceGain, result.coinChange))
         },
       }
@@ -66,6 +68,7 @@ export function FoodActionList({ mode }: FoodActionListProps) {
       { itemId, quantity: 1 },
       {
         onSuccess: (result: PurchaseResult) => {
+          setAction('eat', 1500) // 购买成功同样呈现进食反馈（spec: 购买触发 eat）
           fireFeedback('coins', toFeedback(undefined, undefined, undefined, -(result.totalCost ?? 0)))
         },
       }

@@ -1,7 +1,8 @@
 /**
  * 柴犬 SVG 插画 — 程序化几何图形组合。
  * 支持 8 种情绪状态的表情/姿态变化 + Action 驱动的 CSS 动画层
- * （idle 呼吸/眨眼、walk 步伐、rest 尾巴慢摆、sleep 蜷缩+Zzz、jump 离地）。
+ * （idle 呼吸/眨眼、walk 步伐、rest 尾巴慢摆、sleep 蜷缩+Zzz、jump 离地、
+ * eat 低头咀嚼、小动作 stretch/yawn/scratch/look 播放一次）。
  */
 import type { EmotionState, PetAction } from '../../store/petStore'
 import { ANIMATION_CSS } from './animations'
@@ -12,9 +13,11 @@ interface Props {
   className?: string
   /** 动作维度（与情绪正交） */
   action?: PetAction
+  /** 情绪切换眨眼过渡（data-blink 驱动 50ms 闭眼换脸） */
+  blinkNow?: boolean
 }
 
-export function ShibaInu({ emotion, size = 100, className, action = 'idle' }: Props) {
+export function ShibaInu({ emotion, size = 100, className, action = 'idle', blinkNow = false }: Props) {
   const scale = size / 100
   // sleep 动作覆盖为 sleepy 表情参数（闭眼/蜷嘴/尾巴低垂），无需外部 setEmotion
   const displayEmotion = action === 'sleep' ? 'sleepy' : emotion
@@ -70,6 +73,7 @@ export function ShibaInu({ emotion, size = 100, className, action = 'idle' }: Pr
         xmlns="http://www.w3.org/2000/svg"
         className={className}
         data-action={action}
+        data-blink={blinkNow ? '1' : '0'}
         style={{ transform: `scale(${scale})`, transformOrigin: 'top left' }}
         aria-label={`柴犬 — ${emotion}`}
       >
@@ -101,14 +105,14 @@ export function ShibaInu({ emotion, size = 100, className, action = 'idle' }: Pr
             {/* ── 脸部白色区域 ── */}
             <ellipse cx="50" cy="43" rx="16" ry="14" fill="#FFF7ED" />
 
-            {/* ── 左耳 (三角立耳) ── */}
-            <g transform={`rotate(${parseFloat(leftEarRotate)} 30 20)`}>
+            {/* ── 左耳 (三角立耳，eat 时微动) ── */}
+            <g className="pet-ear-l" transform={`rotate(${parseFloat(leftEarRotate)} 30 20)`}>
               <polygon points="28,26 24,6 36,20" fill="#F4A261" />
               <polygon points="28,24 26,10 34,20" fill="#FCA5A5" />
             </g>
 
-            {/* ── 右耳 ── */}
-            <g transform={`rotate(${parseFloat(rightEarRotate)} 70 20)`}>
+            {/* ── 右耳（eat 时微动） ── */}
+            <g className="pet-ear-r" transform={`rotate(${parseFloat(rightEarRotate)} 70 20)`}>
               <polygon points="72,26 76,6 64,20" fill="#F4A261" />
               <polygon points="72,24 74,10 66,20" fill="#FCA5A5" />
             </g>
@@ -132,8 +136,8 @@ export function ShibaInu({ emotion, size = 100, className, action = 'idle' }: Pr
             {/* ── 鼻子 ── */}
             <ellipse cx="50" cy="44" rx="3" ry="2.5" fill="#1C1917" />
 
-            {/* ── 嘴巴 ── */}
-            <path d={mouthPath} stroke="#1C1917" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+            {/* ── 嘴巴（eat 咀嚼 / yawn 张嘴） ── */}
+            <path className="pet-mouth" d={mouthPath} stroke="#1C1917" strokeWidth="1.5" strokeLinecap="round" fill="none" />
 
             {/* ── 腮红 ── */}
             <ellipse cx="34" cy="42" rx="5" ry="3" fill="#FCA5A5" opacity="0.3" />

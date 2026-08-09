@@ -58,4 +58,21 @@ describe('PetAvatar', () => {
     render(<PetAvatar size={80} />, { wrapper })
     expect(screen.getByLabelText('宠物状态: hungry')).toBeInTheDocument()
   })
+
+  it('eat 动作渲染 data-action="eat"（SVG 动画层）', () => {
+    usePetStore.setState({ action: 'eat' })
+    render(<PetAvatar size={80} />, { wrapper })
+    const svg = screen.getByLabelText('宠物状态: idle').querySelector('svg')
+    expect(svg?.getAttribute('data-action')).toBe('eat')
+  })
+
+  it('小动作渲染 data-action（stretch/yawn/scratch/look）', () => {
+    for (const action of ['stretch', 'yawn', 'scratch', 'look'] as const) {
+      usePetStore.setState({ action })
+      const { unmount } = render(<PetAvatar size={80} />, { wrapper })
+      const svg = screen.getByLabelText('宠物状态: idle').querySelector('svg')
+      expect(svg?.getAttribute('data-action')).toBe(action)
+      unmount()
+    }
+  })
 })

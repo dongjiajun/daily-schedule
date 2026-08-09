@@ -119,23 +119,56 @@ describe('RoamingPet', () => {
 
   // ── 渲染解耦（spec: Roam cadence survives re-render）──
   it('渲染不重排游走 timer（tick 节奏稳定，不被渲染清掉重排）', () => {
-    vi.spyOn(Math, 'random').mockReturnValue(0.5) // wander interval = 20s
+    vi.spyOn(Math, 'random').mockReturnValue(0.5) // wander interval = 20s；小动作间隔 = 13s
     const clearSpy = vi.spyOn(globalThis, 'clearTimeout')
     render(<RoamingPet />)
 
-    // 第一 tick（20s）：scheduleWander 递归时清理旧 timer 恰 1 次
+    // 第一 tick（20s）：13s 小动作递归清理 +1，20s 游走 tick 递归清理 +1（恰 2 次）
     // 若渲染触发 effect 重排（旧行为：tick 内 setPosition → 渲染 → cleanup 清 timer 重排），
     // clearTimeout 计数会多出 cleanup + 重排开头 2 次
     act(() => {
       vi.advanceTimersByTime(20_000)
     })
-    expect(clearSpy).toHaveBeenCalledTimes(1)
+    expect(clearSpy).toHaveBeenCalledTimes(2)
 
-    // 第二 tick 在下一个 20s 执行（中间 22.5s idleVariant 递归清理 +1，40s 处第二 tick 递归清理 +1）
+    // 第二 tick 在下一个 20s 执行（中间 26s/39s 小动作递归清理 +2，40s 处第二 tick 递归清理 +1）
     act(() => {
       vi.advanceTimersByTime(20_000)
     })
-    expect(clearSpy).toHaveBeenCalledTimes(3)
+    expect(clearSpy).toHaveBeenCalledTimes(5)
+  })
+
+  // ── 空闲小动作调度（spec: idle 随机小动作）──
+  it('idle 静止 8-18s 后随机播放一个小动作（播放一次自动回 idle）', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5) // 间隔 = 8 + 0.5×10 = 13s；动作 = floor(0.5×4) = 2 → scratch
+    render(<RoamingPet />)
+    expect(usePetStore.getState().action).toBe('idle')
+
+    act(() => {
+      vi.advanceTimersByTime(13_000)
+    })
+    expect(usePetStore.getState().action).toBe('scratch')
+
+    // scratch duration 1200ms → actionTimer 到期自动回 idle
+    act(() => {
+      vi.advanceTimersByTime(1200)
+    })
+    expect(usePetStore.getState().action).toBe('idle')
+  })
+
+  it('休息中不调度小动作（isResting 守卫）', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5) // 间隔 13s
+    render(<RoamingPet />)
+    // 模拟休息态：isResting=true 且动作已回 idle（若守卫失效会播放小动作）
+    act(() => {
+      usePetStore.getState().startResting()
+      usePetStore.getState().setAction('idle')
+    })
+
+    act(() => {
+      vi.advanceTimersByTime(13_000)
+    })
+    expect(usePetStore.getState().action).toBe('idle') // 守卫生效：不调度小动作
   })
 
   // ── 小窝进窝休息（pet-spot Zone）──
@@ -454,7 +487,7 @@ describe('RoamingPet', () => {
       vi.advanceTimersByTime(38_000) // 绕行 38s > 37s 按圈完成（< 45s 兜底）
     })
     expect(usePetStore.getState().action).toBe('idle')
-    // 情绪断言省略：happy 情绪时长 = 45s 兜底，退出后尚未到期（idleVariantTimer 也可能已覆盖）
+    // 情绪断言省略：happy 情绪时长 = 45s 兜底，退出后尚未到期（小动作调度也可能已覆盖）
 
     // 下一个游走 tick（20s）：位置仍在格子内但同格子不立即重启（lastPacedCellRef）
     act(() => {

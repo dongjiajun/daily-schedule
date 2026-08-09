@@ -2,6 +2,7 @@ import { useEffect, useRef, useCallback, useMemo, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useMyPet } from '../hooks/usePet'
 import { usePetStore } from '../store/petStore'
+import type { PetAction } from '../store/petStore'
 import { PetAvatar } from './PetAvatar'
 import { PetBubble } from './PetBubble'
 import { PetStatus } from './PetStatus'
@@ -534,20 +535,34 @@ export function RoamingPet() {
     return () => exitCellPhysics()
   }, [exitCellPhysics])
 
-  // ── 空闲小动作 ──
+  // ── 空闲小动作调度器（spec: idle 随机小动作）──
+  // 8-18s 随机间隔选一个一次性动作播放（伸懒腰/打哈欠/挠耳/张望），actionTimer 到期自动回 idle。
+  // 守卫：仅平静 idle 且完全静止（非休息/非格内/非行走）才播放，不打断睡眠与格内状态机。
   useEffect(() => {
-    const scheduleIdleVariant = () => {
+    const MICRO_ACTIONS: Array<{ action: PetAction; duration: number }> = [
+      { action: 'stretch', duration: 1600 },
+      { action: 'yawn', duration: 1800 },
+      { action: 'scratch', duration: 1200 },
+      { action: 'look', duration: 1400 },
+    ]
+    const scheduleMicroAction = () => {
       if (idleVariantTimerRef.current) clearTimeout(idleVariantTimerRef.current)
       idleVariantTimerRef.current = setTimeout(() => {
         const store = usePetStore.getState()
-        if (store.emotionState === 'idle') {
-          store.setEmotion('idle_variant', 2500)
+        const allowed =
+          store.emotionState === 'idle' &&
+          store.action === 'idle' &&
+          !store.isResting &&
+          !cellPhysicsRef.current
+        if (allowed) {
+          const pick = MICRO_ACTIONS[Math.floor(Math.random() * MICRO_ACTIONS.length)]
+          store.setAction(pick.action, pick.duration)
         }
-        scheduleIdleVariant()
-      }, 15000 + Math.random() * 15000)
+        scheduleMicroAction()
+      }, 8000 + Math.random() * 10000)
     }
 
-    scheduleIdleVariant()
+    scheduleMicroAction()
     return () => {
       if (idleVariantTimerRef.current) clearTimeout(idleVariantTimerRef.current)
     }
