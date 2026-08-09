@@ -1,8 +1,11 @@
 import { useSettingsStore } from '@/core/store/settingsStore'
+import { getThemeForHoliday } from '@daily-schedule/shared/holiday'
 import { FireworkEffect } from './FireworkEffect'
 import { SnowfallEffect } from './SnowfallEffect'
 import { PetalFallEffect } from './PetalFallEffect'
 import { LanternFallEffect } from './LanternFallEffect'
+import { LeafFallEffect } from './LeafFallEffect'
+import { HeartFallEffect } from './HeartFallEffect'
 
 /**
  * 特效渲染容器 — 根据当前节日和用户设置激活对应视觉效果。
@@ -28,7 +31,8 @@ export function EffectLayer() {
   // 无活跃节日
   if (!activeHolidayId) return null
 
-  const effectType = getEffectType(activeHolidayId)
+  // 特效类型统一由共享包 THEME_MAP 解析（唯一真相源，无本地映射副本）
+  const effectType = getThemeForHoliday(activeHolidayId).effectType
 
   return (
     <div
@@ -40,29 +44,8 @@ export function EffectLayer() {
       {effectType === 'snow' && <SnowfallEffect intensity={intensity} />}
       {effectType === 'petal' && <PetalFallEffect intensity={intensity} />}
       {effectType === 'lantern' && <LanternFallEffect intensity={intensity} />}
-      {/* heart / leaf effects are handled by CSS gradient overlay in themes */}
+      {effectType === 'leaf' && <LeafFallEffect intensity={intensity} />}
+      {effectType === 'heart' && <HeartFallEffect intensity={intensity} />}
     </div>
   )
-}
-
-/**
- * 从 THEME_MAP 中读取当前节日的 effectType。
- * 简化版：直接映射已知节日 id → effectType。
- * 完整版应由 holidayEngine.getActiveTheme() 提供 theme.effectType。
- */
-function getEffectType(holidayId: string): string {
-  const effectMap: Record<string, string> = {
-    'spring-festival': 'firework',
-    'new-year': 'firework',
-    'new-years-eve': 'firework',
-    'christmas': 'snow',
-    'christmas-eve': 'snow',
-    'sakura': 'petal',
-    'easter': 'petal',
-    'halloween': 'lantern',
-    'mid-autumn': 'lantern',
-    'lantern-festival': 'lantern',
-    'diwali': 'lantern',
-  }
-  return effectMap[holidayId] ?? 'none'
 }

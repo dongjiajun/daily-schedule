@@ -129,11 +129,13 @@ frontend/src/
 
 ### 特效组件 (core/components/effects/)
 
-- **EffectLayer** (`core/components/effects/EffectLayer.tsx`) — 特效渲染容器，根据当前节日 `effectType` 激活对应特效；自动检测移动端降级和 `prefers-reduced-motion`
+- **EffectLayer** (`core/components/effects/EffectLayer.tsx`) — 特效渲染容器，根据当前节日 `effectType` 激活对应特效（6 种：烟花/雪花/花瓣/灯笼/落叶/爱心）；`effectType` 由共享包 `getThemeForHoliday()` 解析（唯一真相源）；自动检测移动端降级和 `prefers-reduced-motion`
 - **SnowfallEffect** (`core/components/effects/SnowfallEffect.tsx`) — 纯 CSS 雪花飘落，零 JS 开销
 - **PetalFallEffect** (`core/components/effects/PetalFallEffect.tsx`) — 纯 CSS 花瓣飘落
 - **FireworkEffect** (`core/components/effects/FireworkEffect.tsx`) — tsParticles 烟花粒子
 - **LanternFallEffect** (`core/components/effects/LanternFallEffect.tsx`) — tsParticles 灯笼/孔明灯飘升
+- **LeafFallEffect** (`core/components/effects/LeafFallEffect.tsx`) — 纯 CSS 落叶飘落（🍂🍁🌿🍃，感恩节/圣帕特里克节/清明节/世界环境日）
+- **HeartFallEffect** (`core/components/effects/HeartFallEffect.tsx`) — 纯 CSS 爱心飘落（💖💕❤️💘，情人节）
 
 ### 日历模块 (`modules/calendar/`)
 

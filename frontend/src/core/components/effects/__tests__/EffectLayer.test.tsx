@@ -60,6 +60,18 @@ describe('EffectLayer', () => {
     expect(getByTestId('lantern-particles')).toBeInTheDocument()
   })
 
+  it('情人节激活爱心特效', () => {
+    useSettingsStore.setState({ activeHolidayId: 'valentines' })
+    const { container } = render(<EffectLayer />)
+    expect(container.textContent).toContain('💖')
+  })
+
+  it('感恩节激活落叶特效', () => {
+    useSettingsStore.setState({ activeHolidayId: 'thanksgiving' })
+    const { container } = render(<EffectLayer />)
+    expect(container.textContent).toContain('🍂')
+  })
+
   it('effectType=none 时不渲染特效', () => {
     useSettingsStore.setState({ activeHolidayId: 'dragon-boat' })
     const { container } = render(<EffectLayer />)

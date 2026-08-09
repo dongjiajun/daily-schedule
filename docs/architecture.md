@@ -200,7 +200,7 @@ ModuleDefinition {
 ## 测试
 
 - **后端**: 37 个测试类，259 个用例，0 失败。H2 内存数据库（MySQL 兼容模式）。`<!-- DOCS-CHECK: backend-test-classes=37 -->`
-- **前端**: 48 个测试文件，232 个用例，0 失败。vitest + jsdom。`<!-- DOCS-CHECK: frontend-test-files=48 -->`
+- **前端**: 50 个测试文件，238 个用例，0 失败。vitest + jsdom。`<!-- DOCS-CHECK: frontend-test-files=50 -->`
 - **E2E**: 11 个 spec 文件，39 条 Playwright 用例（auth/calendar/task/pet），CI 集成。webServer 复用后台启动的后端 + 自动启动前端 Vite。`<!-- DOCS-CHECK: e2e-files=11 -->`
 - **CI**: GitHub Actions — version-check（版本 + 文档一致性）→ backend mvn test → frontend lint → test → build（含 SDK freshness）三道阻断门禁 + E2E（`continue-on-error` 软性，不阻断）
 - **运行**: `cd backend && mvn test` / `cd frontend && pnpm run test`

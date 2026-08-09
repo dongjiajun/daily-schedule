@@ -1,9 +1,9 @@
 # Holiday Effects（节日特效层）
 
 ## Purpose
-根据当前节日 `effectType` 自动激活对应视觉特效组件（烟花/雪花/花瓣/灯笼）。支持强度分级（off/low/full），移动端自动降级，`prefers-reduced-motion` 响应。
+根据当前节日 `effectType` 自动激活对应视觉特效组件（烟花/雪花/花瓣/灯笼/落叶/爱心）。支持强度分级（off/low/full），移动端自动降级，`prefers-reduced-motion` 响应。
 
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: 根据节日自动激活对应特效
 系统 SHALL 根据当前节日 `HolidayTheme.effectType` 的值，自动渲染对应的视觉特效组件。`effectType` 与特效组件映射：`firework` → `FireworkEffect`、`snow` → `SnowfallEffect`、`petal` → `PetalFallEffect`、`lantern` → `LanternFallEffect`、`leaf` → `LeafFallEffect`、`heart` → `HeartFallEffect`、`none` → 不渲染。`effectType` 解析 SHALL 消费共享包 `getThemeForHoliday(holidayId).effectType`（`packages/shared/src/holiday/themeMapping.ts` 为唯一真相源），不得在 `EffectLayer` 维护独立映射副本。
@@ -32,27 +32,15 @@
 - **WHEN** 用户 `effectIntensity = 'off'`
 - **THEN** 即使当前节日有 `effectType`，也不渲染特效组件
 
-### Requirement: 特效强度分级
-系统 SHALL 根据 `settingsStore.effectIntensity` 控制特效粒子密度：`low` 为低密度、`full` 为全密度。
+## Test Coverage
+<!-- 回填：apply 阶段完成。特效类型解析来自共享包由 valentines/thanksgiving 渲染场景间接覆盖（若解析源缺失，场景断言必然失败）。 -->
 
-#### Scenario: low 模式减少粒子
-- **WHEN** `effectIntensity = 'low'`
-- **THEN** 烟花粒子数减少至 ~15 个，雪花/花瓣数量减半
-
-#### Scenario: full 模式满粒子
-- **WHEN** `effectIntensity = 'full'`
-- **THEN** 烟花粒子 ~60 个，雪花/花瓣满密度
-
-### Requirement: 特效性能保护
-系统 SHALL 在以下情况自动禁用特效：(a) 移动设备（`window.innerWidth < 768`），(b) 用户启用 `prefers-reduced-motion`，(c) `effectIntensity = 'off'`。
-
-#### Scenario: 移动端自动降级
-- **WHEN** 设备屏幕宽度 < 768px
-- **THEN** 特效强度自动降级为 `low`
-
-### Requirement: 特效渲染在 EffectLayer 中统一管理
-所有特效组件 SHALL 在 `EffectLayer` 容器中渲染，`pointer-events: none`，不影响用户交互。
-
-#### Scenario: 特效不阻挡交互
-- **WHEN** 特效组件正在渲染
-- **THEN** 页面按钮、输入框等交互元素仍可正常点击
+| Scenario | 测试类 | 测试方法 | 状态 |
+|----------|--------|----------|------|
+| 春节激活烟花特效 | EffectLayer.test.tsx | 春节激活烟花特效 | ✅ |
+| 圣诞节激活雪花特效 | EffectLayer.test.tsx | 圣诞节激活雪花特效 | ✅ |
+| 用户关闭特效时不渲染 | EffectLayer.test.tsx | effectIntensity=off 时不渲染 | ✅ |
+| 情人节激活爱心特效 | EffectLayer.test.tsx | 情人节激活爱心特效 | ✅ |
+| 感恩节激活落叶特效 | EffectLayer.test.tsx | 感恩节激活落叶特效 | ✅ |
+| 特效类型解析来自共享包唯一真相源 | EffectLayer.test.tsx | 情人节/感恩节激活场景（间接覆盖） | ✅ |
+| 强度分级（low 20 / full 40） | LeafFallEffect.test.tsx / HeartFallEffect.test.tsx | low 模式渲染 20 片/颗、full 模式渲染 40 片/颗 | ✅ |
