@@ -1,6 +1,6 @@
 # 数据库设计
 
-> 当前状态: v3.3.4，对应 Flyway 迁移 V1–V6  
+> 当前状态: v3.5.0，对应 Flyway 迁移 V1–V8  
 > 迁移脚本: `backend/src/main/resources/db/migration/`
 
 ## ER 图
@@ -136,6 +136,8 @@
 | V4 | `V4__event_status.sql` | event 表加 status 列（PLANNED/COMPLETED/CANCELLED） |
 | V5 | `V5__create_pet_tables.sql` | 新增宠物系统三张表：pets / pet_accessories / pet_interactions + 种子数据 |
 | V6 | `V6__create_task_tables.sql` | 新增任务看板两张表：tasks / task_tags |
+| V7 | `V7__create_pet_rewards.sql` | 新增宠物奖励发放记录表 pet_rewards（经济闭环幂等键） |
+| V8 | `V8__seed_pet_accessories.sql` | 新增 11 个节日配饰种子（ACCESSORY，纯外观，名称对齐前端 themeMapping） |
 
 
 
@@ -152,7 +154,7 @@
 | mood | INT | NOT NULL | 100 | 心情 (0-100) |
 | hunger | INT | NOT NULL | 100 | 饱腹 (0-100) |
 | coins | INT | NOT NULL | 100 | 专注币 |
-| current_accessory | BIGINT | NULL, FK → pet_accessories | NULL | 当前佩戴 |
+| current_accessory | BIGINT | NULL, FK → pet_accessories | NULL | 当前佩戴配饰（v3.5 起由购买装备/取下写入） |
 | last_interacted_at | DATETIME | NOT NULL | NOW() | 最近互动时间 |
 | created_at | DATETIME | NOT NULL | NOW() | |
 | updated_at | DATETIME | NOT NULL | NOW() ON UPDATE | |
@@ -172,6 +174,8 @@
 | effect_experience | INT | NOT NULL | 0 | 经验效果 |
 | created_at | DATETIME | NOT NULL | NOW() | |
 
+- 种子：6 种 FOOD（v3.2）+ 11 种 ACCESSORY 节日配饰（v3.5，V8 迁移，纯外观 effect_*=0，名称与前端 `themeMapping.petAccessory` 对齐）
+
 ### pet_interactions（互动记录 — v3.2 新增）
 
 | 字段 | 类型 | 约束 | 默认值 | 说明 |
@@ -186,6 +190,21 @@
 | created_at | DATETIME | NOT NULL | NOW() | |
 
 索引: `idx_interaction_pet (pet_id)`, `idx_interaction_time (pet_id, created_at)`
+
+### pet_rewards（奖励发放记录 — v3.4 新增）
+
+| 字段 | 类型 | 约束 | 默认值 | 说明 |
+|------|------|------|--------|------|
+| id | BIGINT | PK, AUTO | | |
+| pet_id | BIGINT | NOT NULL, FK → pets ON DELETE CASCADE | | |
+| source | VARCHAR(32) | NOT NULL | | TASK_COMPLETED / EVENT_COMPLETED / EVENT_CANCELLED / FOCUS_COMPLETED / DAILY_CHECKIN / HABIT_CHECKED |
+| ref_id | VARCHAR(64) | NOT NULL | | 业务引用标识（taskId / eventId / habitId / 日期） |
+| coin_change | INT | NOT NULL | 0 | 专注币变化 |
+| experience_gain | INT | NOT NULL | 0 | 经验获得 |
+| mood_change | INT | NOT NULL | 0 | 心情变化 |
+| created_at | DATETIME | NOT NULL | NOW() | |
+
+索引: `uk_reward_pet_source_ref (pet_id, source, ref_id)` UNIQUE——幂等发放硬约束（同一来源同一引用仅发放一次）
 
 ### tasks（任务 — v3.3 新增）
 

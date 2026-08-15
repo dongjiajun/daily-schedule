@@ -64,7 +64,7 @@ frontend/src/
 ├── modules/                 # 可插拔功能模块
 │   └── calendar/
 │       ├── index.ts         # ModuleDefinition 导出
-│       ├── routes.tsx        # lazy 路由定义
+│       ├── routes.tsx        # 静态路由定义
 │       ├── components/
 │       │   ├── HomePage.tsx
 │       │   ├── CalendarView.tsx
@@ -90,6 +90,7 @@ frontend/src/
 │       ├── lib/zoneRegistry.ts   # 兴趣区注册表（user-interaction/pet-spot/calendar-cell）
 │       ├── lib/statusColor.ts    # 状态三段色共享函数
 │       └── store/petStore.ts     # 含浮动数值反馈（feedbackTrigger）+ 动作维度（action）
+│                                 #   + persist 持久化（v3.5.1：位置/朝向/休息态/稳定情绪白名单）
 │   └── todo/                 # 任务看板模块
 │       ├── components/       # TodoPage/TaskToolbar/BoardView/TaskColumn/
 │       │                     #   TaskCard/ListView/TaskRow/TaskForm
@@ -149,11 +150,11 @@ frontend/src/
 ### 任务看板模块 (`modules/todo/`)
 
 - **TodoPage** — 任务主页面，组合 TaskToolbar + BoardView/ListView
-- **BoardView** — 三列看板（TODO | IN_PROGRESS | DONE），HTML5 Drag & Drop 跨列移动，响应式列宽（`flex-1`）
+- **BoardView** — 三列看板（TODO | IN_PROGRESS | DONE），HTML5 Drag & Drop 跨列移动（同列拖拽保持原位不甩尾），响应式列宽（`flex-1`）
 - **TaskColumn** — 单列容器：lucide 图标标题 + 数量 Badge + 卡片列表 + 内联快速创建 + drop 区域高亮，CSS 变量主题色
-- **TaskCard** — 任务卡片：lucide 图标（截止日期/逾期）+ 优先级 Badge（纯文本色块）+ 标签 chips + 拖拽手柄 + shadcn/ui Button 操作
+- **TaskCard** — 任务卡片：lucide 图标（截止日期/逾期）+ 优先级 Badge（纯文本色块）+ 标签 chips + 拖拽手柄 + shadcn/ui Select 状态切换（触摸设备可用）+ shadcn/ui Button 编辑/删除（常驻可见；删除走 sonner 撤销 toast）
 - **ListView** — 列表视图：shadcn/ui Button 排序控件（默认/优先级/截止日期/创建时间）+ 任务行
-- **TaskRow** — 列表行：shadcn/ui Select 状态切换 + lucide 图标 + shadcn/ui Button 编辑/删除
+- **TaskRow** — 列表行：shadcn/ui Select 状态切换 + lucide 图标 + shadcn/ui Button 编辑/删除（删除走 sonner 撤销 toast）
 - **TaskForm** — shadcn/ui Dialog 创建/编辑弹窗（含 backdrop-blur + 入场动画）：标题/描述/优先级/截止日期
 - **TaskToolbar** — 顶部工具栏：shadcn/ui Button 看板/列表视图切换（lucide Columns2/List 图标）+ 新建任务按钮（Plus 图标），CSS 变量主题色
 
@@ -161,17 +162,20 @@ frontend/src/
 
 - **RoamingPet** (`modules/pet/components/RoamingPet.tsx`) — v2 游走宠物：以独立角色精灵在页面自由漫步，`pointer-events:none` 穿透，点击摸头/双击玩耍（jump 动作），hover 状态浮窗（含"互动"按钮打开 PetMenu 与"回窝"按钮）；朝向翻转（scaleX）仅作用于宠物身体，气泡/hover 浮窗文字保持正读；鼠标停留/点击/输入触发兴趣区域（Zone）吸引；渲染浮动数值反馈（FloatingText）；**action 接线**：移动→walk、进窝→sleep（蜷缩+Zzz）、双击→jump、移动结束 `onAnimationComplete` 回 idle/sleep；**空闲小动作调度器**：8-18s 随机选 stretch/yawn/scratch/look 播放一次（守卫：仅平静 idle 且非休息非格内非行走）；**昼夜节律**（`determineMode` 输出 period：night/morning/afternoon/daytime）：夜间（≥23）立即走向小窝进窝睡觉（不等 2 分钟）、早晨（7-9）睡眠中唤醒 + "早上好"气泡（每日一次）、午后（12-14）低概率小憩 rest 90s 原地打盹、深夜未睡低概率打哈欠提示（10min 冷却）；**格内物理状态机**（rAF 帧循环，替换旧左右横移）：进格→落向最近底边吸附点（重力落地+落定弹跳）→沿四边连续绕行（14 吸附点含四角转角，每段移动都在边上不斜穿），接近目标加速滑入+精确吸附落定，到达点概率分流（40% 跳跃/30% 短暂停留/30% 直接续走），完成度决定风格（快=绕圈+跳跃+happy / 慢=绕四边+idle_variant），绕 2 圈自然退出（45s 兜底防卡死）或离开格子强制退出恢复游走；贴左/右壁时形象横过来（rotate ±90° + 0.15s 过渡）
 - **ZoneRegistry** (`modules/pet/lib/zoneRegistry.ts`) — 区域注册表：Zone 生命周期管理（注册/更新/移除/decay 自动衰减），类型化区域（user-interaction/pet-spot/calendar-cell）供区域感知机制消费
-- **PetAvatar** (`modules/pet/components/PetAvatar.tsx`) — 宠物形象渲染器：SVG 插画（SvgAvatar）+ 地面阴影椭圆（jump 时缩小变淡）；从 petStore 读 emotionState + action 双维
-- **SvgAvatar** (`modules/pet/components/SvgAvatar.tsx`) — SVG 插画引擎：根据 species + emotionState + action 选择对应插画（橘猫/柴犬 × 8 种情绪 × 11 种动作）；`data-action` 属性驱动 CSS 动画层（呼吸/眨眼/步伐/蜷缩/Zzz/跳跃/进食咀嚼/伸懒腰/打哈欠/挠耳/张望）；**情绪切换眨眼过渡**：emotion 变化先闭眼（data-blink 驱动 50ms 一次性动画）再换表情参数睁开，消除换脸感
+- **PetAvatar** (`modules/pet/components/PetAvatar.tsx`) — 宠物形象渲染器：SVG 插画（SvgAvatar）+ 地面阴影椭圆（jump 时缩小变淡）；从 petStore 读 emotionState + action 双维；v3.5 起经 `useEquippedAccessoryName` 解析当前配饰并传入 SvgAvatar
+- **SvgAvatar** (`modules/pet/components/SvgAvatar.tsx`) — SVG 插画引擎：根据 species + emotionState + action 选择对应插画（橘猫/柴犬 × 8 种情绪 × 11 种动作）；`data-action` 属性驱动 CSS 动画层（呼吸/眨眼/步伐/蜷缩/Zzz/跳跃/进食咀嚼/伸懒腰/打哈欠/挠耳/张望）；**情绪切换眨眼过渡**：emotion 变化先闭眼（data-blink 驱动 50ms 一次性动画）再换表情参数睁开，消除换脸感；**装扮层（v3.5）**：`accessory` prop 相对容器包裹——皮肤类对基础插画应用 CSS filter，其余经 `AccessoryOverlay` 同 viewBox 叠放
+- **AccessoryOverlay** (`modules/pet/components/AccessoryOverlay.tsx`) — 配饰叠加层（v3.5 新增）：帽子（巫师帽/新年帽/火鸡帽/绿帽子）/角（麋鹿角）/耳（兔耳朵）/发饰（樱花）/背包（粽子）五类 SVG 叠放；皮肤类返回 null（filter 由 SvgAvatar 应用）；未知名称静默回退
+- **accessoryRenderMap** (`modules/pet/lib/accessoryRenderMap.ts`) — 配饰名称 → 渲染方式单一映射（v3.5 新增）：11 个名称与 `themeMapping.petAccessory`/数据库种子对齐；皮肤 filter 参数（年兽=红调/玉兔=白亮/印度象=灰调）
 - **PetBubble** (`modules/pet/components/PetBubble.tsx`) — 宠物对话气泡，毛玻璃主题风格
 - **PetStatus** (`modules/pet/components/PetStatus.tsx`) — 宠物状态展示：心情/饱食度进度条（三段色 statusColor：≥60 绿 / 30-59 黄 / <30 红）+ 代币/等级
 - **PetSelection** (`modules/pet/components/PetSelection.tsx`) — 宠物创建选择 Dialog：物种选择 + 命名
 - **ParticleBurst** (`modules/pet/components/ParticleBurst.tsx`) — 粒子爆发特效：hearts/stars/coins/sparkles/food，从指定坐标发射+扩散+淡出
 - **FloatingText** (`modules/pet/components/FloatingText.tsx`) — 浮动数值反馈：互动/购买结果（+N 心情/饱腹/经验/金币）从宠物位置向上飘散+淡出，good 绿 / bad 红
 - **PetMenu** (`modules/pet/components/PetMenu.tsx`) — 互动菜单 Popover：玩耍（免费）/ 喂食 / 商店 tab（食物列表复用 FoodActionList）；金币不足禁用+tooltip；成功 → 浮动数值 + 粒子 + toast
-- **FoodActionList** (`modules/pet/components/FoodActionList.tsx`) — 食物/商品操作列表（PetMenu 与 PetPage 共享）：mode=feed 走 `interact FEED`、mode=shop 走 `purchase`，均即时消费；喂食/购买成功触发 `setAction('eat', 1500)`（低头张嘴咀嚼反馈）
-- **SidebarPet** (`modules/pet/components/SidebarPet.tsx`) — 侧边栏迷你宠物：40-50px 精灵 + 心情/饱食度指示点（三段色 statusColor），点击跳转 /pet；挂载时注册 `pet-spot` Zone（id `pet-home-spot`）作为宠物小窝，scroll/resize 事件驱动 rect 更新，卸载注销
-- **PetPage** (`modules/pet/components/PetPage.tsx`) — /pet 完整宠物面板：大头像 + PetStatus + 互动按钮（PetMenu）+ 喂食区 + 商店区 + 宠物信息卡
+- **FoodActionList** (`modules/pet/components/FoodActionList.tsx`) — 食物/商品操作列表（PetMenu 与 PetPage 共享）：mode=feed 走 `interact FEED`、mode=shop 走 `purchase`；v3.5 起按类型分流——FOOD 即时消费（成功触发 `setAction('eat', 1500)` 低头咀嚼反馈），ACCESSORY 显示「装备」按钮 + 已装备标记（成功触发 happy 情绪 + toast「已装备」）
+- **SidebarPet** (`modules/pet/components/SidebarPet.tsx`) — 侧边栏迷你宠物：40-50px 精灵 + 心情/饱食度指示点（三段色 statusColor），点击跳转 /pet；挂载时注册 `pet-spot` Zone（id `pet-home-spot`）作为宠物小窝，scroll/resize 事件驱动 rect 更新，卸载注销；v3.5 起迷你精灵同样渲染配饰装扮
+- **PetPage** (`modules/pet/components/PetPage.tsx`) — /pet 完整宠物面板：大头像 + PetStatus + 互动按钮（PetMenu）+ 喂食区 + 商店区 + 宠物信息卡；v3.5 起新增「当前配饰」区（配饰名称 + 「取下」按钮，走 `useUnequip`）
+- **petEventBridge** (`modules/pet/lib/petEventBridge.ts`) — 事件桥接（v3.4 扩展）：监听 calendar（event:completed/created/cancelled）、todo（task:completed/created）、habit（habit:checked）、focus（focus:completed）、user（user:dailyCheckin）五类事件；任务/日程完成时 invalidate 宠物查询缓存（即时刷新后端发放的专注币）；habit/focus/checkin 事件调用奖励 API（幂等）→ granted=true 时刷新宠物数据 + 金币粒子 + 「+N 专注币」气泡，失败静默
 
 - **游走引擎** (`packages/shared/src/pet/roaming.ts`) — 纯逻辑游走算法：随机漫步（含逃逸机制，防边缘排斥困角）/Zone 区域吸引/边界避让/休息点选择，Web 与小程序共享
 
@@ -214,6 +218,7 @@ frontend/src/
 
 - **ModuleRegistry** (`core/lib/moduleRegistry.ts`) — 管理插件式架构中所有模块的生命周期
 - **EventBus** (`core/lib/eventBus.ts`) — 类型安全的同步事件总线（单例，从 `@daily-schedule/shared` 导入 EventBus 类）
+- **queryClient** (`core/lib/queryClient.ts`) — React Query 客户端单例（v3.4 新增）：供非组件上下文（petEventBridge 事件桥接）安全 invalidate 查询缓存，App.tsx 的 QueryClientProvider 引用同一实例
 - 模块间不允许直接 import store/组件，仅通过事件总线通信
 
 ## 工具库

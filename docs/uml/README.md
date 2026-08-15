@@ -200,6 +200,15 @@ Scheduler     Repository     Channel    SseEmitter    Browser
    说明：互动记录 `pet_interactions` 仅为持久化表，领域层不设实体——
    互动效果由应用层计算为 `InteractionResult` 值对象后由 `Pet.applyInteraction()` 应用。
 
+   说明（v3.4 更新）：`PetInteraction` / `PetReward` 已升级为领域 POJO，
+   经 `PetInteractionRepository` / `PetRewardRepository` 端口持久化（应用层不再直连 Mapper）。
+   奖励发放 `PetDomainService.grant(pet, source)` 同样产出 `InteractionResult` 后复用 `applyInteraction()`。
+
+   说明（v3.5 更新）：购买数值同样由 `PetDomainService.purchase(pet, item, quantity)` 产出
+   `InteractionResult` 后复用 `applyInteraction()`（钳制唯一实现点）。
+   装备语义：ACCESSORY 购买 → `Pet.currentAccessory = itemId`（覆盖）；取下 →
+   `PetRepository.clearCurrentAccessory(petId)` 显式 SET NULL（updateById 默认跳过 null 字段）。
+
 ┌──────────────────────────────────┐
 │          ShopItem                 │
 ├──────────────────────────────────┤
@@ -209,6 +218,30 @@ Scheduler     Repository     Channel    SseEmitter    Browser
 │ + price: Integer                 │
 │ + effectMood / effectHunger      │
 │ + effectExperience: Integer      │
+└──────────────────────────────────┘
+
+┌──────────────────────────────────┐
+│      RewardSource（枚举）         │
+├──────────────────────────────────┤
+│ TASK_COMPLETED    +10 币 +20 经验 │
+│ EVENT_COMPLETED   +20 币 +30 经验 │
+│ EVENT_CANCELLED   心情 -10        │
+│ FOCUS_COMPLETED   +5 币 +10 经验  │
+│ DAILY_CHECKIN     +15 币 +10 经验 │
+│ HABIT_CHECKED     +5 币 +10 经验  │
+└──────────────────────────────────┘
+               │ 1
+               ▼
+┌──────────────────────────────────┐
+│          PetReward                │
+├──────────────────────────────────┤
+│ + petId: Long (FK → pets)        │
+│ + source: RewardSource           │
+│ + refId: String (≤64)            │
+│ + coinChange / experienceGain    │
+│ + moodChange: Integer            │
+├──────────────────────────────────┤
+│ UNIQUE (pet_id, source, ref_id)  │ ← 幂等发放硬约束
 └──────────────────────────────────┘
 ```
 
@@ -226,7 +259,7 @@ Scheduler     Repository     Channel    SseEmitter    Browser
 │ + priority: TaskPriority (LOW/MED/HIGH/URGENT)   │
 │ + sortOrder: Integer                             │
 │ + dueDate: LocalDate                             │
-│ + tagIds: Set<Long>           ── 写路径          │
+│ + tagIds: List<Long>          ── 写路径          │
 │ + tags: List<Tag>             ── 读路径投影      │
 │ + createdAt: LocalDateTime                       │
 │ + updatedAt: LocalDateTime                       │

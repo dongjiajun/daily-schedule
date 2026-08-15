@@ -6,7 +6,7 @@
 ## Requirements
 
 ### Requirement: 模块注册时绑定事件
-`petModule.onInit` SHALL 在模块注册时调用 `registerPetEventListeners()`，监听 calendar 事件（`event:completed` / `event:created` / `event:cancelled`）和 todo 事件（`task:completed` / `task:created`），触发宠物动画和气泡消息。
+`petModule.onInit` SHALL 在模块注册时调用 `registerPetEventListeners()`，监听 calendar 事件（`event:completed` / `event:created` / `event:cancelled`）、todo 事件（`task:completed` / `task:created`）、habit 事件（`habit:checked`）、focus 事件（`focus:completed`）和 user 事件（`user:dailyCheckin`），触发宠物动画和气泡消息。habit/focus/user 事件 SHALL 额外调用奖励 API 发放奖励（详见 pet-economy-loop）；`event:completed` / `task:completed` 监听器 SHALL 额外 invalidate 宠物查询缓存以即时刷新专注币。
 
 #### Scenario: 日程完成 → 宠物开心
 - **WHEN** eventBus emit `{ type: 'event:completed', payload: { eventId: '1', title: '团队周会' } }`
@@ -27,6 +27,18 @@
 #### Scenario: 任务创建 → 宠物鼓励
 - **WHEN** eventBus emit `{ type: 'task:created', payload: { taskId: '6' } }`
 - **THEN** petStore.bubbleMessage = '新任务已就绪，一起加油！💪'（不改变 animationState）
+
+#### Scenario: 习惯打卡 → 奖励发放
+- **WHEN** eventBus emit `{ type: 'habit:checked', payload: { habitId: 'h1' } }`
+- **THEN** 调用奖励 API（HABIT_CHECKED, refId="h1"）；granted=true 时触发金币粒子并刷新宠物数据
+
+#### Scenario: 专注完成 → 奖励发放
+- **WHEN** eventBus emit `{ type: 'focus:completed', payload: { duration: 1500, sessionId: 'f-9' } }`
+- **THEN** 调用奖励 API（FOCUS_COMPLETED, refId="f-9"）；granted=true 时触发金币粒子并刷新宠物数据
+
+#### Scenario: 每日签到 → 奖励发放
+- **WHEN** eventBus emit `{ type: 'user:dailyCheckin', payload: { timestamp: 1753500000000 } }`
+- **THEN** 调用奖励 API（DAILY_CHECKIN, refId=当日日期）；granted=true 时触发金币粒子并刷新宠物数据
 
 #### Scenario: Todo 模块未注册时兼容
 - **WHEN** 用户仅注册 calendar 和 pet 模块（未注册 todo）

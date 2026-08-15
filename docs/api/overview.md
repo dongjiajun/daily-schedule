@@ -1,7 +1,7 @@
 # API 规范
 
 > **唯一真相源**: `specs/openapi.yaml`  
-> **当前 API 版本**: 3.3.4  
+> **当前 API 版本**: 3.5.0  
 > **变更历史**: `specs/CHANGELOG.md`  
 > 本文档提供叙事性说明与使用示例；Schema 细节与端点定义以 OpenAPI 文件为准。
 
@@ -81,6 +81,8 @@ Token 通过注册/登录获取，access token 有效期 15 分钟，refresh tok
 ```json
 { "code": 409, "message": "该时段已有其他日程，请调整时间" }
 ```
+
+**request-id 链路（v3.5 可观测性）**：所有响应携带 `X-Request-Id` 头（客户端可传入，≤64 字符，缺省由服务端生成 UUID）。错误响应的 `message` 末尾携带 `（requestId: xxx）` 后缀，用户凭响应即可在后端日志中检索对应请求的完整堆栈。
 
 ## 日程 Event
 
@@ -225,6 +227,22 @@ v1 仅支持改名：`{ "name": "二橘" }`
 - FEED 需指定 `itemId`（商品 ID），不指定则默认最便宜食物。专注币不足时返回 400。
 - PLAY 免费，不消耗专注币
 
+### 行为奖励 `POST /pets/me/rewards`（v3.4 新增）
+
+```json
+// Request
+{ "source": "TASK_COMPLETED", "refId": "42" }
+// Response 200（首次发放）
+{ "granted": true, "coinChange": 10, "experienceGain": 20, "moodChange": 0, "newCoins": 110, "newExperience": 20, "newMood": 80 }
+// Response 200（幂等重复 / 无宠物）
+{ "granted": false, "coinChange": 0, "experienceGain": 0, "moodChange": 0, "newCoins": 0, "newExperience": 0, "newMood": 0 }
+```
+
+- source: `TASK_COMPLETED` | `EVENT_COMPLETED` | `EVENT_CANCELLED` | `FOCUS_COMPLETED` | `DAILY_CHECKIN` | `HABIT_CHECKED`
+- refId（≤64 字符）为幂等键：同一 (source, refId) 仅发放一次，重复请求返回 `granted=false`
+- 无宠物时同样返回 `granted=false`，不阻断调用方流程
+- 任务/日程完成的奖励由后端在状态迁移事务内自动发放（无需前端调用）；本端点供专注/签到/习惯等前端事件桥接使用
+
 ## 商店 Shop（v3.2 新增）
 
 ### 物品列表 `GET /shop/items`
@@ -234,14 +252,24 @@ v1 仅支持改名：`{ "name": "二橘" }`
 ### 购买 `POST /shop/purchase`
 
 ```json
-// Request
+// Request（食物，支持批量）
 { "itemId": 1, "quantity": 2 }
 // Response
 { "success": true, "itemName": "小鱼干", "quantity": 2, "totalCost": 20, "newCoins": 80, "newMood": 90, "newHunger": 100, "newExperience": 6 }
+
+// Request（配饰，购买即装备，quantity 固定 1）
+{ "itemId": 7, "quantity": 1 }
+// Response
+{ "success": true, "itemName": "巫师帽", "quantity": 1, "totalCost": 40, "newCoins": 60, "equippedAccessoryId": 7 }
 ```
 
-- v1 即时消费模式：购买即使用，效果立即应用到宠物
+- FOOD 即时消费模式：购买即使用，效果立即应用到宠物（v3.5 数值钳制下沉领域层）
+- ACCESSORY 购买即装备：写入 `pets.current_accessory`（覆盖旧装备），`equippedAccessoryId` 回传配饰 id；`quantity > 1` 返回 400
 - 专注币不足返回 400
+
+### 取下配饰 `DELETE /pets/me/accessory`（v3.5 新增）
+
+`current_accessory` 置 NULL，返回 204。未装备时请求同样返回 204（幂等）；无宠物返回 404。
 
 ## 任务 Task（v3.3 新增）
 

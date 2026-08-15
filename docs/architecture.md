@@ -39,8 +39,8 @@
 ┌───────────────────────▼──────────────────────────────────┐
 │                  MySQL 8.0 (InnoDB)                       │
 │   user | category | tag | event | event_tag               │
-│   pets | pet_accessories | pet_interactions               │
-│   tasks | task_tags                                       │
+│   pets | pet_accessories（FOOD+ACCESSORY 种子）           │
+│   pet_rewards | tasks | task_tags                         │
 │   event.last_reminded_at（幂等标记）                       │
 └──────────────────────────────────────────────────────────┘
 ```
@@ -95,10 +95,62 @@ Scheduler (30s fixedDelay, Clock-injected)
 
 `BrowserNotificationService` 通过 `SseEmitterManager.sendToUser` 按 userId 推送 SSE，前端 `useSseNotifications` 依赖登录时下发的 `dsa_sse_session` HttpOnly Cookie 自动认证（v3.0+ 不再使用 `?token=` 查询参数），指数退避自动重连。
 
+## 宠物经济闭环（v3.4）
+
+```
+任务 moveTask（非 DONE → DONE）──┐
+日程 update（非 COMPLETED → COMPLETED）──┤   同事务
+日程 delete（非 COMPLETED）──负面───────┼──▶ PetApplicationService.grantReward(source, refId)
+习惯/专注/签到（前端事件桥接）──▶ POST /pets/me/rewards ─┘
+                                                          │
+                    幂等检查 pet_rewards UNIQUE(pet_id, source, ref_id)
+                    命中/无宠物 → granted=false（静默，不阻断主流程）
+                    未命中 → PetDomainService.grant（RewardSource 数值）→ Pet.applyInteraction（钳制/等级）→ 记录发放
+```
+
+- **数值唯一来源**: `RewardSource` 枚举（TASK +10币/+20经验、EVENT +20/+30、FOCUS +5/+10、CHECKIN +15/+10、HABIT +5/+10、取消 -10 心情）
+- **幂等**: `pet_rewards` 表唯一键在数据库层防重复刷币（状态来回切换仅首次发放）
+- **仓储端口**: `PetAccessoryRepository` / `PetInteractionRepository` / `PetRewardRepository`（v3.4 补齐，PetApplicationService 不再直连 Mapper）
+- **前端**: `petEventBridge` 监听 habit:checked / focus:completed / user:dailyCheckin → 奖励 API（Phase 2 习惯/专注模块预留）；任务/日程完成事件 invalidate 宠物查询即时刷新专注币
+
+## 宠物装扮系统（v3.5）
+
+```
+购买（purchase，按 type 分流）
+├─ FOOD      → PetDomainService.purchase → applyInteraction（钳制）  即时消费
+└─ ACCESSORY → 校验 quantity==1 → Pet.currentAccessory = itemId      购买即装备（覆盖）
+取下（DELETE /pets/me/accessory）→ PetRepository.clearCurrentAccessory（显式 SET NULL，幂等）
+渲染 → SvgAvatar(accessory 名称) → accessoryRenderMap 映射
+       ├─ 叠加层类（帽/角/耳/发饰/背包）→ AccessoryOverlay 同 viewBox SVG 叠放
+       └─ 皮肤类 → 基础插画 CSS filter 近似（年兽红调/玉兔白亮/印度象灰调）
+```
+
+- **种子**: V8 迁移 11 个 ACCESSORY 物品，名称与 `shared/holiday/themeMapping.petAccessory` 逐一对齐（价格档位 30-80）
+- **数值钳制唯一实现点**: `Pet.applyInteraction`（购买/奖励/互动三路径共用，线1 O8 收尾）
+- **全场景生效**: RoamingPet / PetPage / SidebarPet 均经 useEquippedAccessoryName 解析当前配饰
+- **明确不做**: 节日自动穿戴（需库存概念，M2.4）；皮肤逐图层重绘（filter 近似）
+
+## 宠物状态持久化（v3.5.1）
+
+- `petStore` 接入 zustand `persist` 中间件（localStorage key `pet-roaming-state`，version 1）：白名单 `{ position, facing, isResting, emotionState }`——刷新后位置/朝向/休息态/稳定情绪恢复，陪伴感不中断
+- **情绪归一**：仅稳定情绪（idle/idle_variant/hungry/sleepy）落盘，瞬态情绪（happy/sad/excited/surprised）写入时归一 idle（刷新后不残留）
+- **恢复钳制**：rehydrate 时 position 按视口（-90px 宠物尺寸）钳制，窗口缩放后宠物仍可见
+- **瞬态不落盘**：action/粒子/气泡/连击/定时器句柄不进序列化，刷新回默认
+- 后端数值状态（mood/hunger/coins）仍由 pets 表 + 30s 轮询承载，localStorage 仅存游走陪伴态
+
 ## 缓存
 
-- **Caffeine 本地缓存**: 分类列表 (categories)、标签列表 (tags)，5 分钟过期
-- **写操作驱逐**: create/update/delete 自动 `@CacheEvict`
+- **Caffeine 本地缓存**: 分类列表 (categories)、标签列表 (tags)，5 分钟过期（`spring.cache.type=caffeine` 主配置声明），缓存键按 userId 隔离
+- **写操作驱逐**: create/update/delete 按 userId 精确 `@CacheEvict`（不跨用户清空）；测试环境（H2）禁用缓存（`spring.cache.type=none`）
+- **CORS 单轨**: `SecurityConfig` 的 `CorsConfigurationSource` 读取 `cors.allowed-origin-patterns`（默认 `http://localhost:*`，prod 由 `CORS_ORIGINS` 环境变量注入）
+
+## 可观测性与监控
+
+- **日志**: `logback-spring.xml` —— prod 滚动文件（`logs/daily-schedule.log` 按天滚动、保留 7 天），dev/test 控制台；pattern 含 requestId（MDC）；业务包 INFO 分级
+- **request-id 全链路**: `RequestIdFilter`（Security 链之前）解析/生成 `X-Request-Id` → MDC → 响应头回写 → finally 清理；`GlobalExceptionHandler` 错误响应 message 携带 `（requestId: xxx）` 后缀，凭响应可检索日志
+- **入口与安全日志**: 7 个 Controller 入口 INFO 日志（敏感字段不入日志）；认证失败 WARN（请求路径）
+- **探活**: Actuator 仅暴露 `health` 端点（`SecurityConfig` 显式放行 `/actuator/health`）；docker-compose backend healthcheck 周期探测
+- **调度线程池**: `ScheduleConfig` 的 `TaskScheduler`（pool 2，`scheduler-` 前缀）——提醒扫描与宠物衰减独立线程互不阻塞
 
 ## 项目结构（Monorepo）
 
@@ -173,7 +225,7 @@ daily-schedule/
 |------|------|------|
 | API | `api/controller/`, `api/assembler/`, `api/exception/` | REST 端点、DTO 转换、全局异常处理（7 个 Controller） |
 | 应用 | `application/event/`, `application/category/`, `application/tag/`, `application/pet/`, `application/todo/`, `application/auth/` | 用例编排、重名校验、缓存注解 |
-| 领域 | `domain/event/`, `domain/category/`, `domain/tag/`, `domain/user/`, `domain/pet/`, `domain/task/`, `domain/notification/` | 业务实体与规则（28 个文件，`<!-- DOCS-CHECK: domain-files=28 -->`）、仓储接口 |
+| 领域 | `domain/event/`, `domain/category/`, `domain/tag/`, `domain/user/`, `domain/pet/`, `domain/task/`, `domain/notification/` | 业务实体与规则（35 个文件，`<!-- DOCS-CHECK: domain-files=35 -->`）、仓储接口 |
 | 基础设施 | `infrastructure/persistence/`, `infrastructure/security/`, `infrastructure/config/`, `infrastructure/scheduled/`, `infrastructure/notification/` | 持久化、JWT/认证、缓存配置、调度、SSE |
 
 ## 前端模块架构（core + modules）
@@ -199,9 +251,9 @@ ModuleDefinition {
 
 ## 测试
 
-- **后端**: 37 个测试类，259 个用例，0 失败。H2 内存数据库（MySQL 兼容模式）。`<!-- DOCS-CHECK: backend-test-classes=37 -->`
-- **前端**: 50 个测试文件，238 个用例，0 失败。vitest + jsdom。`<!-- DOCS-CHECK: frontend-test-files=50 -->`
-- **E2E**: 11 个 spec 文件，39 条 Playwright 用例（auth/calendar/task/pet），CI 集成。webServer 复用后台启动的后端 + 自动启动前端 Vite。`<!-- DOCS-CHECK: e2e-files=11 -->`
+- **后端**: 44 个测试类，327 个用例，0 失败。H2 内存数据库（MySQL 兼容模式）。`<!-- DOCS-CHECK: backend-test-classes=44 -->`
+- **前端**: 51 个测试文件，267 个用例，0 失败。vitest + jsdom。`<!-- DOCS-CHECK: frontend-test-files=51 -->`
+- **E2E**: 13 个 spec 文件，57 条 Playwright 用例（auth/calendar/task/pet），CI 集成。webServer 复用后台启动的后端 + 自动启动前端 Vite。`<!-- DOCS-CHECK: e2e-files=13 -->`
 - **CI**: GitHub Actions — version-check（版本 + 文档一致性）→ backend mvn test → frontend lint → test → build（含 SDK freshness）三道阻断门禁 + E2E（`continue-on-error` 软性，不阻断）
 - **运行**: `cd backend && mvn test` / `cd frontend && pnpm run test`
 
@@ -214,5 +266,5 @@ docker-compose up -d   # MySQL 8.0 + 后端 8080 + 前端 :5173
 ## 设计文档
 
 - `specs/openapi.yaml` — API 契约（唯一真相源）
-- `openspec/specs/` — 53 个能力规格文档（`<!-- DOCS-CHECK: specs-count=53 -->`）
+- `openspec/specs/` — 60 个能力规格文档（`<!-- DOCS-CHECK: specs-count=61 -->`）
 - `docs/planning/execution-plan.md` — 产品愿景与路线图（规划）
