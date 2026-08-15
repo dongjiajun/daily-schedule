@@ -1,5 +1,6 @@
 package com.dailyschedule.infrastructure.persistence.repository;
 
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.dailyschedule.domain.pet.Pet;
 import com.dailyschedule.domain.pet.PetRepository;
 import com.dailyschedule.domain.pet.PetSpecies;
@@ -52,6 +53,14 @@ public class PetRepositoryImpl implements PetRepository {
     public List<Pet> findAllForDecay() {
         List<PetPO> pos = petMapper.selectList(null);
         return pos.stream().map(this::toDomain).collect(Collectors.toList());
+    }
+
+    @Override
+    public void clearCurrentAccessory(Long petId) {
+        // updateById 默认跳过 null 字段，须显式 SET NULL
+        petMapper.update(null, new LambdaUpdateWrapper<PetPO>()
+            .eq(PetPO::getId, petId)
+            .set(PetPO::getCurrentAccessory, null));
     }
 
     private Pet toDomain(PetPO po) {

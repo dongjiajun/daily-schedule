@@ -1,11 +1,8 @@
 package com.dailyschedule.application.pet;
 
+import com.dailyschedule.api.exception.BusinessException;
 import com.dailyschedule.api.exception.ResourceNotFoundException;
 import com.dailyschedule.domain.pet.*;
-import com.dailyschedule.infrastructure.persistence.mapper.PetAccessoryMapper;
-import com.dailyschedule.infrastructure.persistence.mapper.PetInteractionMapper;
-import com.dailyschedule.infrastructure.persistence.po.PetAccessoryPO;
-import com.dailyschedule.infrastructure.persistence.po.PetInteractionPO;
 import com.dailyschedule.infrastructure.security.CurrentUserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -29,9 +26,11 @@ class PetApplicationServiceTest {
     @Mock
     private PetRepository petRepository;
     @Mock
-    private PetAccessoryMapper accessoryMapper;
+    private PetAccessoryRepository accessoryRepository;
     @Mock
-    private PetInteractionMapper interactionMapper;
+    private PetInteractionRepository interactionRepository;
+    @Mock
+    private PetRewardRepository rewardRepository;
     @Mock
     private CurrentUserService currentUserService;
 
@@ -42,7 +41,7 @@ class PetApplicationServiceTest {
     void setUp() {
         domainService = new PetDomainService(); // real domain logic
         applicationService = new PetApplicationService(
-            petRepository, domainService, accessoryMapper, interactionMapper, currentUserService);
+            petRepository, domainService, accessoryRepository, interactionRepository, rewardRepository, currentUserService);
         lenient().when(currentUserService.getCurrentUserId()).thenReturn(1L);
     }
 
@@ -73,7 +72,7 @@ class PetApplicationServiceTest {
         when(petRepository.findByUserId(1L)).thenReturn(Optional.of(existing));
 
         assertThatThrownBy(() -> applicationService.create(PetSpecies.SHIBA_INU, "柴柴"))
-            .isInstanceOf(IllegalStateException.class)
+            .isInstanceOf(BusinessException.class)
             .hasMessageContaining("已有宠物");
     }
 
@@ -118,7 +117,7 @@ class PetApplicationServiceTest {
         InteractionResult result = applicationService.interact(InteractionType.PLAY, null);
         assertThat(result.getMoodChange()).isEqualTo(25);
         assertThat(result.getHungerChange()).isEqualTo(-10);
-        verify(interactionMapper).insert(any(PetInteractionPO.class));
+        verify(interactionRepository).save(any(PetInteraction.class));
     }
 
     @Test
@@ -128,15 +127,8 @@ class PetApplicationServiceTest {
         pet.setCoins(2);
         when(petRepository.findByUserId(1L)).thenReturn(Optional.of(pet));
 
-        PetAccessoryPO food = new PetAccessoryPO();
-        food.setId(1L);
-        food.setName("小鱼干");
-        food.setPrice(10);
-        food.setType("FOOD");
-        food.setEffectMood(5);
-        food.setEffectHunger(20);
-        food.setEffectExperience(3);
-        when(accessoryMapper.selectById(1L)).thenReturn(food);
+        ShopItem food = sampleFood();
+        when(accessoryRepository.findById(1L)).thenReturn(Optional.of(food));
 
         assertThatThrownBy(() -> applicationService.interact(InteractionType.FEED, 1L))
             .isInstanceOf(IllegalArgumentException.class)
@@ -144,17 +136,21 @@ class PetApplicationServiceTest {
     }
 
     @Test
+    @DisplayName("interact → 喂食 → 商店无食物 → BusinessException（409 语义）")
+    void interact_feed_noFood_throwsBusinessException() {
+        Pet pet = samplePet();
+        when(petRepository.findByUserId(1L)).thenReturn(Optional.of(pet));
+        when(accessoryRepository.findAllShopItems()).thenReturn(List.of());
+
+        assertThatThrownBy(() -> applicationService.interact(InteractionType.FEED, null))
+            .isInstanceOf(BusinessException.class)
+            .hasMessageContaining("商店中没有可用的食物");
+    }
+
+    @Test
     @DisplayName("getShopItems → 返回物品列表")
     void getShopItems() {
-        PetAccessoryPO po = new PetAccessoryPO();
-        po.setId(1L);
-        po.setName("小鱼干");
-        po.setType("FOOD");
-        po.setPrice(10);
-        po.setEffectMood(5);
-        po.setEffectHunger(20);
-        po.setEffectExperience(3);
-        when(accessoryMapper.selectAllShopItems()).thenReturn(List.of(po));
+        when(accessoryRepository.findAllShopItems()).thenReturn(List.of(sampleFood()));
 
         List<ShopItem> items = applicationService.getShopItems();
         assertThat(items).hasSize(1);
@@ -167,16 +163,7 @@ class PetApplicationServiceTest {
         Pet pet = samplePet();
         pet.setCoins(100);
         when(petRepository.findByUserId(1L)).thenReturn(Optional.of(pet));
-
-        PetAccessoryPO food = new PetAccessoryPO();
-        food.setId(1L);
-        food.setName("小鱼干");
-        food.setPrice(10);
-        food.setType("FOOD");
-        food.setEffectMood(5);
-        food.setEffectHunger(20);
-        food.setEffectExperience(3);
-        when(accessoryMapper.selectById(1L)).thenReturn(food);
+        when(accessoryRepository.findById(1L)).thenReturn(Optional.of(sampleFood()));
 
         PurchaseResult result = applicationService.purchase(1L, 2);
         assertThat(result.isSuccess()).isTrue();
@@ -190,16 +177,180 @@ class PetApplicationServiceTest {
         Pet pet = samplePet();
         pet.setCoins(5);
         when(petRepository.findByUserId(1L)).thenReturn(Optional.of(pet));
-
-        PetAccessoryPO food = new PetAccessoryPO();
-        food.setId(1L);
-        food.setName("小鱼干");
-        food.setPrice(10);
-        when(accessoryMapper.selectById(1L)).thenReturn(food);
+        when(accessoryRepository.findById(1L)).thenReturn(Optional.of(sampleFood()));
 
         assertThatThrownBy(() -> applicationService.purchase(1L, 1))
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessageContaining("专注币不足");
+    }
+
+    // ─── purchase 装备语义 ───
+
+    @Test
+    @DisplayName("purchase → 购买配饰 → 装备成功 + 数值不变")
+    void purchase_accessory_equips() {
+        Pet pet = samplePet();
+        pet.setCoins(100);
+        when(petRepository.findByUserId(1L)).thenReturn(Optional.of(pet));
+        when(accessoryRepository.findById(7L)).thenReturn(Optional.of(sampleAccessory(7L, "巫师帽", 40)));
+
+        PurchaseResult result = applicationService.purchase(7L, 1);
+        assertThat(result.isSuccess()).isTrue();
+        assertThat(result.getEquippedAccessoryId()).isEqualTo(7L);
+        assertThat(result.getNewCoins()).isEqualTo(60);
+        assertThat(pet.getCurrentAccessory()).isEqualTo(7L);
+        assertThat(pet.getMood()).isEqualTo(80);   // 数值不变（效果 0）
+        assertThat(pet.getHunger()).isEqualTo(80);
+    }
+
+    @Test
+    @DisplayName("purchase → 已装备再购买新配饰 → 覆盖旧装备")
+    void purchase_accessory_overwrites() {
+        Pet pet = samplePet();
+        pet.setCoins(200);
+        pet.setCurrentAccessory(7L);
+        when(petRepository.findByUserId(1L)).thenReturn(Optional.of(pet));
+        when(accessoryRepository.findById(8L)).thenReturn(Optional.of(sampleAccessory(8L, "麋鹿角", 30)));
+
+        PurchaseResult result = applicationService.purchase(8L, 1);
+        assertThat(result.getEquippedAccessoryId()).isEqualTo(8L);
+        assertThat(pet.getCurrentAccessory()).isEqualTo(8L);
+    }
+
+    @Test
+    @DisplayName("purchase → 配饰 quantity>1 → 抛异常")
+    void purchase_accessory_quantityRejected() {
+        Pet pet = samplePet();
+        pet.setCoins(500);
+        when(petRepository.findByUserId(1L)).thenReturn(Optional.of(pet));
+        when(accessoryRepository.findById(7L)).thenReturn(Optional.of(sampleAccessory(7L, "巫师帽", 40)));
+
+        assertThatThrownBy(() -> applicationService.purchase(7L, 2))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("配饰每次只能购买一件");
+        assertThat(pet.getCurrentAccessory()).isNull();
+    }
+
+    @Test
+    @DisplayName("purchase → 食物购买 → 不装备（equippedAccessoryId 为 null）")
+    void purchase_food_noEquip() {
+        Pet pet = samplePet();
+        pet.setCoins(100);
+        when(petRepository.findByUserId(1L)).thenReturn(Optional.of(pet));
+        when(accessoryRepository.findById(1L)).thenReturn(Optional.of(sampleFood()));
+
+        PurchaseResult result = applicationService.purchase(1L, 2);
+        assertThat(result.getEquippedAccessoryId()).isNull();
+        assertThat(pet.getCurrentAccessory()).isNull();
+        assertThat(result.getNewCoins()).isEqualTo(80);
+        assertThat(result.getNewHunger()).isEqualTo(100); // 80 + 20×2 钳制 100
+    }
+
+    @Test
+    @DisplayName("unequip → 取下配饰 → 显式 SET NULL 清空")
+    void unequip_success() {
+        Pet pet = samplePet();
+        pet.setCurrentAccessory(7L);
+        when(petRepository.findByUserId(1L)).thenReturn(Optional.of(pet));
+
+        applicationService.unequip();
+        assertThat(pet.getCurrentAccessory()).isNull();
+        // updateById 默认跳过 null 字段，须走仓储显式清空方法
+        verify(petRepository).clearCurrentAccessory(1L);
+    }
+
+    @Test
+    @DisplayName("unequip → 未装备时取下 → 幂等不报错")
+    void unequip_idempotent() {
+        Pet pet = samplePet();
+        when(petRepository.findByUserId(1L)).thenReturn(Optional.of(pet));
+
+        applicationService.unequip();
+        assertThat(pet.getCurrentAccessory()).isNull();
+        verify(petRepository).clearCurrentAccessory(1L);
+    }
+
+    // ─── grantReward ───
+
+    @Test
+    @DisplayName("grantReward → 首次发放 → +币+经验并记录")
+    void grantReward_firstTime() {
+        Pet pet = samplePet();
+        when(petRepository.findByUserId(1L)).thenReturn(Optional.of(pet));
+        when(petRepository.save(any(Pet.class))).thenReturn(pet);
+        when(rewardRepository.existsBySourceAndRefId(1L, RewardSource.TASK_COMPLETED, "42")).thenReturn(false);
+
+        RewardResult result = applicationService.grantReward(RewardSource.TASK_COMPLETED, "42");
+        assertThat(result.isGranted()).isTrue();
+        assertThat(result.getCoinChange()).isEqualTo(10);
+        assertThat(result.getExperienceGain()).isEqualTo(20);
+        assertThat(result.getNewCoins()).isEqualTo(110);
+        assertThat(result.getNewExperience()).isEqualTo(20);
+        verify(rewardRepository).save(any(PetReward.class));
+        verify(petRepository).save(pet);
+    }
+
+    @Test
+    @DisplayName("grantReward → 重复发放 → granted=false 不重复")
+    void grantReward_duplicate_skips() {
+        Pet pet = samplePet();
+        when(petRepository.findByUserId(1L)).thenReturn(Optional.of(pet));
+        when(rewardRepository.existsBySourceAndRefId(1L, RewardSource.TASK_COMPLETED, "42")).thenReturn(true);
+
+        RewardResult result = applicationService.grantReward(RewardSource.TASK_COMPLETED, "42");
+        assertThat(result.isGranted()).isFalse();
+        assertThat(result.getCoinChange()).isZero();
+        verify(rewardRepository, never()).save(any());
+        verify(petRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("grantReward → 无宠物 → granted=false 静默跳过")
+    void grantReward_noPet_skips() {
+        when(petRepository.findByUserId(1L)).thenReturn(Optional.empty());
+
+        RewardResult result = applicationService.grantReward(RewardSource.EVENT_COMPLETED, "e1");
+        assertThat(result.isGranted()).isFalse();
+        verify(rewardRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("grantReward → 取消来源 → 心情钳制不为负")
+    void grantReward_moodClamped() {
+        Pet pet = samplePet();
+        pet.setMood(5);
+        when(petRepository.findByUserId(1L)).thenReturn(Optional.of(pet));
+        when(petRepository.save(any(Pet.class))).thenReturn(pet);
+        when(rewardRepository.existsBySourceAndRefId(1L, RewardSource.EVENT_CANCELLED, "e2")).thenReturn(false);
+
+        RewardResult result = applicationService.grantReward(RewardSource.EVENT_CANCELLED, "e2");
+        assertThat(result.isGranted()).isTrue();
+        assertThat(result.getMoodChange()).isEqualTo(-10);
+        assertThat(result.getNewMood()).isZero();
+    }
+
+    private ShopItem sampleFood() {
+        ShopItem item = new ShopItem();
+        item.setId(1L);
+        item.setName("小鱼干");
+        item.setType("FOOD");
+        item.setPrice(10);
+        item.setEffectMood(5);
+        item.setEffectHunger(20);
+        item.setEffectExperience(3);
+        return item;
+    }
+
+    private ShopItem sampleAccessory(Long id, String name, int price) {
+        ShopItem item = new ShopItem();
+        item.setId(id);
+        item.setName(name);
+        item.setType("ACCESSORY");
+        item.setPrice(price);
+        item.setEffectMood(0);
+        item.setEffectHunger(0);
+        item.setEffectExperience(0);
+        return item;
     }
 
     private Pet samplePet() {

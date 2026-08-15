@@ -48,7 +48,7 @@ public class BrowserNotificationService implements NotificationChannel {
         try {
             return objectMapper.writeValueAsString(payload);
         } catch (JsonProcessingException e) {
-            log.error("提醒载荷序列化失败 id={}: {}", event.getId(), e.getMessage());
+            log.error("提醒载荷序列化失败 id={}: {}", event.getId(), e.getMessage(), e);
             return null;
         }
     }

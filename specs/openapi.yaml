@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: 日程管理系统 API
-  version: 3.3.4
+  version: 3.5.0
   description: |
     v3.3 接口定义 — 前后端契约唯一真相源。
 
@@ -571,6 +571,42 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '404':
           $ref: '#/components/responses/NotFound'
+
+  /pets/me/accessory:
+    delete:
+      operationId: unequipAccessory
+      tags: [Pet]
+      summary: 取下当前配饰（幂等，未装备时同样成功）
+      responses:
+        '204':
+          description: 取下成功
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /pets/me/rewards:
+    post:
+      operationId: grantPetReward
+      tags: [Pet]
+      summary: 领取行为奖励（幂等，granted=false 表示未发放）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GrantRewardRequest'
+      responses:
+        '200':
+          description: 发放结果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RewardResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
 
   /shop/items:
     get:
@@ -1175,6 +1211,42 @@ components:
         newHunger:
           type: integer
         newExperience:
+          type: integer
+        equippedAccessoryId:
+          type: integer
+          format: int64
+          description: 装备购买时回传所装备配饰 id（FOOD 购买为 null）
+
+    GrantRewardRequest:
+      type: object
+      required: [source, refId]
+      properties:
+        source:
+          type: string
+          enum: [TASK_COMPLETED, EVENT_COMPLETED, EVENT_CANCELLED, FOCUS_COMPLETED, DAILY_CHECKIN, HABIT_CHECKED]
+        refId:
+          type: string
+          maxLength: 64
+          description: 业务引用标识（幂等键），如 taskId / eventId / habitId / 日期
+
+    RewardResult:
+      type: object
+      required: [granted, coinChange, experienceGain, moodChange, newCoins, newExperience, newMood]
+      properties:
+        granted:
+          type: boolean
+          description: false 表示未发放（无宠物或幂等键已命中）
+        coinChange:
+          type: integer
+        experienceGain:
+          type: integer
+        moodChange:
+          type: integer
+        newCoins:
+          type: integer
+        newExperience:
+          type: integer
+        newMood:
           type: integer
 
     TaskProfile:

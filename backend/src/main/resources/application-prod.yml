@@ -1,5 +1,5 @@
 cors:
-  allowed-origin-patterns: ${CORS_ORIGINS}
+  allowed-origin-patterns: ${CORS_ORIGINS:http://localhost:*}
 
 spring:
   datasource:

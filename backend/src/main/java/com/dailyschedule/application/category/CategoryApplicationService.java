@@ -19,6 +19,7 @@ public class CategoryApplicationService {
         this.categoryRepository = categoryRepository;
     }
 
+    @Cacheable(cacheNames = "categories", key = "#userId")
     public List<Category> listAll(Long userId) {
         return categoryRepository.findAll(userId);
     }
@@ -33,7 +34,7 @@ public class CategoryApplicationService {
     }
 
     @Transactional
-    @CacheEvict(value = "categories", allEntries = true)
+    @CacheEvict(cacheNames = "categories", key = "#category.userId")
     public Category create(Category category) {
         if (!category.isValid()) {
             throw new IllegalArgumentException("分类名称不能为空");
@@ -45,7 +46,7 @@ public class CategoryApplicationService {
     }
 
     @Transactional
-    @CacheEvict(value = "categories", allEntries = true)
+    @CacheEvict(cacheNames = "categories", key = "#userId")
     public Category update(Long id, Category data, Long userId) {
         Category existing = getById(id, userId);
         if (data.getName() != null && !data.getName().equals(existing.getName())) {
@@ -60,7 +61,7 @@ public class CategoryApplicationService {
     }
 
     @Transactional
-    @CacheEvict(value = "categories", allEntries = true)
+    @CacheEvict(cacheNames = "categories", key = "#userId")
     public void delete(Long id, Long userId) {
         getById(id, userId);
         categoryRepository.delete(id);

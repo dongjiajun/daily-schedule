@@ -29,6 +29,12 @@ services:
       JWT_SECRET: ${JWT_SECRET:-change-me-in-production-use-a-strong-secret-key}
     ports:
       - "8080:8080"
+    healthcheck:
+      test: ["CMD", "bash", "-c", "curl -sf http://localhost:8080/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
     depends_on:
       mysql:
         condition: service_healthy

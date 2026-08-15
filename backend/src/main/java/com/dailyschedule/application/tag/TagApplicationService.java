@@ -4,6 +4,7 @@ import com.dailyschedule.api.exception.ResourceNotFoundException;
 import com.dailyschedule.domain.tag.Tag;
 import com.dailyschedule.domain.tag.TagRepository;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +19,7 @@ public class TagApplicationService {
         this.tagRepository = tagRepository;
     }
 
+    @Cacheable(cacheNames = "tags", key = "#userId")
     public List<Tag> listAll(Long userId) {
         return tagRepository.findAll(userId);
     }
@@ -32,7 +34,7 @@ public class TagApplicationService {
     }
 
     @Transactional
-    @CacheEvict(value = "tags", allEntries = true)
+    @CacheEvict(cacheNames = "tags", key = "#tag.userId")
     public Tag create(Tag tag) {
         if (!tag.isValid()) {
             throw new IllegalArgumentException("标签名称不能为空");
@@ -44,7 +46,7 @@ public class TagApplicationService {
     }
 
     @Transactional
-    @CacheEvict(value = "tags", allEntries = true)
+    @CacheEvict(cacheNames = "tags", key = "#userId")
     public Tag update(Long id, Tag data, Long userId) {
         Tag existing = getById(id, userId);
         if (data.getName() != null && !data.getName().equals(existing.getName())) {
@@ -58,7 +60,7 @@ public class TagApplicationService {
     }
 
     @Transactional
-    @CacheEvict(value = "tags", allEntries = true)
+    @CacheEvict(cacheNames = "tags", key = "#userId")
     public void delete(Long id, Long userId) {
         getById(id, userId);
         tagRepository.delete(id);

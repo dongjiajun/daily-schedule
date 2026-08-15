@@ -89,6 +89,19 @@ CREATE TABLE IF NOT EXISTS pet_interactions (
     FOREIGN KEY (pet_id) REFERENCES pets(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS pet_rewards (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    pet_id BIGINT NOT NULL,
+    source VARCHAR(32) NOT NULL,
+    ref_id VARCHAR(64) NOT NULL,
+    coin_change INT NOT NULL DEFAULT 0,
+    experience_gain INT NOT NULL DEFAULT 0,
+    mood_change INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (pet_id) REFERENCES pets(id) ON DELETE CASCADE
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_reward_pet_source_ref ON pet_rewards (pet_id, source, ref_id);
+
 CREATE TABLE IF NOT EXISTS tasks (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT NOT NULL,
@@ -117,4 +130,15 @@ INSERT INTO pet_accessories (name, type, price, effect_mood, effect_hunger, effe
 ('狗粮',     'FOOD', 15,  8, 30,  5),
 ('磨牙棒',   'FOOD', 20,  8, 25,  6),
 ('优质罐头', 'FOOD', 35, 15, 50, 10),
-('玩具球',   'FOOD',  5, 15,  0,  5);
+('玩具球',   'FOOD',  5, 15,  0,  5),
+('年兽皮肤',   'ACCESSORY', 80, 0, 0, 0),
+('麋鹿角',     'ACCESSORY', 30, 0, 0, 0),
+('巫师帽',     'ACCESSORY', 40, 0, 0, 0),
+('玉兔皮肤',   'ACCESSORY', 80, 0, 0, 0),
+('粽子背包',   'ACCESSORY', 50, 0, 0, 0),
+('新年帽',     'ACCESSORY', 40, 0, 0, 0),
+('火鸡帽',     'ACCESSORY', 40, 0, 0, 0),
+('绿帽子',     'ACCESSORY', 30, 0, 0, 0),
+('樱花发饰',   'ACCESSORY', 30, 0, 0, 0),
+('印度象皮肤', 'ACCESSORY', 80, 0, 0, 0),
+('兔耳朵',     'ACCESSORY', 30, 0, 0, 0);

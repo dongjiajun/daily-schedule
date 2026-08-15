@@ -1,6 +1,7 @@
 package com.dailyschedule.api.controller;
 
 import com.dailyschedule.application.todo.TodoApplicationService;
+import com.dailyschedule.domain.tag.Tag;
 import com.dailyschedule.domain.task.Task;
 import com.dailyschedule.domain.task.TaskPriority;
 import com.dailyschedule.domain.task.TaskStatus;
@@ -70,6 +71,26 @@ class TodoControllerTest {
         mockMvc.perform(get("/api/v1/tasks?status=TODO"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$[0].status").value("TODO"));
+    }
+
+    @Test
+    @DisplayName("GET /api/v1/tasks → 响应包含标签数组")
+    void listTasks_shouldReturnTags() throws Exception {
+        Task task = sampleTask(1L, "带标签任务", TaskStatus.TODO);
+        Tag tag = new Tag();
+        tag.setId(11L);
+        tag.setName("工作");
+        tag.setColor("#ff0000");
+        task.setTags(List.of(tag));
+
+        when(todoAppService.listTasks(isNull(), isNull(), isNull()))
+            .thenReturn(List.of(task));
+
+        mockMvc.perform(get("/api/v1/tasks"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$[0].tags[0].name").value("工作"))
+            .andExpect(jsonPath("$[0].tags[0].color").value("#ff0000"))
+            .andExpect(jsonPath("$[0].tags[0].id").value(11));
     }
 
     @Test

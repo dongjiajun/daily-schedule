@@ -1,5 +1,6 @@
 package com.dailyschedule.application.auth;
 
+import com.dailyschedule.api.exception.ResourceNotFoundException;
 import com.dailyschedule.domain.category.Category;
 import com.dailyschedule.domain.category.CategoryRepository;
 import com.dailyschedule.domain.user.PasswordHasher;
@@ -107,7 +108,7 @@ public class AuthApplicationService {
 
     public User currentUser(Long userId) {
         return userRepository.findById(userId)
-            .orElseThrow(() -> new IllegalStateException("当前用户已不存在"));
+            .orElseThrow(() -> new ResourceNotFoundException("当前用户已不存在"));
     }
 
     private Tokens issueTokens(User user, LocalDateTime now) {

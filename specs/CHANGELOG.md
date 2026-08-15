@@ -8,6 +8,34 @@
 
 ---
 
+## [3.5.0] — 2026-08-15
+
+宠物装扮系统（MINOR）：配饰装备语义落地——购买即装备（覆盖旧装备）、取下端点、11 个节日配饰种子。
+
+### Added — 宠物
+- `DELETE /pets/me/accessory` — 取下当前配饰（幂等，未装备时同样 204）
+
+### Modified — 商店
+- `PurchaseResult` 新增可选字段 `equippedAccessoryId`（装备购买时回传配饰 id，FOOD 购买为 null）——向后兼容
+- 购买语义分流：`ACCESSORY` 物品购买即装备（写入 `pets.current_accessory`，quantity 固定 1），`FOOD` 保持即时消费
+
+### Added — 数据库
+- `V8__seed_pet_accessories.sql` — 11 个节日配饰种子（年兽皮肤/麋鹿角/巫师帽/玉兔皮肤/粽子背包/新年帽/火鸡帽/绿帽子/樱花发饰/印度象皮肤/兔耳朵），名称与前端 `themeMapping.petAccessory` 对齐
+
+---
+
+## [3.4.0] — 2026-08-14
+
+宠物经济闭环（MINOR）：专注币收入来源落地，任务/日程完成、专注、签到、习惯打卡发放奖励；日程取消产生一次性心情惩罚。
+
+### Added — 宠物
+- `POST /pets/me/rewards` — 幂等行为奖励领取（`GrantRewardRequest { source, refId }` → `RewardResult { granted, coinChange, experienceGain, moodChange, newCoins, newExperience, newMood }`）。`granted=false` 表示未发放（无宠物或幂等键已命中），重复请求不重复发放。
+
+### Added — 数据库
+- `pet_rewards` 表（V7 迁移）— 奖励发放记录，`UNIQUE (pet_id, source, ref_id)` 幂等键。
+
+---
+
 ## [3.3.4] — 2026-08-02
 
 无 API 契约变更（纯前端宠物健壮性收尾：兴趣区保鲜期 15s → 45s + 惰性过期、游走节奏与渲染解耦、SVG transform 格式清理）。版本号随前端发布同步。

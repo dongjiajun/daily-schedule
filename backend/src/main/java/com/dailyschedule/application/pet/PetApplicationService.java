@@ -1,37 +1,36 @@
 package com.dailyschedule.application.pet;
 
+import com.dailyschedule.api.exception.BusinessException;
 import com.dailyschedule.api.exception.ResourceNotFoundException;
 import com.dailyschedule.domain.pet.*;
-import com.dailyschedule.infrastructure.persistence.mapper.PetAccessoryMapper;
-import com.dailyschedule.infrastructure.persistence.mapper.PetInteractionMapper;
-import com.dailyschedule.infrastructure.persistence.po.PetAccessoryPO;
-import com.dailyschedule.infrastructure.persistence.po.PetInteractionPO;
 import com.dailyschedule.infrastructure.security.CurrentUserService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class PetApplicationService {
 
     private final PetRepository petRepository;
     private final PetDomainService domainService;
-    private final PetAccessoryMapper accessoryMapper;
-    private final PetInteractionMapper interactionMapper;
+    private final PetAccessoryRepository accessoryRepository;
+    private final PetInteractionRepository interactionRepository;
+    private final PetRewardRepository rewardRepository;
     private final CurrentUserService currentUserService;
 
     public PetApplicationService(PetRepository petRepository,
                                  PetDomainService domainService,
-                                 PetAccessoryMapper accessoryMapper,
-                                 PetInteractionMapper interactionMapper,
+                                 PetAccessoryRepository accessoryRepository,
+                                 PetInteractionRepository interactionRepository,
+                                 PetRewardRepository rewardRepository,
                                  CurrentUserService currentUserService) {
         this.petRepository = petRepository;
         this.domainService = domainService;
-        this.accessoryMapper = accessoryMapper;
-        this.interactionMapper = interactionMapper;
+        this.accessoryRepository = accessoryRepository;
+        this.interactionRepository = interactionRepository;
+        this.rewardRepository = rewardRepository;
         this.currentUserService = currentUserService;
     }
 
@@ -40,7 +39,7 @@ public class PetApplicationService {
         Long userId = currentUserService.getCurrentUserId();
 
         if (petRepository.findByUserId(userId).isPresent()) {
-            throw new IllegalStateException("已有宠物，不可重复创建");
+            throw new BusinessException("已有宠物，不可重复创建");
         }
 
         Pet pet = new Pet();
@@ -86,20 +85,17 @@ public class PetApplicationService {
         if (type == InteractionType.FEED) {
             if (itemId == null) {
                 // 默认使用第一个可用食物（最便宜的）
-                List<PetAccessoryPO> foods = accessoryMapper.selectAllShopItems()
+                List<ShopItem> foods = accessoryRepository.findAllShopItems()
                     .stream()
                     .filter(a -> "FOOD".equals(a.getType()))
                     .toList();
                 if (foods.isEmpty()) {
-                    throw new IllegalStateException("商店中没有可用的食物");
+                    throw new BusinessException("商店中没有可用的食物");
                 }
-                item = toShopItem(foods.get(0));
+                item = foods.get(0);
             } else {
-                PetAccessoryPO po = accessoryMapper.selectById(itemId);
-                if (po == null) {
-                    throw new ResourceNotFoundException("物品不存在: " + itemId);
-                }
-                item = toShopItem(po);
+                item = accessoryRepository.findById(itemId)
+                    .orElseThrow(() -> new ResourceNotFoundException("物品不存在: " + itemId));
             }
         }
 
@@ -107,14 +103,7 @@ public class PetApplicationService {
         pet.applyInteraction(result);
 
         // 记录互动
-        PetInteractionPO record = new PetInteractionPO();
-        record.setPetId(pet.getId());
-        record.setType(type.name());
-        record.setQuantity(1);
-        record.setMoodChange(result.getMoodChange());
-        record.setHungerChange(result.getHungerChange());
-        record.setExperienceGain(result.getExperienceGain());
-        interactionMapper.insert(record);
+        interactionRepository.save(PetInteraction.of(pet.getId(), type, result));
 
         petRepository.save(pet);
         return result;
@@ -122,61 +111,77 @@ public class PetApplicationService {
 
     @Transactional(readOnly = true)
     public List<ShopItem> getShopItems() {
-        return accessoryMapper.selectAllShopItems()
-            .stream()
-            .map(this::toShopItem)
-            .collect(Collectors.toList());
+        return accessoryRepository.findAllShopItems();
     }
 
     @Transactional
     public PurchaseResult purchase(Long itemId, int quantity) {
         Pet pet = getMyPet();
 
-        PetAccessoryPO po = accessoryMapper.selectById(itemId);
-        if (po == null) {
-            throw new ResourceNotFoundException("物品不存在: " + itemId);
-        }
+        ShopItem item = accessoryRepository.findById(itemId)
+            .orElseThrow(() -> new ResourceNotFoundException("物品不存在: " + itemId));
 
-        int totalCost = po.getPrice() * quantity;
+        int totalCost = item.getPrice() * quantity;
         if (pet.getCoins() < totalCost) {
             throw new IllegalArgumentException("专注币不足，需要 " + totalCost + "，当前 " + pet.getCoins());
         }
 
-        // 即时消费模式：购买即使用，效果立即应用
-        int moodGain = po.getEffectMood() * quantity;
-        int hungerGain = po.getEffectHunger() * quantity;
-        int expGain = po.getEffectExperience() * quantity;
-
-        pet.setCoins(pet.getCoins() - totalCost);
-        pet.setMood(Math.min(100, pet.getMood() + moodGain));
-        pet.setHunger(Math.min(100, pet.getHunger() + hungerGain));
-        pet.setExperience(pet.getExperience() + expGain);
-        pet.setLevel(PetDomainService.calculateLevel(pet.getExperience()));
-        pet.setLastInteractedAt(LocalDateTime.now());
+        boolean isAccessory = "ACCESSORY".equals(item.getType());
+        // 数值计算收口领域层（含 ACCESSORY quantity==1 校验），钳制/等级由 applyInteraction 统一应用
+        InteractionResult purchaseResult = domainService.purchase(pet, item, quantity);
+        if (isAccessory) {
+            // 购买即装备：覆盖旧装备（无库存概念）
+            pet.setCurrentAccessory(item.getId());
+        }
+        pet.applyInteraction(purchaseResult);
 
         petRepository.save(pet);
 
         PurchaseResult result = new PurchaseResult();
         result.setSuccess(true);
-        result.setItemName(po.getName());
+        result.setItemName(item.getName());
         result.setQuantity(quantity);
         result.setTotalCost(totalCost);
         result.setNewCoins(pet.getCoins());
         result.setNewMood(pet.getMood());
         result.setNewHunger(pet.getHunger());
         result.setNewExperience(pet.getExperience());
+        if (isAccessory) {
+            result.setEquippedAccessoryId(item.getId());
+        }
         return result;
     }
 
-    private ShopItem toShopItem(PetAccessoryPO po) {
-        ShopItem item = new ShopItem();
-        item.setId(po.getId());
-        item.setName(po.getName());
-        item.setType(po.getType());
-        item.setPrice(po.getPrice());
-        item.setEffectMood(po.getEffectMood());
-        item.setEffectHunger(po.getEffectHunger());
-        item.setEffectExperience(po.getEffectExperience());
-        return item;
+    /** 取下当前配饰（幂等：未装备时同样成功）。 */
+    @Transactional
+    public void unequip() {
+        Pet pet = getMyPet();
+        // updateById 默认跳过 null 字段，需走仓储显式 SET NULL
+        petRepository.clearCurrentAccessory(pet.getId());
+        pet.setCurrentAccessory(null);
+    }
+
+    /**
+     * 幂等发放行为奖励（完成日程/任务/专注/签到/习惯 → +币+经验；取消 → 心情负面）。
+     * 幂等键 (pet_id, source, refId)：重复发放返回 granted=false，不抛异常；
+     * 无宠物时同样返回 granted=false，不阻断调用方（如任务/日程主流程）。
+     */
+    @Transactional
+    public RewardResult grantReward(RewardSource source, String refId) {
+        Long userId = currentUserService.getCurrentUserId();
+        Pet pet = petRepository.findByUserId(userId).orElse(null);
+        if (pet == null) {
+            return RewardResult.notGranted(source);
+        }
+        if (rewardRepository.existsBySourceAndRefId(pet.getId(), source, refId)) {
+            return RewardResult.notGranted(source);
+        }
+
+        InteractionResult interaction = domainService.grant(pet, source);
+        pet.applyInteraction(interaction);
+
+        petRepository.save(pet);
+        rewardRepository.save(PetReward.of(pet.getId(), source, refId, interaction));
+        return RewardResult.granted(source, interaction);
     }
 }

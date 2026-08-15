@@ -4,6 +4,21 @@ spring:
   jackson:
     date-format: yyyy-MM-dd HH:mm:ss
     time-zone: Asia/Shanghai
+  cache:
+    type: caffeine
+    caffeine:
+      spec: expireAfterWrite=5m
+
+# CORS 允许源（逗号分隔 origin patterns；prod 由 CORS_ORIGINS 环境变量注入）
+cors:
+  allowed-origin-patterns: http://localhost:*
+
+# 可观测性：仅暴露 health 探活端点（SecurityConfig 显式放行 /actuator/health）
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
 
 server:
   port: ${SERVER_PORT:8080}

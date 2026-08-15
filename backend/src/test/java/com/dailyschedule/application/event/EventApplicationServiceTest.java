@@ -1,11 +1,13 @@
 package com.dailyschedule.application.event;
 
 import com.dailyschedule.api.exception.ResourceNotFoundException;
+import com.dailyschedule.application.pet.PetApplicationService;
 import com.dailyschedule.domain.event.Event;
 import com.dailyschedule.domain.event.EventDomainService;
 import com.dailyschedule.domain.event.EventFilter;
 import com.dailyschedule.domain.event.EventRepository;
 import com.dailyschedule.domain.event.EventStatus;
+import com.dailyschedule.domain.pet.RewardSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -29,12 +31,15 @@ class EventApplicationServiceTest {
     @Mock
     private EventRepository eventRepository;
 
+    @Mock
+    private PetApplicationService petApplicationService;
+
     private EventApplicationService appService;
     private final EventDomainService domainService = new EventDomainService();
 
     @BeforeEach
     void setUp() {
-        appService = new EventApplicationService(eventRepository, domainService);
+        appService = new EventApplicationService(eventRepository, domainService, petApplicationService);
     }
 
     @Test
@@ -146,5 +151,82 @@ class EventApplicationServiceTest {
             .isInstanceOf(ResourceNotFoundException.class)
             .hasMessageContaining("日程不存在");
         verify(eventRepository, never()).delete(any());
+    }
+
+    // ─── 宠物奖励挂钩 ───
+
+    @Test
+    @DisplayName("update → PLANNED 迁移为 COMPLETED → 发放 EVENT_COMPLETED 奖励")
+    void update_plannedToCompleted_grantsReward() {
+        Event existing = new Event("周会",
+            LocalDateTime.of(2026, 5, 10, 9, 0),
+            LocalDateTime.of(2026, 5, 10, 10, 0));
+        existing.setId(5L);
+        existing.setUserId(1L);
+        existing.setStatus(EventStatus.PLANNED);
+        when(eventRepository.findById(5L)).thenReturn(Optional.of(existing));
+        when(eventRepository.save(any(Event.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Event data = new Event("周会",
+            LocalDateTime.of(2026, 5, 10, 9, 0),
+            LocalDateTime.of(2026, 5, 10, 10, 0));
+        data.setStatus(EventStatus.COMPLETED);
+
+        Event result = appService.update(5L, data, 1L);
+        assertThat(result.getStatus()).isEqualTo(EventStatus.COMPLETED);
+        verify(petApplicationService).grantReward(RewardSource.EVENT_COMPLETED, "5");
+    }
+
+    @Test
+    @DisplayName("update → 已 COMPLETED 再次更新 → 不重复发放")
+    void update_completedToCompleted_noReward() {
+        Event existing = new Event("周会",
+            LocalDateTime.of(2026, 5, 10, 9, 0),
+            LocalDateTime.of(2026, 5, 10, 10, 0));
+        existing.setId(5L);
+        existing.setUserId(1L);
+        existing.setStatus(EventStatus.COMPLETED);
+        when(eventRepository.findById(5L)).thenReturn(Optional.of(existing));
+        when(eventRepository.save(any(Event.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Event data = new Event("周会",
+            LocalDateTime.of(2026, 5, 10, 9, 0),
+            LocalDateTime.of(2026, 5, 10, 10, 0));
+        data.setStatus(EventStatus.COMPLETED);
+
+        appService.update(5L, data, 1L);
+        verify(petApplicationService, never()).grantReward(any(), anyString());
+    }
+
+    @Test
+    @DisplayName("delete → 删除 PLANNED 日程 → 发放 EVENT_CANCELLED 负面奖励")
+    void delete_planned_grantsCancellationReward() {
+        Event existing = new Event("要取消的日程",
+            LocalDateTime.of(2026, 5, 10, 9, 0),
+            LocalDateTime.of(2026, 5, 10, 10, 0));
+        existing.setId(3L);
+        existing.setUserId(1L);
+        existing.setStatus(EventStatus.PLANNED);
+        when(eventRepository.findById(3L)).thenReturn(Optional.of(existing));
+
+        appService.delete(3L, 1L);
+        verify(eventRepository).delete(3L);
+        verify(petApplicationService).grantReward(RewardSource.EVENT_CANCELLED, "3");
+    }
+
+    @Test
+    @DisplayName("delete → 删除 COMPLETED 日程 → 不惩罚")
+    void delete_completed_noReward() {
+        Event existing = new Event("已完成日程",
+            LocalDateTime.of(2026, 5, 10, 9, 0),
+            LocalDateTime.of(2026, 5, 10, 10, 0));
+        existing.setId(4L);
+        existing.setUserId(1L);
+        existing.setStatus(EventStatus.COMPLETED);
+        when(eventRepository.findById(4L)).thenReturn(Optional.of(existing));
+
+        appService.delete(4L, 1L);
+        verify(eventRepository).delete(4L);
+        verify(petApplicationService, never()).grantReward(any(), anyString());
     }
 }

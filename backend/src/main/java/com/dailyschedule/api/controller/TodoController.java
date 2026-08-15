@@ -8,8 +8,9 @@ import com.dailyschedule.api.generated.dto.TaskProfile;
 import com.dailyschedule.api.generated.dto.UpdateTaskRequest;
 import com.dailyschedule.application.todo.TodoApplicationService;
 import com.dailyschedule.domain.task.Task;
-import com.dailyschedule.domain.task.TaskPriority;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,6 +21,8 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/v1")
 public class TodoController implements TasksApi {
 
+    private static final Logger log = LoggerFactory.getLogger(TodoController.class);
+
     private final TodoApplicationService todoAppService;
 
     public TodoController(TodoApplicationService todoAppService) {
@@ -28,6 +31,7 @@ public class TodoController implements TasksApi {
 
     @Override
     public List<TaskProfile> listTasks(String status, String priority, Long tagId) {
+        log.info("listTasks: status={} priority={} tagId={}", status, priority, tagId);
         List<Task> tasks = todoAppService.listTasks(status, priority, tagId);
         return tasks.stream()
             .map(TodoAssembler::toTaskProfile)
@@ -37,46 +41,28 @@ public class TodoController implements TasksApi {
     @Override
     @ResponseStatus(HttpStatus.CREATED)
     public TaskProfile createTask(@Valid CreateTaskRequest request) {
-        Task task = new Task();
-        task.setTitle(request.getTitle());
-        task.setDescription(request.getDescription());
-        if (request.getPriority() != null) {
-            task.setPriority(TaskPriority.fromString(request.getPriority().getValue()));
-        }
-        task.setDueDate(request.getDueDate());
-        if (request.getTagIds() != null) {
-            task.setTagIds(request.getTagIds());
-        }
-
-        Task created = todoAppService.createTask(task);
+        log.info("createTask: title={}", request.getTitle());
+        Task created = todoAppService.createTask(TodoAssembler.toDomain(request));
         return TodoAssembler.toTaskProfile(created);
     }
 
     @Override
     public TaskProfile updateTask(Long id, @Valid UpdateTaskRequest request) {
-        Task updates = new Task();
-        updates.setTitle(request.getTitle());
-        updates.setDescription(request.getDescription());
-        if (request.getPriority() != null) {
-            updates.setPriority(TaskPriority.fromString(request.getPriority().getValue()));
-        }
-        updates.setDueDate(request.getDueDate());
-        if (request.getTagIds() != null) {
-            updates.setTagIds(request.getTagIds());
-        }
-
-        Task updated = todoAppService.updateTask(id, updates);
+        log.info("updateTask: id={}", id);
+        Task updated = todoAppService.updateTask(id, TodoAssembler.toDomain(request));
         return TodoAssembler.toTaskProfile(updated);
     }
 
     @Override
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteTask(Long id) {
+        log.info("deleteTask: id={}", id);
         todoAppService.deleteTask(id);
     }
 
     @Override
     public TaskProfile moveTask(Long id, @Valid MoveTaskRequest request) {
+        log.info("moveTask: id={} status={}", id, request.getStatus());
         int sortOrder = request.getSortOrder() != null ? request.getSortOrder() : 0;
         Task moved = todoAppService.moveTask(id, request.getStatus().getValue(), sortOrder);
         return TodoAssembler.toTaskProfile(moved);

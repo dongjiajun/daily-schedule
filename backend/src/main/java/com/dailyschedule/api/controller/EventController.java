@@ -11,6 +11,8 @@ import com.dailyschedule.domain.event.Event;
 import com.dailyschedule.domain.event.EventFilter;
 import com.dailyschedule.infrastructure.security.CurrentUserService;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,6 +22,8 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1")
 public class EventController implements EventsApi {
+
+    private static final Logger log = LoggerFactory.getLogger(EventController.class);
 
     private final EventApplicationService eventAppService;
     private final CurrentUserService currentUserService;
@@ -32,8 +36,10 @@ public class EventController implements EventsApi {
     @Override
     @ResponseStatus(HttpStatus.CREATED)
     public EventResponse createEvent(@Valid @RequestBody EventCreateRequest request) {
+        Long userId = currentUserService.getCurrentUserId();
+        log.info("createEvent: userId={} title={}", userId, request.getTitle());
         Event event = EventAssembler.toDomain(request);
-        event.setUserId(currentUserService.getCurrentUserId());
+        event.setUserId(userId);
         Event saved = eventAppService.create(event);
         return EventAssembler.toResponse(saved);
     }
@@ -41,12 +47,16 @@ public class EventController implements EventsApi {
     @Override
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteEvent(Long id) {
-        eventAppService.delete(id, currentUserService.getCurrentUserId());
+        Long userId = currentUserService.getCurrentUserId();
+        log.info("deleteEvent: userId={} id={}", userId, id);
+        eventAppService.delete(id, userId);
     }
 
     @Override
     public EventResponse getEventById(Long id) {
-        Event event = eventAppService.getById(id, currentUserService.getCurrentUserId());
+        Long userId = currentUserService.getCurrentUserId();
+        log.info("getEventById: userId={} id={}", userId, id);
+        Event event = eventAppService.getById(id, userId);
         return EventAssembler.toResponse(event);
     }
 
@@ -55,6 +65,7 @@ public class EventController implements EventsApi {
                                           Long tagId, EventStatus status,
                                           String keyword, Integer page, Integer size) {
         Long userId = currentUserService.getCurrentUserId();
+        log.info("listEvents: userId={} start={} end={}", userId, start, end);
         int p = page != null && page > 0 ? page : 1;
         int s = size != null && size > 0 ? size : 50;
         EventFilter filter = new EventFilter(categoryId, tagId, EventAssembler.toDomainStatus(status), keyword);
@@ -64,8 +75,10 @@ public class EventController implements EventsApi {
 
     @Override
     public EventResponse updateEvent(Long id, @Valid @RequestBody EventUpdateRequest request) {
+        Long userId = currentUserService.getCurrentUserId();
+        log.info("updateEvent: userId={} id={}", userId, id);
         Event data = EventAssembler.toDomain(request);
-        Event updated = eventAppService.update(id, data, currentUserService.getCurrentUserId());
+        Event updated = eventAppService.update(id, data, userId);
         return EventAssembler.toResponse(updated);
     }
 }

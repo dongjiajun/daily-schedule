@@ -17,6 +17,8 @@ import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -139,5 +141,83 @@ class PetControllerTest {
                 .content("{\"itemId\":1,\"quantity\":1}"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    @DisplayName("POST /api/v1/shop/purchase → 购买配饰回传 equippedAccessoryId")
+    void purchase_accessory_shouldReturnEquippedId() throws Exception {
+        when(currentUserService.getCurrentUserId()).thenReturn(1L);
+        PurchaseResult result = new PurchaseResult();
+        result.setSuccess(true);
+        result.setItemName("巫师帽");
+        result.setTotalCost(40);
+        result.setNewCoins(60);
+        result.setEquippedAccessoryId(7L);
+        when(petAppService.purchase(anyLong(), any(Integer.class))).thenReturn(result);
+
+        mockMvc.perform(post("/api/v1/shop/purchase")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"itemId\":7,\"quantity\":1}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.equippedAccessoryId").value(7));
+    }
+
+    @Test
+    @DisplayName("DELETE /api/v1/pets/me/accessory → 取下成功 204")
+    void unequipAccessory_shouldReturn204() throws Exception {
+        when(currentUserService.getCurrentUserId()).thenReturn(1L);
+        doNothing().when(petAppService).unequip();
+
+        mockMvc.perform(delete("/api/v1/pets/me/accessory"))
+            .andExpect(status().isNoContent());
+        verify(petAppService).unequip();
+    }
+
+    @Test
+    @DisplayName("POST /api/v1/pets/me/rewards → 首次领取 granted=true")
+    void grantPetReward_shouldReturnGranted() throws Exception {
+        when(currentUserService.getCurrentUserId()).thenReturn(1L);
+        RewardResult result = new RewardResult();
+        result.setGranted(true);
+        result.setCoinChange(10);
+        result.setExperienceGain(20);
+        result.setMoodChange(0);
+        result.setNewCoins(110);
+        result.setNewExperience(20);
+        result.setNewMood(80);
+        when(petAppService.grantReward(any(), any())).thenReturn(result);
+
+        mockMvc.perform(post("/api/v1/pets/me/rewards")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"source\":\"TASK_COMPLETED\",\"refId\":\"42\"}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.granted").value(true))
+            .andExpect(jsonPath("$.coinChange").value(10))
+            .andExpect(jsonPath("$.newCoins").value(110));
+    }
+
+    @Test
+    @DisplayName("POST /api/v1/pets/me/rewards → 重复领取 granted=false")
+    void grantPetReward_duplicate_shouldReturnNotGranted() throws Exception {
+        when(currentUserService.getCurrentUserId()).thenReturn(1L);
+        RewardResult result = new RewardResult();
+        result.setGranted(false);
+        when(petAppService.grantReward(any(), any())).thenReturn(result);
+
+        mockMvc.perform(post("/api/v1/pets/me/rewards")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"source\":\"TASK_COMPLETED\",\"refId\":\"42\"}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.granted").value(false))
+            .andExpect(jsonPath("$.coinChange").value(0));
+    }
+
+    @Test
+    @DisplayName("POST /api/v1/pets/me/rewards → 非法 source → 400")
+    void grantPetReward_invalidSource_shouldReturn400() throws Exception {
+        mockMvc.perform(post("/api/v1/pets/me/rewards")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"source\":\"NOPE\",\"refId\":\"x\"}"))
+            .andExpect(status().isBadRequest());
     }
 }

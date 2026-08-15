@@ -1,10 +1,13 @@
 package com.dailyschedule.application.event;
 
 import com.dailyschedule.api.exception.ResourceNotFoundException;
+import com.dailyschedule.application.pet.PetApplicationService;
 import com.dailyschedule.domain.event.Event;
 import com.dailyschedule.domain.event.EventDomainService;
 import com.dailyschedule.domain.event.EventFilter;
 import com.dailyschedule.domain.event.EventRepository;
+import com.dailyschedule.domain.event.EventStatus;
+import com.dailyschedule.domain.pet.RewardSource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,10 +19,13 @@ public class EventApplicationService {
 
     private final EventRepository eventRepository;
     private final EventDomainService domainService;
+    private final PetApplicationService petApplicationService;
 
-    public EventApplicationService(EventRepository eventRepository, EventDomainService domainService) {
+    public EventApplicationService(EventRepository eventRepository, EventDomainService domainService,
+                                   PetApplicationService petApplicationService) {
         this.eventRepository = eventRepository;
         this.domainService = domainService;
+        this.petApplicationService = petApplicationService;
     }
 
     public PagedEvents listByRange(LocalDateTime start, LocalDateTime end, Long userId,
@@ -55,17 +61,29 @@ public class EventApplicationService {
     @Transactional
     public Event update(Long id, Event data, Long userId) {
         Event existing = getById(id, userId);
+        EventStatus previousStatus = existing.getStatus();
         existing.update(data);
         if (!existing.isValid()) {
             throw new IllegalArgumentException("更新后日程数据不合法");
         }
-        return eventRepository.save(existing);
+        Event saved = eventRepository.save(existing);
+
+        // 状态迁移挂钩：非 COMPLETED → COMPLETED 发放宠物奖励（幂等，同事务）
+        if (saved.getStatus() == EventStatus.COMPLETED && previousStatus != EventStatus.COMPLETED) {
+            petApplicationService.grantReward(RewardSource.EVENT_COMPLETED, String.valueOf(id));
+        }
+        return saved;
     }
 
     @Transactional
     public void delete(Long id, Long userId) {
-        getById(id, userId);
+        Event existing = getById(id, userId);
         eventRepository.delete(id);
+
+        // 取消负面奖励：删除未完成的日程 → 心情 -10（按 eventId 幂等一次）
+        if (existing.getStatus() != EventStatus.COMPLETED) {
+            petApplicationService.grantReward(RewardSource.EVENT_CANCELLED, String.valueOf(id));
+        }
     }
 
     public record PagedEvents(List<Event> events, long total, int page, int size) {}

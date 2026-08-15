@@ -1,6 +1,8 @@
 package com.dailyschedule.application.todo;
 
 import com.dailyschedule.api.exception.ResourceNotFoundException;
+import com.dailyschedule.application.pet.PetApplicationService;
+import com.dailyschedule.domain.pet.RewardSource;
 import com.dailyschedule.domain.task.*;
 import com.dailyschedule.infrastructure.security.CurrentUserService;
 import org.springframework.stereotype.Service;
@@ -13,13 +15,16 @@ public class TodoApplicationService {
 
     private final TaskRepository taskRepository;
     private final TaskDomainService domainService;
+    private final PetApplicationService petApplicationService;
     private final CurrentUserService currentUserService;
 
     public TodoApplicationService(TaskRepository taskRepository,
                                    TaskDomainService domainService,
+                                   PetApplicationService petApplicationService,
                                    CurrentUserService currentUserService) {
         this.taskRepository = taskRepository;
         this.domainService = domainService;
+        this.petApplicationService = petApplicationService;
         this.currentUserService = currentUserService;
     }
 
@@ -68,7 +73,9 @@ public class TodoApplicationService {
         if (updates.getDueDate() != null) {
             task.setDueDate(updates.getDueDate());
         }
-        if (updates.getTagIds() != null) {
+        // 生成 DTO 的 tagIds 默认为空列表，"未提供"与"清空"不可区分：
+        // 空列表视为"未触及标签"（保留既有），显式非空列表为替换语义。
+        if (updates.getTagIds() != null && !updates.getTagIds().isEmpty()) {
             task.setTagIds(updates.getTagIds());
         }
 
@@ -84,10 +91,16 @@ public class TodoApplicationService {
     @Transactional
     public Task moveTask(Long id, String status, int sortOrder) {
         Task task = findOwnTask(id);
+        TaskStatus previousStatus = task.getStatus();
         TaskStatus targetStatus = TaskStatus.fromString(status);
         taskRepository.updateStatus(id, targetStatus, sortOrder);
         task.setStatus(targetStatus);
         task.setSortOrder(sortOrder);
+
+        // 完成挂钩：非 DONE → DONE 迁移发放宠物奖励（幂等，同事务；无宠物时 grantReward 静默跳过）
+        if (targetStatus == TaskStatus.DONE && previousStatus != TaskStatus.DONE) {
+            petApplicationService.grantReward(RewardSource.TASK_COMPLETED, String.valueOf(id));
+        }
         return task;
     }
 

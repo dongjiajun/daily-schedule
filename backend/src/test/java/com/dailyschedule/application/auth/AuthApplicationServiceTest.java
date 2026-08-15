@@ -1,5 +1,6 @@
 package com.dailyschedule.application.auth;
 
+import com.dailyschedule.api.exception.ResourceNotFoundException;
 import com.dailyschedule.application.auth.AuthApplicationService.DuplicateAccountException;
 import com.dailyschedule.application.auth.AuthApplicationService.InvalidCredentialsException;
 import com.dailyschedule.domain.category.Category;
@@ -241,11 +242,11 @@ class AuthApplicationServiceTest {
     }
 
     @Test
-    @DisplayName("currentUser：repo 找不到 → IllegalStateException")
+    @DisplayName("currentUser：repo 找不到 → ResourceNotFoundException")
     void currentUser_notFound_throws() {
         when(userRepository.findById(99L)).thenReturn(Optional.empty());
         assertThatThrownBy(() -> svc.currentUser(99L))
-            .isInstanceOf(IllegalStateException.class);
+            .isInstanceOf(ResourceNotFoundException.class);
     }
 
     private static User activeUser(Long id, String username, String email) {

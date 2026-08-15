@@ -3,8 +3,11 @@ package com.dailyschedule.infrastructure.persistence.repository;
 import com.dailyschedule.domain.task.Task;
 import com.dailyschedule.domain.task.TaskPriority;
 import com.dailyschedule.domain.task.TaskStatus;
+import com.dailyschedule.infrastructure.persistence.mapper.TagMapper;
 import com.dailyschedule.infrastructure.persistence.mapper.TaskMapper;
 import com.dailyschedule.infrastructure.persistence.mapper.TaskTagMapper;
+import com.dailyschedule.infrastructure.persistence.mapper.TaskTagMapper.TaskTagJoinRow;
+import com.dailyschedule.infrastructure.persistence.po.TagPO;
 import com.dailyschedule.infrastructure.persistence.po.TaskPO;
 import com.dailyschedule.infrastructure.persistence.po.TaskTagPO;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,6 +24,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -32,11 +36,17 @@ class TaskRepositoryImplTest {
     @Mock
     private TaskTagMapper taskTagMapper;
 
+    @Mock
+    private TagMapper tagMapper;
+
     private TaskRepositoryImpl repository;
 
     @BeforeEach
     void setUp() {
-        repository = new TaskRepositoryImpl(taskMapper, taskTagMapper);
+        repository = new TaskRepositoryImpl(taskMapper, taskTagMapper, tagMapper);
+        // loadWithTags 默认无标签关联
+        lenient().when(taskTagMapper.selectTagsByTaskIds(any())).thenReturn(List.of());
+        lenient().when(tagMapper.selectBatchIds(anyList())).thenReturn(List.of());
     }
 
     @Test
@@ -73,7 +83,46 @@ class TaskRepositoryImplTest {
     }
 
     @Test
-    @DisplayName("save → insert → 设置 id 和时间戳")
+    @DisplayName("findByUserId → 批量回填标签 → tags 按任务分组")
+    void findByUserId_loadsTagsByGroup() {
+        TaskPO po1 = samplePO(1L, 100L, "任务A", "TODO", "MEDIUM");
+        TaskPO po2 = samplePO(2L, 100L, "任务B", "TODO", "MEDIUM");
+        when(taskMapper.selectByFilter(100L, "TODO", null, null))
+            .thenReturn(List.of(po1, po2));
+
+        // loadWithTags 传入的是 Map.keySet()（Set），须用 any() 匹配
+        when(taskTagMapper.selectTagsByTaskIds(any())).thenReturn(List.of(
+            joinRow(1L, 11L, "工作", "#ff0000"),
+            joinRow(1L, 12L, "紧急", "#00ff00"),
+            joinRow(2L, 13L, "生活", "#0000ff")
+        ));
+
+        List<Task> results = repository.findByUserId(100L, TaskStatus.TODO, null, null);
+        assertThat(results).hasSize(2);
+        Task taskA = results.stream().filter(t -> t.getId() == 1L).findFirst().orElseThrow();
+        Task taskB = results.stream().filter(t -> t.getId() == 2L).findFirst().orElseThrow();
+        assertThat(taskA.getTags()).hasSize(2);
+        assertThat(taskA.getTags().get(0).getId()).isEqualTo(11L);
+        assertThat(taskA.getTags().get(1).getName()).isEqualTo("紧急");
+        assertThat(taskA.getTagIds()).containsExactlyInAnyOrder(11L, 12L);
+        assertThat(taskB.getTags()).hasSize(1);
+        assertThat(taskB.getTags().get(0).getColor()).isEqualTo("#0000ff");
+        assertThat(taskB.getTagIds()).containsExactly(13L);
+    }
+
+    @Test
+    @DisplayName("findByUserId → 无标签关联 → tags 为空列表")
+    void findByUserId_noTags_returnsEmptyList() {
+        TaskPO po = samplePO(1L, 100L, "无标签任务", "DONE", "MEDIUM");
+        when(taskMapper.selectByFilter(100L, "DONE", null, null)).thenReturn(List.of(po));
+
+        List<Task> results = repository.findByUserId(100L, TaskStatus.DONE, null, null);
+        assertThat(results).hasSize(1);
+        assertThat(results.get(0).getTags()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("save → insert → 设置 id 和时间戳 + 回填标签")
     void save_insert_setsIdAndTimestamps() {
         Task task = new Task();
         task.setUserId(100L);
@@ -90,10 +139,37 @@ class TaskRepositoryImplTest {
             return 1;
         }).when(taskMapper).insert(any(TaskPO.class));
 
+        when(tagMapper.selectBatchIds(List.of(1L, 2L)))
+            .thenReturn(List.of(sampleTagPO(1L, "工作", "#ff0000"), sampleTagPO(2L, "生活", "#0000ff")));
+
         Task saved = repository.save(task);
         assertThat(saved.getId()).isEqualTo(10L);
         assertThat(saved.getCreatedAt()).isNotNull();
+        assertThat(saved.getTags()).hasSize(2);
+        assertThat(saved.getTags().get(0).getName()).isEqualTo("工作");
         verify(taskTagMapper, times(2)).insert(any(TaskTagPO.class));
+    }
+
+    @Test
+    @DisplayName("update → 标签先删后插 + 回填最新关联")
+    void update_replacesTagsAndRefills() {
+        Task task = new Task();
+        task.setId(10L);
+        task.setUserId(100L);
+        task.setTitle("更新任务");
+        task.setStatus(TaskStatus.TODO);
+        task.setPriority(TaskPriority.MEDIUM);
+        task.setTagIds(List.of(3L));
+
+        when(taskMapper.selectById(10L)).thenReturn(samplePO(10L, 100L, "更新任务", "TODO", "MEDIUM"));
+        when(tagMapper.selectBatchIds(List.of(3L)))
+            .thenReturn(List.of(sampleTagPO(3L, "新标签", "#123456")));
+
+        Task updated = repository.update(task);
+        verify(taskTagMapper).deleteByTaskId(10L);
+        verify(taskTagMapper, times(1)).insert(any(TaskTagPO.class));
+        assertThat(updated.getTags()).hasSize(1);
+        assertThat(updated.getTags().get(0).getName()).isEqualTo("新标签");
     }
 
     @Test
@@ -156,5 +232,27 @@ class TaskRepositoryImplTest {
         po.setCreatedAt(LocalDateTime.now());
         po.setUpdatedAt(LocalDateTime.now());
         return po;
+    }
+
+    private TagPO sampleTagPO(Long id, String name, String color) {
+        TagPO po = new TagPO();
+        po.setId(id);
+        po.setName(name);
+        po.setColor(color);
+        po.setUserId(100L);
+        po.setCreatedAt(LocalDateTime.now());
+        po.setUpdatedAt(LocalDateTime.now());
+        return po;
+    }
+
+    private TaskTagJoinRow joinRow(Long taskIdRef, Long tagId, String name, String color) {
+        TaskTagJoinRow row = new TaskTagJoinRow();
+        row.setTaskIdRef(taskIdRef);
+        row.setId(tagId);
+        row.setName(name);
+        row.setColor(color);
+        row.setCreatedAt(LocalDateTime.now());
+        row.setUpdatedAt(LocalDateTime.now());
+        return row;
     }
 }

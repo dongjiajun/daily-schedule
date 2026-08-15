@@ -1,6 +1,8 @@
 package com.dailyschedule.application.todo;
 
 import com.dailyschedule.api.exception.ResourceNotFoundException;
+import com.dailyschedule.application.pet.PetApplicationService;
+import com.dailyschedule.domain.pet.RewardSource;
 import com.dailyschedule.domain.task.*;
 import com.dailyschedule.infrastructure.security.CurrentUserService;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,13 +30,16 @@ class TodoApplicationServiceTest {
     private TaskDomainService domainService;
 
     @Mock
+    private PetApplicationService petApplicationService;
+
+    @Mock
     private CurrentUserService currentUserService;
 
     private TodoApplicationService service;
 
     @BeforeEach
     void setUp() {
-        service = new TodoApplicationService(taskRepository, domainService, currentUserService);
+        service = new TodoApplicationService(taskRepository, domainService, petApplicationService, currentUserService);
     }
 
     // ─── listTasks ───
@@ -108,6 +113,44 @@ class TodoApplicationServiceTest {
     }
 
     @Test
+    @DisplayName("updateTask → tagIds 为空列表（未提供）→ 保留既有标签")
+    void updateTask_emptyTagIds_preservesExistingTags() {
+        when(currentUserService.getCurrentUserId()).thenReturn(1L);
+
+        Task existing = sampleTask(1L, "旧标题", TaskStatus.TODO);
+        existing.setTagIds(List.of(1L, 2L));
+        when(taskRepository.findById(1L)).thenReturn(Optional.of(existing));
+
+        Task updates = new Task();
+        updates.setTitle("新标题");
+        // tagIds 保持默认空列表（生成 DTO 未提供字段时的实际形态）
+
+        when(taskRepository.update(any(Task.class))).thenReturn(existing);
+
+        service.updateTask(1L, updates);
+        assertThat(existing.getTagIds()).containsExactlyInAnyOrder(1L, 2L);
+    }
+
+    @Test
+    @DisplayName("updateTask → 显式非空 tagIds → 替换标签关联")
+    void updateTask_explicitTagIds_replacesAssociations() {
+        when(currentUserService.getCurrentUserId()).thenReturn(1L);
+
+        Task existing = sampleTask(1L, "旧标题", TaskStatus.TODO);
+        existing.setTagIds(List.of(1L, 2L));
+        when(taskRepository.findById(1L)).thenReturn(Optional.of(existing));
+
+        Task updates = new Task();
+        updates.setTitle("新标题");
+        updates.setTagIds(List.of(3L));
+
+        when(taskRepository.update(any(Task.class))).thenReturn(existing);
+
+        service.updateTask(1L, updates);
+        assertThat(existing.getTagIds()).containsExactly(3L);
+    }
+
+    @Test
     @DisplayName("updateTask → 任务不存在 → 抛出 404")
     void updateTask_notFound_throws() {
         when(currentUserService.getCurrentUserId()).thenReturn(1L);
@@ -157,6 +200,41 @@ class TodoApplicationServiceTest {
         assertThat(result.getStatus()).isEqualTo(TaskStatus.DONE);
         assertThat(result.getSortOrder()).isEqualTo(5);
         verify(taskRepository).updateStatus(1L, TaskStatus.DONE, 5);
+    }
+
+    // ─── moveTask 宠物奖励挂钩 ───
+
+    @Test
+    @DisplayName("moveTask → 非 DONE 迁入 DONE → 发放 TASK_COMPLETED 奖励")
+    void moveTask_intoDone_grantsReward() {
+        when(currentUserService.getCurrentUserId()).thenReturn(1L);
+        Task existing = sampleTask(1L, "任务", TaskStatus.TODO);
+        when(taskRepository.findById(1L)).thenReturn(Optional.of(existing));
+
+        service.moveTask(1L, "DONE", 5);
+        verify(petApplicationService).grantReward(RewardSource.TASK_COMPLETED, "1");
+    }
+
+    @Test
+    @DisplayName("moveTask → DONE 同列重排 → 不发放奖励")
+    void moveTask_doneToDone_noReward() {
+        when(currentUserService.getCurrentUserId()).thenReturn(1L);
+        Task existing = sampleTask(1L, "任务", TaskStatus.DONE);
+        when(taskRepository.findById(1L)).thenReturn(Optional.of(existing));
+
+        service.moveTask(1L, "DONE", 8);
+        verify(petApplicationService, never()).grantReward(any(), anyString());
+    }
+
+    @Test
+    @DisplayName("moveTask → 移出 DONE → 不发放奖励")
+    void moveTask_outOfDone_noReward() {
+        when(currentUserService.getCurrentUserId()).thenReturn(1L);
+        Task existing = sampleTask(1L, "任务", TaskStatus.DONE);
+        when(taskRepository.findById(1L)).thenReturn(Optional.of(existing));
+
+        service.moveTask(1L, "TODO", 0);
+        verify(petApplicationService, never()).grantReward(any(), anyString());
     }
 
     private Task sampleTask(Long id, String title, TaskStatus status) {

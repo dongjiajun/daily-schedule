@@ -70,7 +70,7 @@ public class ReminderScheduler {
             try {
                 channel.send(event);
             } catch (Exception e) {
-                log.error("提醒发送失败 id={}: {}", event.getId(), e.getMessage());
+                log.error("提醒发送失败 id={}: {}", event.getId(), e.getMessage(), e);
             }
         }
     }

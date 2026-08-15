@@ -14,6 +14,8 @@ import com.dailyschedule.infrastructure.security.CurrentUserService;
 import com.dailyschedule.infrastructure.security.JwtAuthFilter;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -24,6 +26,8 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 @RestController
 @RequestMapping("/api/v1")
 public class AuthController implements AuthApi {
+
+    private static final Logger log = LoggerFactory.getLogger(AuthController.class);
 
     private final AuthApplicationService authAppService;
     private final CurrentUserService currentUserService;
@@ -37,6 +41,7 @@ public class AuthController implements AuthApi {
     @Override
     @ResponseStatus(HttpStatus.CREATED)
     public LoginResponse register(RegisterRequest request) {
+        log.info("register: username={} email={}", request.getUsername(), request.getEmail());
         Tokens tokens = authAppService.register(new RegisterCommand(
             request.getUsername(),
             request.getEmail(),
@@ -49,6 +54,7 @@ public class AuthController implements AuthApi {
 
     @Override
     public LoginResponse login(LoginRequest request) {
+        log.info("login: usernameOrEmail={}", request.getUsernameOrEmail());
         Tokens tokens = authAppService.login(request.getUsernameOrEmail(), request.getPassword());
         setSseCookie(tokens.accessToken());
         return UserAssembler.toLoginResponse(tokens);
@@ -56,6 +62,7 @@ public class AuthController implements AuthApi {
 
     @Override
     public LoginResponse refreshToken(RefreshRequest request) {
+        log.info("refreshToken");
         Tokens tokens = authAppService.refresh(request.getRefreshToken());
         setSseCookie(tokens.accessToken());
         return UserAssembler.toLoginResponse(tokens);
@@ -64,12 +71,14 @@ public class AuthController implements AuthApi {
     @Override
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void logout() {
+        log.info("logout");
         clearSseCookie();
     }
 
     @Override
     public UserResponse currentUser() {
         Long userId = currentUserService.getCurrentUserId();
+        log.info("currentUser: userId={}", userId);
         return UserAssembler.toResponse(authAppService.currentUser(userId));
     }
 

@@ -4,6 +4,8 @@ spring:
     username: sa
     password:
     driver-class-name: org.h2.Driver
+  cache:
+    type: none
   flyway:
     enabled: false
   sql:

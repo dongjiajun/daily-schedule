@@ -3,6 +3,7 @@ package com.dailyschedule.api.assembler;
 import com.dailyschedule.api.generated.dto.InteractionResult;
 import com.dailyschedule.api.generated.dto.PetProfile;
 import com.dailyschedule.api.generated.dto.PurchaseResult;
+import com.dailyschedule.api.generated.dto.RewardResult;
 import com.dailyschedule.api.generated.dto.ShopItem;
 import com.dailyschedule.domain.pet.Pet;
 
@@ -63,6 +64,20 @@ public class PetAssembler {
             .newCoins(domain.getNewCoins())
             .newMood(domain.getNewMood())
             .newHunger(domain.getNewHunger())
-            .newExperience(domain.getNewExperience());
+            .newExperience(domain.getNewExperience())
+            .equippedAccessoryId(domain.getEquippedAccessoryId());
+    }
+
+    public static RewardResult toRewardResultDto(
+        com.dailyschedule.domain.pet.RewardResult domain) {
+        if (domain == null) return null;
+        return new RewardResult()
+            .granted(domain.isGranted())
+            .coinChange(domain.getCoinChange())
+            .experienceGain(domain.getExperienceGain())
+            .moodChange(domain.getMoodChange())
+            .newCoins(domain.getNewCoins())
+            .newExperience(domain.getNewExperience())
+            .newMood(domain.getNewMood());
     }
 }

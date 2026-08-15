@@ -9,6 +9,8 @@ public class PurchaseResult {
     private int newMood;
     private int newHunger;
     private int newExperience;
+    /** 装备购买时回传所装备配饰 id（FOOD 购买为 null）。 */
+    private Long equippedAccessoryId;
 
     public PurchaseResult() {}
 
@@ -28,4 +30,6 @@ public class PurchaseResult {
     public void setNewHunger(int newHunger) { this.newHunger = newHunger; }
     public int getNewExperience() { return newExperience; }
     public void setNewExperience(int newExperience) { this.newExperience = newExperience; }
+    public Long getEquippedAccessoryId() { return equippedAccessoryId; }
+    public void setEquippedAccessoryId(Long equippedAccessoryId) { this.equippedAccessoryId = equippedAccessoryId; }
 }

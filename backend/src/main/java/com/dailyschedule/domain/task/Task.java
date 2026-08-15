@@ -1,5 +1,7 @@
 package com.dailyschedule.domain.task;
 
+import com.dailyschedule.domain.tag.Tag;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -15,6 +17,8 @@ public class Task {
     private int sortOrder;
     private LocalDate dueDate;
     private List<Long> tagIds = new ArrayList<>();
+    /** 读取路径回填的关联标签（与 Event 双字段模式对齐），写入仍走 tagIds。 */
+    private List<Tag> tags = new ArrayList<>();
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -46,6 +50,8 @@ public class Task {
     public void setDueDate(LocalDate dueDate) { this.dueDate = dueDate; }
     public List<Long> getTagIds() { return tagIds; }
     public void setTagIds(List<Long> tagIds) { this.tagIds = tagIds != null ? tagIds : new ArrayList<>(); }
+    public List<Tag> getTags() { return tags; }
+    public void setTags(List<Tag> tags) { this.tags = tags != null ? tags : new ArrayList<>(); }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }

@@ -2,6 +2,8 @@ package com.dailyschedule.api.controller;
 
 import com.dailyschedule.infrastructure.notification.SseEmitterManager;
 import com.dailyschedule.infrastructure.security.CurrentUserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -16,6 +18,8 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 @RestController
 public class SseController {
 
+    private static final Logger log = LoggerFactory.getLogger(SseController.class);
+
     private final SseEmitterManager sseEmitterManager;
     private final CurrentUserService currentUserService;
 
@@ -28,6 +32,7 @@ public class SseController {
     @GetMapping("/api/v1/sse/notifications")
     public SseEmitter subscribe() {
         Long userId = currentUserService.getCurrentUserId();
+        log.info("sseSubscribe: userId={}", userId);
         return sseEmitterManager.register(userId);
     }
 }
