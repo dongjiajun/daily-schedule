@@ -30,7 +30,7 @@ export type HabitEvent =
 
 /** 专注相关事件（发出方: modules/pomodoro） */
 export type FocusEvent =
-  { type: 'focus:completed'; payload: { duration: number } }
+  { type: 'focus:completed'; payload: { duration: number; sessionId?: string } }
 
 /** 用户相关事件（发出方: core/auth） */
 export type UserEvent =

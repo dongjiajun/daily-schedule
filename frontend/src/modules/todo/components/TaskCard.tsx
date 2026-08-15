@@ -1,7 +1,8 @@
 import type { TaskProfile } from '@/api/types.gen'
-import { useDeleteTask } from '../hooks/useTasks'
+import { useDeleteTaskWithUndo, useMoveTaskWithPetEvent } from '../hooks/useTasks'
 import { Button } from '@/core/components/ui/button'
-import { AlertTriangle, Calendar, Pencil, Trash2 } from 'lucide-react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/core/components/ui/select'
+import { AlertTriangle, Calendar, Pencil, Trash2, ClipboardList, CircleDot, CheckCircle2 } from 'lucide-react'
 
 const priorityColors: Record<string, string> = {
   URGENT: 'bg-red-500 text-white',
@@ -23,7 +24,8 @@ interface TaskCardProps {
 }
 
 export function TaskCard({ task, onEdit }: TaskCardProps) {
-  const deleteTask = useDeleteTask()
+  const { deleteWithUndo } = useDeleteTaskWithUndo()
+  const moveWithPetEvent = useMoveTaskWithPetEvent()
   const isOverdue =
     task.dueDate && task.status !== 'DONE' && new Date(task.dueDate) < new Date()
 
@@ -74,29 +76,55 @@ export function TaskCard({ task, onEdit }: TaskCardProps) {
         </div>
       )}
 
-      {/* Action buttons */}
-      <div className="flex justify-end gap-1 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => onEdit(task)}
+      {/* Status switch + action buttons（常驻可见，触摸设备无 hover 也可操作） */}
+      <div className="flex items-center justify-between gap-1 mt-2">
+        <Select
+          value={task.status ?? 'TODO'}
+          onValueChange={(newStatus) => moveWithPetEvent(task, newStatus)}
         >
-          <Pencil className="size-3" />
-          编辑
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => {
-            if (window.confirm('确定删除此任务？')) {
-              deleteTask.mutate(task.id!)
-            }
-          }}
-          className="text-red-500 hover:text-red-700"
-        >
-          <Trash2 className="size-3" />
-          删除
-        </Button>
+          <SelectTrigger className="h-7 w-[110px] text-xs" aria-label="状态">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="TODO">
+              <span className="flex items-center gap-1.5">
+                <ClipboardList className="size-3.5" />
+                待办
+              </span>
+            </SelectItem>
+            <SelectItem value="IN_PROGRESS">
+              <span className="flex items-center gap-1.5">
+                <CircleDot className="size-3.5" />
+                进行中
+              </span>
+            </SelectItem>
+            <SelectItem value="DONE">
+              <span className="flex items-center gap-1.5">
+                <CheckCircle2 className="size-3.5" />
+                已完成
+              </span>
+            </SelectItem>
+          </SelectContent>
+        </Select>
+        <div className="flex justify-end gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onEdit(task)}
+          >
+            <Pencil className="size-3" />
+            编辑
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => deleteWithUndo(task)}
+            className="text-red-500 hover:text-red-700"
+          >
+            <Trash2 className="size-3" />
+            删除
+          </Button>
+        </div>
       </div>
     </div>
   )

@@ -23,6 +23,9 @@ export function BoardView({ tasks, onEdit }: BoardViewProps) {
       const task = tasks.find((t) => t.id === taskId)
       if (!task) return
 
+      // 同列拖拽：位置不变（不甩尾）
+      if (task.status === newStatus) return
+
       const maxOrder =
         Math.max(
           ...tasks

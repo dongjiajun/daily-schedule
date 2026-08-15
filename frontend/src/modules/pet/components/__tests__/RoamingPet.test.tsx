@@ -10,6 +10,7 @@ vi.mock('../../hooks/usePet', () => ({
   useInteract: () => ({ mutate: vi.fn(), isPending: false }),
   useShopItems: () => ({ data: [], isLoading: false }),
   usePurchase: () => ({ mutate: vi.fn(), isPending: false }),
+  useEquippedAccessoryName: () => null,
 }))
 
 vi.mock('framer-motion', () => ({

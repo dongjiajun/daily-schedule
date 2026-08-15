@@ -37,7 +37,7 @@ export interface ModuleDefinition {
   icon: React.ComponentType<{ className?: string }>
   /** 侧边栏排序权重（数字越小越靠前） */
   order: number
-  /** 路由定义（lazy loaded） */
+  /** 路由定义（静态收集） */
   routes: RouteObject[]
   /** 模块级 Zustand stores（key → StateCreator） */
   stores?: Record<string, unknown>

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useMyPet } from '../hooks/usePet'
+import { useMyPet, useEquippedAccessoryName, useUnequip } from '../hooks/usePet'
 import { usePetStore } from '../store/petStore'
 import { PetAvatar } from './PetAvatar'
 import { PetStatus } from './PetStatus'
@@ -10,6 +10,8 @@ import { Loader2 } from 'lucide-react'
 
 export default function PetPage() {
   const { data: pet, isLoading } = useMyPet()
+  const accessoryName = useEquippedAccessoryName()
+  const unequip = useUnequip()
   const setSelectionOpen = usePetStore((s) => s.setSelectionOpen)
   const [menuOpen, setMenuOpen] = useState(false)
 
@@ -52,20 +54,39 @@ export default function PetPage() {
             <section className="w-full bg-white rounded-xl border p-4">
               <h2 className="font-semibold mb-2 text-sm">宠物信息</h2>
               <dl className="grid grid-cols-2 gap-2 text-sm">
-                <dt className="text-muted-foreground">名称</dt>
+                <dt className="text-foreground-muted">名称</dt>
                 <dd>{pet.name}</dd>
-                <dt className="text-muted-foreground">物种</dt>
+                <dt className="text-foreground-muted">物种</dt>
                 <dd>{pet.species}</dd>
-                <dt className="text-muted-foreground">等级</dt>
+                <dt className="text-foreground-muted">等级</dt>
                 <dd>Lv.{pet.level}</dd>
-                <dt className="text-muted-foreground">经验</dt>
+                <dt className="text-foreground-muted">经验</dt>
                 <dd>{pet.experience}</dd>
               </dl>
+            </section>
+
+            {/* 当前配饰 */}
+            <section className="w-full bg-white rounded-xl border p-4">
+              <h2 className="font-semibold mb-2 text-sm">当前配饰 🎀</h2>
+              {accessoryName ? (
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm">{accessoryName}</span>
+                  <button
+                    onClick={() => unequip.mutate()}
+                    disabled={unequip.isPending}
+                    className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-hover transition-colors disabled:opacity-50"
+                  >
+                    取下
+                  </button>
+                </div>
+              ) : (
+                <p className="text-sm text-foreground-muted">未装备任何配饰</p>
+              )}
             </section>
           </div>
         </div>
       ) : (
-        <div className="text-center py-12 text-muted-foreground">
+        <div className="text-center py-12 text-foreground-muted">
           <p>你还没有宠物</p>
           <button
             className="mt-2 text-blue-500 hover:underline"

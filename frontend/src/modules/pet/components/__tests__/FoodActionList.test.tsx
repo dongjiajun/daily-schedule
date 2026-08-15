@@ -19,6 +19,7 @@ const wrapper = ({ children }: { children: React.ReactNode }) => {
 }
 
 const SHOP_ITEM = { id: 1, name: '小鱼干', price: 10, effectHunger: 20, effectMood: 5 }
+const ACCESSORY_ITEM = { id: 7, name: '巫师帽', type: 'ACCESSORY', price: 40, effectHunger: 0, effectMood: 0 }
 
 describe('FoodActionList', () => {
   beforeEach(() => {
@@ -78,5 +79,47 @@ describe('FoodActionList', () => {
     vi.advanceTimersByTime(1500)
     expect(usePetStore.getState().action).toBe('idle')
     vi.useRealTimers()
+  })
+
+  it('ACCESSORY 显示「装备」按钮，购买即装备（开心情绪而非 eat）', () => {
+    vi.mocked(useShopItems).mockReturnValue({
+      data: [ACCESSORY_ITEM],
+      isLoading: false,
+    } as ReturnType<typeof useShopItems>)
+    let onSuccess: ((r: PurchaseResult) => void) | null = null
+    vi.mocked(usePurchase).mockReturnValue({
+      mutate: (_args: unknown, opts: { onSuccess: (r: PurchaseResult) => void }) => {
+        onSuccess = opts.onSuccess
+      },
+      isPending: false,
+    } as unknown as ReturnType<typeof usePurchase>)
+
+    render(<FoodActionList mode="shop" />, { wrapper })
+    const equipBtn = screen.getByRole('button', { name: '装备-巫师帽' })
+    expect(equipBtn).toBeEnabled()
+    fireEvent.click(equipBtn)
+
+    expect(onSuccess).not.toBeNull()
+    onSuccess?.({ totalCost: 40, equippedAccessoryId: 7 } as PurchaseResult)
+    expect(usePetStore.getState().emotionState).toBe('happy')
+    expect(usePetStore.getState().action).not.toBe('eat') // 装备不呈现进食动作
+  })
+
+  it('已装备配饰 → 按钮禁用并显示「已装备」标记', () => {
+    vi.mocked(useShopItems).mockReturnValue({
+      data: [ACCESSORY_ITEM],
+      isLoading: false,
+    } as ReturnType<typeof useShopItems>)
+    vi.mocked(useMyPet).mockReturnValue({
+      data: { coins: 100, currentAccessory: 7 },
+      isLoading: false,
+      isError: false,
+    } as ReturnType<typeof useMyPet>)
+
+    render(<FoodActionList mode="shop" />, { wrapper })
+    const equipBtn = screen.getByRole('button', { name: '装备-巫师帽' })
+    expect(equipBtn).toBeDisabled()
+    expect(equipBtn).toHaveTextContent('已装备')
+    expect(screen.getByText('已装备', { selector: 'span' })).toBeTruthy()
   })
 })

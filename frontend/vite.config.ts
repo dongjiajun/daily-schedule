@@ -17,7 +17,7 @@ export default defineConfig({
         description: '插件式个人日程管理中心',
         start_url: '/',
         display: 'standalone',
-        theme_color: '#3b82f6',
+        theme_color: '#f5f6f8',
         background_color: '#ffffff',
         icons: [
           { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },

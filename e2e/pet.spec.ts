@@ -106,4 +106,31 @@ test.describe('Pet', () => {
     await expect(page.locator('[data-pet="roaming"] [style*="rotate"]').first()).toBeVisible({ timeout: 40_000 })
   })
 
+  test('刷新后宠物状态从 localStorage 恢复（持久化不崩溃）', async ({ page }) => {
+    await ensureLoggedIn(page)
+
+    // 预置持久化记录（模拟上次会话游走结果：位置 420,300 / 朝左 / 情绪 sleepy）
+    await page.evaluate(() => {
+      localStorage.setItem('pet-roaming-state', JSON.stringify({
+        state: { position: { x: 420, y: 300 }, facing: 'left', isResting: false, emotionState: 'sleepy' },
+        version: 1,
+      }))
+    })
+
+    await page.reload()
+    await page.waitForLoadState('networkidle')
+    await page.waitForTimeout(3000)
+
+    // rehydrate 不崩溃：宠物渲染存在，无错误 toast
+    await expect(page.locator('[aria-label^="宠物状态"]').first()).toBeVisible({ timeout: 5000 })
+    const errorToast = page.locator('[data-sonner-toast]').filter({ hasText: /失败|错误|异常/ })
+    await expect(errorToast).toHaveCount(0)
+
+    // 持久化记录保留（rehydrate 未清除；后续状态变化会继续覆写同一 key）
+    const raw = await page.evaluate(() => localStorage.getItem('pet-roaming-state'))
+    expect(raw).not.toBeNull()
+    const parsed = JSON.parse(raw!)
+    expect(parsed.version).toBe(1)
+  })
+
 })

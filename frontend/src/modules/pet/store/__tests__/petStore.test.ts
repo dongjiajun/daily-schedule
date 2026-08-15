@@ -1,8 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { usePetStore } from '../petStore'
+import { usePetStore, clampPositionToViewport } from '../petStore'
+
+const STORAGE_KEY = 'pet-roaming-state'
+
+function readPersisted(): { state: Record<string, unknown>; version: number } | null {
+  const raw = localStorage.getItem(STORAGE_KEY)
+  return raw ? JSON.parse(raw) : null
+}
 
 describe('petStore', () => {
   beforeEach(() => {
+    localStorage.clear()
     usePetStore.getState().reset()
     vi.useFakeTimers()
   })
@@ -144,5 +152,98 @@ describe('petStore', () => {
 
     usePetStore.getState().wakeUp()
     expect(usePetStore.getState().isResting).toBe(false)
+  })
+
+  // ─── 持久化（pet-state-persist） ───
+
+  it('游走状态变化写入 localStorage（白名单字段）', () => {
+    usePetStore.getState().setPosition({ x: 500, y: 300 })
+    usePetStore.getState().setFacing('left')
+    usePetStore.getState().startResting()
+
+    const persisted = readPersisted()
+    expect(persisted).not.toBeNull()
+    expect(persisted!.version).toBe(1)
+    expect(persisted!.state.position).toEqual({ x: 500, y: 300 })
+    expect(persisted!.state.facing).toBe('left')
+    expect(persisted!.state.isResting).toBe(true)
+  })
+
+  it('rehydrate 恢复持久化状态', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      state: { position: { x: 555, y: 222 }, facing: 'left', isResting: true, emotionState: 'sleepy' },
+      version: 1,
+    }))
+
+    await usePetStore.persist.rehydrate()
+
+    const s = usePetStore.getState()
+    expect(s.position).toEqual({ x: 555, y: 222 })
+    expect(s.facing).toBe('left')
+    expect(s.isResting).toBe(true)
+    expect(s.emotionState).toBe('sleepy')
+  })
+
+  it('瞬态情绪归一为 idle（稳定情绪原样落盘）', () => {
+    usePetStore.getState().setEmotion('happy', 5000)
+    expect(readPersisted()!.state.emotionState).toBe('idle')
+
+    usePetStore.getState().setEmotion('sleepy')
+    expect(readPersisted()!.state.emotionState).toBe('sleepy')
+
+    usePetStore.getState().setEmotion('excited', 5000)
+    expect(readPersisted()!.state.emotionState).toBe('idle')
+  })
+
+  it('瞬态字段不落盘（action/粒子/气泡/连击）', () => {
+    usePetStore.getState().setAction('eat', 1500)
+    usePetStore.getState().triggerParticle('coins')
+    usePetStore.getState().showBubble('测试')
+    usePetStore.getState().incrementCombo()
+
+    const persistedState = readPersisted()!.state
+    expect(persistedState).not.toHaveProperty('action')
+    expect(persistedState).not.toHaveProperty('particleTrigger')
+    expect(persistedState).not.toHaveProperty('bubbleMessage')
+    expect(persistedState).not.toHaveProperty('comboCount')
+    expect(persistedState).not.toHaveProperty('stateTimer')
+  })
+
+  it('clampPositionToViewport 越界钳制回视口（jsdom 视口 1024×768）', () => {
+    expect(clampPositionToViewport({ x: 3000, y: 500 })).toEqual({ x: 1024 - 90, y: 500 })
+    expect(clampPositionToViewport({ x: -50, y: -20 })).toEqual({ x: 0, y: 0 })
+    expect(clampPositionToViewport({ x: 200, y: 100 })).toEqual({ x: 200, y: 100 })
+  })
+
+  it('rehydrate 时越界位置被钳制', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      state: { position: { x: 5000, y: 9000 }, facing: 'right', isResting: false, emotionState: 'idle' },
+      version: 1,
+    }))
+
+    await usePetStore.persist.rehydrate()
+
+    const s = usePetStore.getState()
+    expect(s.position.x).toBeLessThanOrEqual(1024 - 90)
+    expect(s.position.y).toBeLessThanOrEqual(768 - 90)
+  })
+
+  it('无持久化记录时 rehydrate 使用默认值', async () => {
+    usePetStore.setState({ position: { x: 777, y: 666 }, facing: 'left' })
+    await usePetStore.persist.rehydrate()
+
+    // 无记录：persist 跳过恢复，当前内存状态保持
+    const s = usePetStore.getState()
+    expect(s.position).toEqual({ x: 777, y: 666 })
+  })
+
+  it('reset 后持久化记录为默认值', () => {
+    usePetStore.getState().setPosition({ x: 900, y: 500 })
+    usePetStore.getState().reset()
+
+    const persisted = readPersisted()!
+    expect(persisted.state.position).toEqual({ x: 100, y: 100 })
+    expect(persisted.state.facing).toBe('right')
+    expect(persisted.state.isResting).toBe(false)
   })
 })

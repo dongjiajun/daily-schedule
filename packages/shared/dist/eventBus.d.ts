@@ -60,6 +60,7 @@ export type FocusEvent = {
     type: 'focus:completed';
     payload: {
         duration: number;
+        sessionId?: string;
     };
 };
 /** 用户相关事件（发出方: core/auth） */

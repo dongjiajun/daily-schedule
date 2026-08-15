@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 
 export type EmotionState = 'idle' | 'idle_variant' | 'happy' | 'sad' | 'hungry' | 'sleepy' | 'excited' | 'surprised'
 /** 动作维度（与 emotion 正交）：idle=呼吸眨眼 / walk=步伐 / pace=格内往返 / rest=下坐 / sleep=蜷缩+Zzz / jump=跳跃 / eat=进食 / stretch=伸懒腰 / yawn=打哈欠 / scratch=挠耳 / look=张望 */
@@ -9,6 +10,26 @@ export interface Position {
   x: number
   y: number
 }
+
+/** 持久化白名单——稳定情绪（瞬态情绪 happy/sad/excited/surprised 由定时器回落，不落盘） */
+const STABLE_EMOTIONS = new Set<EmotionState>(['idle', 'idle_variant', 'hungry', 'sleepy'])
+
+/** 宠物渲染尺寸（与 RoamingPet 的 PetAvatar size={90} 一致），视口钳制安全边距 */
+const PET_RENDER_SIZE = 90
+
+/** 持久化位置恢复时的视口越界钳制；window 不可用（测试/SSR）时原样返回 */
+export function clampPositionToViewport(pos: Position): Position {
+  if (typeof window === 'undefined') return pos
+  const maxX = Math.max(0, window.innerWidth - PET_RENDER_SIZE)
+  const maxY = Math.max(0, window.innerHeight - PET_RENDER_SIZE)
+  return {
+    x: Math.min(Math.max(pos.x, 0), maxX),
+    y: Math.min(Math.max(pos.y, 0), maxY),
+  }
+}
+
+/** 持久化落盘子集（白名单外的瞬态字段/定时器句柄不序列化） */
+type PersistedPetState = Pick<PetStore, 'position' | 'facing' | 'isResting' | 'emotionState'>
 
 /** 浮动数值反馈项（如 "+20 饱腹"） */
 export interface FeedbackItem {
@@ -88,7 +109,9 @@ interface PetStore {
   reset: () => void
 }
 
-export const usePetStore = create<PetStore>((set, get) => ({
+export const usePetStore = create<PetStore>()(
+  persist(
+    (set, get) => ({
   // ── 初始值 ──
   animationState: 'idle',
   emotionState: 'idle',
@@ -227,4 +250,26 @@ export const usePetStore = create<PetStore>((set, get) => ({
       feedbackTrigger: null,
     })
   },
-}))
+    }),
+    {
+      name: 'pet-roaming-state',
+      version: 1,
+      partialize: (state): PersistedPetState => ({
+        position: state.position,
+        facing: state.facing,
+        isResting: state.isResting,
+        // 瞬态情绪归一：刷新后不残留"永远开心/难过"
+        emotionState: STABLE_EMOTIONS.has(state.emotionState) ? state.emotionState : 'idle',
+      }),
+      merge: (persisted, current) => {
+        const p = (persisted ?? {}) as Partial<PersistedPetState>
+        return {
+          ...current,
+          ...p,
+          // 窗口缩放/换分辨率后旧位置可能屏外，恢复时钳制回视口
+          position: p.position ? clampPositionToViewport(p.position) : current.position,
+        }
+      },
+    }
+  )
+)

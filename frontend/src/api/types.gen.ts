@@ -185,6 +185,31 @@ export type PurchaseResult = {
     newMood?: number;
     newHunger?: number;
     newExperience?: number;
+    /**
+     * 装备购买时回传所装备配饰 id（FOOD 购买为 null）
+     */
+    equippedAccessoryId?: number;
+};
+
+export type GrantRewardRequest = {
+    source: 'TASK_COMPLETED' | 'EVENT_COMPLETED' | 'EVENT_CANCELLED' | 'FOCUS_COMPLETED' | 'DAILY_CHECKIN' | 'HABIT_CHECKED';
+    /**
+     * 业务引用标识（幂等键），如 taskId / eventId / habitId / 日期
+     */
+    refId: string;
+};
+
+export type RewardResult = {
+    /**
+     * false 表示未发放（无宠物或幂等键已命中）
+     */
+    granted: boolean;
+    coinChange: number;
+    experienceGain: number;
+    moodChange: number;
+    newCoins: number;
+    newExperience: number;
+    newMood: number;
 };
 
 export type TaskProfile = {
@@ -894,6 +919,64 @@ export type InteractWithPetResponses = {
 };
 
 export type InteractWithPetResponse = InteractWithPetResponses[keyof InteractWithPetResponses];
+
+export type UnequipAccessoryData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/pets/me/accessory';
+};
+
+export type UnequipAccessoryErrors = {
+    /**
+     * 未认证或 token 失效
+     */
+    401: ApiResponse;
+    /**
+     * 资源不存在或无权访问
+     */
+    404: ApiResponse;
+};
+
+export type UnequipAccessoryError = UnequipAccessoryErrors[keyof UnequipAccessoryErrors];
+
+export type UnequipAccessoryResponses = {
+    /**
+     * 取下成功
+     */
+    204: void;
+};
+
+export type UnequipAccessoryResponse = UnequipAccessoryResponses[keyof UnequipAccessoryResponses];
+
+export type GrantPetRewardData = {
+    body: GrantRewardRequest;
+    path?: never;
+    query?: never;
+    url: '/pets/me/rewards';
+};
+
+export type GrantPetRewardErrors = {
+    /**
+     * 请求参数不合法
+     */
+    400: ApiResponse;
+    /**
+     * 未认证或 token 失效
+     */
+    401: ApiResponse;
+};
+
+export type GrantPetRewardError = GrantPetRewardErrors[keyof GrantPetRewardErrors];
+
+export type GrantPetRewardResponses = {
+    /**
+     * 发放结果
+     */
+    200: RewardResult;
+};
+
+export type GrantPetRewardResponse = GrantPetRewardResponses[keyof GrantPetRewardResponses];
 
 export type GetShopItemsData = {
     body?: never;

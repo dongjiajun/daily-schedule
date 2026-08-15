@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { getMyPet, createPet, updatePet, interactWithPet, getShopItems, purchaseItem } from '@/api/sdk.gen'
+import { getMyPet, createPet, updatePet, interactWithPet, getShopItems, purchaseItem, unequipAccessory } from '@/api/sdk.gen'
 import { unwrap } from '@/core/lib/unwrap'
 import type { CreatePetRequest, InteractRequest, PurchaseRequest, UpdatePetRequest } from '@/api/types.gen'
 
@@ -63,13 +63,37 @@ export function useShopItems() {
   })
 }
 
+/** 当前装备的配饰名称（currentAccessory id → 商店物品名称；未装备/未识别 → null） */
+export function useEquippedAccessoryName(): string | null {
+  const { data: pet } = useMyPet()
+  const { data: items } = useShopItems()
+  if (!pet?.currentAccessory || !items) return null
+  return items.find((i) => i.id === pet.currentAccessory)?.name ?? null
+}
+
 export function usePurchase() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (data: PurchaseRequest) => unwrap(await purchaseItem({ body: data })),
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['pet', 'me'] })
-      toast.success(`购买成功！-${result.totalCost} 专注币`)
+      if (result.equippedAccessoryId) {
+        toast.success(`已装备「${result.itemName}」`)
+      } else {
+        toast.success(`购买成功！-${result.totalCost} 专注币`)
+      }
+    },
+    onError: (err: Error) => { toast.error(err.message) },
+  })
+}
+
+export function useUnequip() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async () => { unwrap(await unequipAccessory()) },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pet', 'me'] })
+      toast.success('已取下配饰')
     },
     onError: (err: Error) => { toast.error(err.message) },
   })

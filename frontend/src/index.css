@@ -1,6 +1,19 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 @import "./core/styles/themes.css";
 @import "./core/styles/holiday-themes.css";
+
+/* 尊重系统"减少动态效果"偏好：CSS 层动画（弹层过渡/宠物动作）压缩至近乎瞬时；
+   framer-motion 层由 App 根 MotionConfig reducedMotion="user" 处理 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
 
 /* ===== Tailwind 4 语义颜色映射 ===== */
 /* 将 CSS 自定义属性注册为 Tailwind utility 类 */

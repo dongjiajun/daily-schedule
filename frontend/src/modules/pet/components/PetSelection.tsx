@@ -51,7 +51,7 @@ export function PetSelection() {
               >
                 <Icon className={`w-10 h-10 ${selected ? 'text-blue-500' : 'text-gray-400'}`} />
                 <span className="font-medium text-sm">{opt.label}</span>
-                <span className="text-xs text-muted-foreground text-center">{opt.desc}</span>
+                <span className="text-xs text-foreground-muted text-center">{opt.desc}</span>
               </button>
             )
           })}
@@ -67,7 +67,7 @@ export function PetSelection() {
             onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
           />
-          <span className="text-xs text-muted-foreground text-right">{name.length}/30</span>
+          <span className="text-xs text-foreground-muted text-right">{name.length}/30</span>
         </div>
 
         <Button onClick={handleSubmit} disabled={!isValid || createPet.isPending}>

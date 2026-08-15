@@ -1,4 +1,4 @@
-import { useMyPet } from '../hooks/usePet'
+import { useMyPet, useEquippedAccessoryName } from '../hooks/usePet'
 import { usePetStore } from '../store/petStore'
 import { SvgAvatar } from './SvgAvatar'
 
@@ -24,6 +24,7 @@ export function PetAvatar({ size = 100 }: PetAvatarProps) {
   const { data: pet } = useMyPet()
   const emotionState = usePetStore((s) => s.emotionState)
   const action = usePetStore((s) => s.action)
+  const accessoryName = useEquippedAccessoryName()
 
   const species = (pet?.species as 'ORANGE_CAT' | 'SHIBA_INU') ?? 'ORANGE_CAT'
 
@@ -39,6 +40,7 @@ export function PetAvatar({ size = 100 }: PetAvatarProps) {
           emotion={emotionState}
           action={action}
           size={size}
+          accessory={accessoryName}
         />
       </div>
       <div className="pet-shadow-wrap" style={{ width: size }}>

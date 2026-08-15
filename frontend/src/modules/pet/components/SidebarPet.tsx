@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { useMyPet } from '../hooks/usePet'
+import { useMyPet, useEquippedAccessoryName } from '../hooks/usePet'
 import { usePetStore } from '../store/petStore'
 import { registerZone, updateZoneRect } from '../lib/zoneRegistry'
 import { statusColor } from '../lib/statusColor'
@@ -21,6 +21,7 @@ export function SidebarPet({ onNavigate }: { onNavigate?: () => void }) {
   const navigate = useNavigate()
   const { data: pet, isLoading } = useMyPet()
   const emotionState = usePetStore((s) => s.emotionState)
+  const accessoryName = useEquippedAccessoryName()
   const setSelectionOpen = usePetStore((s) => s.setSelectionOpen)
   const homeRef = useRef<HTMLDivElement>(null)
 
@@ -74,7 +75,7 @@ export function SidebarPet({ onNavigate }: { onNavigate?: () => void }) {
         {/* 迷你精灵 */}
         <div className="w-10 h-10 flex-shrink-0 flex items-center justify-center">
           {isLoading ? (
-            <div className="w-8 h-8 bg-muted rounded-full animate-pulse" />
+            <div className="w-8 h-8 bg-hover rounded-full animate-pulse" />
           ) : pet ? (
             <motion.div
               animate={{ y: [0, -2, 0] }}
@@ -84,6 +85,7 @@ export function SidebarPet({ onNavigate }: { onNavigate?: () => void }) {
                 species={pet.species as 'ORANGE_CAT' | 'SHIBA_INU'}
                 emotion={emotionState}
                 size={40}
+                accessory={accessoryName}
               />
             </motion.div>
           ) : (

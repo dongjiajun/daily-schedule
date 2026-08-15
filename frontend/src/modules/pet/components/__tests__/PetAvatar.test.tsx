@@ -11,6 +11,7 @@ vi.mock('../../hooks/usePet', () => ({
   useInteract: vi.fn(),
   useShopItems: vi.fn(),
   usePurchase: vi.fn(),
+  useEquippedAccessoryName: () => null,
 }))
 
 const wrapper = ({ children }: { children: React.ReactNode }) => {

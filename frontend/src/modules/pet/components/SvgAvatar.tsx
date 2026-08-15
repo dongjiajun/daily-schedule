@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { OrangeCat } from '../assets/svg/OrangeCat'
 import { ShibaInu } from '../assets/svg/ShibaInu'
+import { AccessoryOverlay } from './AccessoryOverlay'
+import { getSkinFilter } from '../lib/accessoryRenderMap'
 import type { EmotionState, PetAction } from '../store/petStore'
 
 interface SvgAvatarProps {
@@ -9,6 +11,8 @@ interface SvgAvatarProps {
   action?: PetAction
   size?: number
   className?: string
+  /** 配饰名称（与 ACCESSORY_RENDER_MAP 对齐）；null/未识别时无装扮 */
+  accessory?: string | null
 }
 
 /**
@@ -19,8 +23,9 @@ interface SvgAvatarProps {
  * 情绪切换经一次眨眼过渡：emotion 变化 → 立即闭眼（data-blink 驱动 50ms 一次性动画）
  * → 两帧后切换表情参数 → 50ms 后睁开，用户看到"闭眼换脸再睁开"，消除瞬间换脸感。
  */
-export function SvgAvatar({ species, emotion, action = 'idle', size = 100, className }: SvgAvatarProps) {
+export function SvgAvatar({ species, emotion, action = 'idle', size = 100, className, accessory }: SvgAvatarProps) {
   const Component = species === 'SHIBA_INU' ? ShibaInu : OrangeCat
+  const skinFilter = getSkinFilter(accessory)
   const prevEmotionRef = useRef(emotion)
   const blinkTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [displayEmotion, setDisplayEmotion] = useState(emotion)
@@ -51,12 +56,15 @@ export function SvgAvatar({ species, emotion, action = 'idle', size = 100, class
   }, [emotion])
 
   return (
-    <Component
-      emotion={displayEmotion}
-      action={action}
-      size={size}
-      className={className}
-      blinkNow={blinking}
-    />
+    <div style={{ position: 'relative', width: size, height: size, filter: skinFilter }}>
+      <Component
+        emotion={displayEmotion}
+        action={action}
+        size={size}
+        className={className}
+        blinkNow={blinking}
+      />
+      <AccessoryOverlay name={accessory} size={size} />
+    </div>
   )
 }

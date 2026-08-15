@@ -19,6 +19,7 @@ vi.mock('../../hooks/usePet', () => ({
     data: { id: 1, name: '豆豆', species: 'ORANGE_CAT', mood: 80, hunger: 60, coins: 10, level: 2 },
     isLoading: false,
   }),
+  useEquippedAccessoryName: () => null,
 }))
 
 import { SidebarPet } from '../SidebarPet'

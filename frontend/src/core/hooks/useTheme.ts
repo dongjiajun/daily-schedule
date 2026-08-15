@@ -53,5 +53,18 @@ export function useTheme() {
     } else if (themeMode === 'manual') {
       document.documentElement.dataset.theme = theme
     }
+    // 主题切换后同步状态栏颜色：读取 CSS 变量计算值，覆盖 5 套主题 + 节日主题
+    syncThemeColor()
   }, [themeMode, activeHolidayId, holidayCheckDate, theme])
+}
+
+/**
+ * 将当前主题的 --color-bg 计算值同步到 <meta name="theme-color">。
+ * getComputedStyle 会强制样式重算，保证读到新主题的值。
+ */
+function syncThemeColor() {
+  const meta = document.querySelector('meta[name="theme-color"]')
+  if (!meta) return
+  const bg = getComputedStyle(document.documentElement).getPropertyValue('--color-bg').trim()
+  if (bg) meta.setAttribute('content', bg)
 }

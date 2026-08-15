@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { CreateCategoryData, CreateCategoryErrors, CreateCategoryResponses, CreateEventData, CreateEventErrors, CreateEventResponses, CreatePetData, CreatePetErrors, CreatePetResponses, CreateTagData, CreateTagErrors, CreateTagResponses, CreateTaskData, CreateTaskErrors, CreateTaskResponses, CurrentUserData, CurrentUserErrors, CurrentUserResponses, DeleteCategoryData, DeleteCategoryErrors, DeleteCategoryResponses, DeleteEventData, DeleteEventErrors, DeleteEventResponses, DeleteTagData, DeleteTagErrors, DeleteTagResponses, DeleteTaskData, DeleteTaskErrors, DeleteTaskResponses, GetEventByIdData, GetEventByIdErrors, GetEventByIdResponses, GetMyPetData, GetMyPetErrors, GetMyPetResponses, GetShopItemsData, GetShopItemsResponses, InteractWithPetData, InteractWithPetErrors, InteractWithPetResponses, ListCategoriesData, ListCategoriesErrors, ListCategoriesResponses, ListEventsData, ListEventsErrors, ListEventsResponses, ListTagsData, ListTagsErrors, ListTagsResponses, ListTasksData, ListTasksErrors, ListTasksResponses, LoginData, LoginErrors, LoginResponses, LogoutData, LogoutErrors, LogoutResponses, MoveTaskData, MoveTaskErrors, MoveTaskResponses, PurchaseItemData, PurchaseItemErrors, PurchaseItemResponses, RefreshTokenData, RefreshTokenErrors, RefreshTokenResponses, RegisterData, RegisterErrors, RegisterResponses, SubscribeNotificationsData, SubscribeNotificationsErrors, SubscribeNotificationsResponse, SubscribeNotificationsResponses, UpdateCategoryData, UpdateCategoryErrors, UpdateCategoryResponses, UpdateEventData, UpdateEventErrors, UpdateEventResponses, UpdatePetData, UpdatePetErrors, UpdatePetResponses, UpdateTagData, UpdateTagErrors, UpdateTagResponses, UpdateTaskData, UpdateTaskErrors, UpdateTaskResponses } from './types.gen';
+import type { CreateCategoryData, CreateCategoryErrors, CreateCategoryResponses, CreateEventData, CreateEventErrors, CreateEventResponses, CreatePetData, CreatePetErrors, CreatePetResponses, CreateTagData, CreateTagErrors, CreateTagResponses, CreateTaskData, CreateTaskErrors, CreateTaskResponses, CurrentUserData, CurrentUserErrors, CurrentUserResponses, DeleteCategoryData, DeleteCategoryErrors, DeleteCategoryResponses, DeleteEventData, DeleteEventErrors, DeleteEventResponses, DeleteTagData, DeleteTagErrors, DeleteTagResponses, DeleteTaskData, DeleteTaskErrors, DeleteTaskResponses, GetEventByIdData, GetEventByIdErrors, GetEventByIdResponses, GetMyPetData, GetMyPetErrors, GetMyPetResponses, GetShopItemsData, GetShopItemsResponses, GrantPetRewardData, GrantPetRewardErrors, GrantPetRewardResponses, InteractWithPetData, InteractWithPetErrors, InteractWithPetResponses, ListCategoriesData, ListCategoriesErrors, ListCategoriesResponses, ListEventsData, ListEventsErrors, ListEventsResponses, ListTagsData, ListTagsErrors, ListTagsResponses, ListTasksData, ListTasksErrors, ListTasksResponses, LoginData, LoginErrors, LoginResponses, LogoutData, LogoutErrors, LogoutResponses, MoveTaskData, MoveTaskErrors, MoveTaskResponses, PurchaseItemData, PurchaseItemErrors, PurchaseItemResponses, RefreshTokenData, RefreshTokenErrors, RefreshTokenResponses, RegisterData, RegisterErrors, RegisterResponses, SubscribeNotificationsData, SubscribeNotificationsErrors, SubscribeNotificationsResponse, SubscribeNotificationsResponses, UnequipAccessoryData, UnequipAccessoryErrors, UnequipAccessoryResponses, UpdateCategoryData, UpdateCategoryErrors, UpdateCategoryResponses, UpdateEventData, UpdateEventErrors, UpdateEventResponses, UpdatePetData, UpdatePetErrors, UpdatePetResponses, UpdateTagData, UpdateTagErrors, UpdateTagResponses, UpdateTaskData, UpdateTaskErrors, UpdateTaskResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -254,6 +254,28 @@ export const updatePet = <ThrowOnError extends boolean = false>(options: Options
 export const interactWithPet = <ThrowOnError extends boolean = false>(options: Options<InteractWithPetData, ThrowOnError>) => (options.client ?? client).post<InteractWithPetResponses, InteractWithPetErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/pets/me/interact',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * 取下当前配饰（幂等，未装备时同样成功）
+ */
+export const unequipAccessory = <ThrowOnError extends boolean = false>(options?: Options<UnequipAccessoryData, ThrowOnError>) => (options?.client ?? client).delete<UnequipAccessoryResponses, UnequipAccessoryErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/pets/me/accessory',
+    ...options
+});
+
+/**
+ * 领取行为奖励（幂等，granted=false 表示未发放）
+ */
+export const grantPetReward = <ThrowOnError extends boolean = false>(options: Options<GrantPetRewardData, ThrowOnError>) => (options.client ?? client).post<GrantPetRewardResponses, GrantPetRewardErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/pets/me/rewards',
     ...options,
     headers: {
         'Content-Type': 'application/json',

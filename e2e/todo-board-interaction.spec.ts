@@ -34,21 +34,10 @@ async function ensureLoggedIn(page: Parameters<Parameters<typeof test>[1]>[0]['p
 }
 
 async function createTaskViaQuickAdd(page: Parameters<Parameters<typeof test>[1]>[0]['page'], title: string) {
-  // Click the column-level "+ 新建" button (not the toolbar one)
-  const addButtons = page.locator('button:has-text("新建")')
-  const count = await addButtons.count()
-  // The first "新建" buttons are column-level ones (not the toolbar one)
-  for (let i = 0; i < count; i++) {
-    const btn = addButtons.nth(i)
-    const parent = btn.locator('..')
-    // Column "新建" buttons are inside column headers
-    const parentClass = await parent.getAttribute('class')
-    if (parentClass?.includes('items-center') && parentClass?.includes('justify-between')) {
-      await btn.click()
-      await page.waitForTimeout(300)
-      break
-    }
-  }
+  // 列头"新建"按钮（精确文本，排除工具栏"新建任务"）
+  const addBtn = page.getByRole('button', { name: '新建', exact: true }).first()
+  await addBtn.click()
+  await page.waitForTimeout(300)
   const input = page.locator('input[placeholder*="回车创建"]')
   await expect(input).toBeVisible({ timeout: 3000 })
   await input.fill(title)
@@ -212,5 +201,129 @@ test.describe('Todo Board Interactions', () => {
       // Dialog should close
       await expect(dialog).not.toBeVisible({ timeout: 3000 })
     }
+  })
+
+  test('同列拖拽任务保持原位（不甩尾）', async ({ page }) => {
+    await ensureLoggedIn(page)
+    await page.goto('/todo')
+    await page.waitForLoadState('networkidle')
+    await page.waitForTimeout(1000)
+
+    // 在 TODO 列创建两个任务（A 在 B 上方）
+    await createTaskViaQuickAdd(page, `同列A_${Date.now()}`)
+    await createTaskViaQuickAdd(page, `同列B_${Date.now()}`)
+    await page.waitForTimeout(1000)
+
+    const cardA = page.locator('div[draggable]').filter({ hasText: '同列A_' }).first()
+    const cardB = page.locator('div[draggable]').filter({ hasText: '同列B_' }).first()
+    await expect(cardA).toBeVisible({ timeout: 3000 })
+    await expect(cardB).toBeVisible({ timeout: 3000 })
+
+    // 记录拖拽前的相对顺序
+    const beforeA = await cardA.boundingBox()
+    const beforeB = await cardB.boundingBox()
+    expect(beforeA).not.toBeNull()
+    expect(beforeB).not.toBeNull()
+
+    // 将 A 拖到其自身所在列（TODO 列）的空处
+    const columnHeader = page.locator('h3').filter({ hasText: '待办' }).first()
+    const dropZone = columnHeader.locator('..').locator('..')
+    const targetBox = await dropZone.boundingBox()
+    if (beforeA && targetBox) {
+      await page.mouse.move(beforeA.x + beforeA.width / 2, beforeA.y + beforeA.height / 2)
+      await page.mouse.down()
+      await page.waitForTimeout(100)
+      await page.mouse.move(targetBox.x + targetBox.width / 2, targetBox.y + targetBox.height - 20, { steps: 10 })
+      await page.waitForTimeout(200)
+      await page.mouse.up()
+      await page.waitForTimeout(1500)
+    }
+
+    // 同列拖拽不改变顺序：A 仍在 B 上方
+    const afterA = await cardA.boundingBox()
+    const afterB = await cardB.boundingBox()
+    expect(afterA).not.toBeNull()
+    expect(afterB).not.toBeNull()
+    if (afterA && afterB) {
+      expect(afterA.y).toBeLessThan(afterB.y)
+    }
+  })
+})
+
+test.describe('Todo Board Mobile（移动端可用性）', () => {
+  test.use({ viewport: { width: 375, height: 667 } })
+
+  test('卡片操作按钮在触摸设备直接可见', async ({ page }) => {
+    await ensureLoggedIn(page)
+    await page.goto('/todo')
+    await page.waitForLoadState('networkidle')
+    await page.waitForTimeout(1000)
+
+    await createTaskViaQuickAdd(page, `移动端任务_${Date.now()}`)
+    await page.waitForTimeout(1000)
+
+    const card = page.locator('div[draggable]').filter({ hasText: '移动端任务_' }).first()
+    await expect(card).toBeVisible({ timeout: 3000 })
+    // 无 hover 状态下编辑/删除按钮直接可见
+    await expect(card.getByRole('button', { name: /编辑/ })).toBeVisible()
+    await expect(card.getByRole('button', { name: /删除/ })).toBeVisible()
+  })
+
+  test('卡片状态下拉可改列（触摸无需拖拽）', async ({ page }) => {
+    await ensureLoggedIn(page)
+    await page.goto('/todo')
+    await page.waitForLoadState('networkidle')
+    await page.waitForTimeout(1000)
+
+    await createTaskViaQuickAdd(page, `移列任务_${Date.now()}`)
+    await page.waitForTimeout(1000)
+
+    const card = page.locator('div[draggable]').filter({ hasText: '移列任务_' }).first()
+    await expect(card).toBeVisible({ timeout: 3000 })
+
+    // 点开卡片状态下拉并选择"已完成"
+    await card.getByRole('combobox').click()
+    await page.waitForTimeout(300)
+    await page.getByRole('option', { name: /已完成/ }).click()
+    await page.waitForTimeout(2000)
+
+    // 任务移入 DONE 列（重新加载确认）
+    await page.goto('/todo')
+    await page.waitForLoadState('networkidle')
+    await page.waitForTimeout(1000)
+    const doneColumn = page.locator('h3').filter({ hasText: '已完成' }).first().locator('..').locator('..')
+    await expect(doneColumn.filter({ hasText: '移列任务_' })).toBeVisible({ timeout: 5000 })
+  })
+
+  test('删除走 toast 撤销，无原生 confirm', async ({ page }) => {
+    await ensureLoggedIn(page)
+    await page.goto('/todo')
+    await page.waitForLoadState('networkidle')
+    await page.waitForTimeout(1000)
+
+    const title = `删除撤销_${Date.now()}`
+    await createTaskViaQuickAdd(page, title)
+    await page.waitForTimeout(1000)
+
+    // 监听原生 confirm（应不出现）
+    let confirmAppeared = false
+    page.on('dialog', (d) => {
+      confirmAppeared = true
+      void d.dismiss()
+    })
+
+    const card = page.locator('div[draggable]').filter({ hasText: title }).first()
+    await card.getByRole('button', { name: /删除/ }).click()
+    await page.waitForTimeout(1500)
+
+    // 出现撤销 toast（而非 confirm）
+    const undoToast = page.locator('[data-sonner-toast]').filter({ hasText: '任务已删除' })
+    await expect(undoToast).toBeVisible({ timeout: 3000 })
+    expect(confirmAppeared).toBe(false)
+
+    // 点击撤销 → 任务恢复
+    await undoToast.getByRole('button', { name: /撤销/ }).click()
+    await page.waitForTimeout(2000)
+    await expect(page.locator('div[draggable]').filter({ hasText: title }).first()).toBeVisible({ timeout: 5000 })
   })
 })

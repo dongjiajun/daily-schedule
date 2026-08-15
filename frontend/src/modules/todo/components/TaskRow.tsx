@@ -1,6 +1,5 @@
 import type { TaskProfile } from '@/api/types.gen'
-import { useDeleteTask, useMoveTask } from '../hooks/useTasks'
-import { emitTaskCompleted } from '../lib/taskEvents'
+import { useDeleteTaskWithUndo, useMoveTaskWithPetEvent } from '../hooks/useTasks'
 import { Button } from '@/core/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/core/components/ui/select'
 import { Pencil, Trash2, ClipboardList, CircleDot, CheckCircle2 } from 'lucide-react'
@@ -31,26 +30,10 @@ interface TaskRowProps {
 }
 
 export function TaskRow({ task, onEdit }: TaskRowProps) {
-  const deleteTask = useDeleteTask()
-  const moveTask = useMoveTask()
+  const { deleteWithUndo } = useDeleteTaskWithUndo()
+  const moveWithPetEvent = useMoveTaskWithPetEvent()
   const isOverdue =
     task.dueDate && task.status !== 'DONE' && new Date(task.dueDate) < new Date()
-
-  const handleStatusChange = (newStatus: string) => {
-    moveTask.mutate(
-      {
-        id: task.id!,
-        data: { status: newStatus as 'TODO' | 'IN_PROGRESS' | 'DONE', sortOrder: task.sortOrder ?? 0 },
-      },
-      {
-        onSuccess: () => {
-          if (newStatus === 'DONE' && task.title) {
-            emitTaskCompleted(String(task.id!), task.title)
-          }
-        },
-      }
-    )
-  }
 
   const StatusIcon = statusIcon[task.status ?? 'TODO'] ?? ClipboardList
 
@@ -59,7 +42,7 @@ export function TaskRow({ task, onEdit }: TaskRowProps) {
       {/* Status dropdown */}
       <Select
         value={task.status ?? 'TODO'}
-        onValueChange={handleStatusChange}
+        onValueChange={(newStatus) => moveWithPetEvent(task, newStatus)}
       >
         <SelectTrigger className="w-[120px] h-8 text-sm">
           <SelectValue />
@@ -124,9 +107,7 @@ export function TaskRow({ task, onEdit }: TaskRowProps) {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => {
-            if (window.confirm('确定删除此任务？')) deleteTask.mutate(task.id!)
-          }}
+          onClick={() => deleteWithUndo(task)}
           className="text-red-500 hover:text-red-700"
         >
           <Trash2 className="size-3" />
