@@ -1,0 +1,5 @@
+/* 首页（骨架页）。卡片布局类在 app.scss 全局（.page/.card/.title/...），
+   此处仅放页面专属规则：顶部留白主视觉。 */
+.page {
+  padding-top: 40px;
+}

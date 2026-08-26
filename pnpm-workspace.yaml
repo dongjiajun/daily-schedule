@@ -1,5 +1,14 @@
 packages:
   - "frontend"
+  - "apps/*"
   - "packages/*"
 allowBuilds:
+  '@nutui/nutui-react-taro': false
+  '@parcel/watcher': true
+  '@swc/core': true
+  '@tarojs/binding': true
+  '@tarojs/cli': true
   '@tsparticles/engine': false
+  core-js: false
+  core-js-pure: false
+  esbuild: true

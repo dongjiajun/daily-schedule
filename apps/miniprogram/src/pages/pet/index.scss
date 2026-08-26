@@ -1,0 +1,280 @@
+/* 宠物互动页样式（mp-pet-*） */
+
+.mp-pet-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #f5f7fa;
+  padding: 24rpx;
+  box-sizing: border-box;
+}
+
+/* ---------- 加载/错误态 ---------- */
+
+.mp-pet-status {
+  margin-top: 120rpx;
+  text-align: center;
+  color: #8c8c8c;
+  font-size: 28rpx;
+}
+
+.mp-pet-error {
+  margin-top: 120rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24rpx;
+}
+
+.mp-pet-retry-btn {
+  padding: 12rpx 48rpx;
+  border: 2rpx solid #4f7cff;
+  border-radius: 12rpx;
+  color: #4f7cff;
+  font-size: 28rpx;
+}
+
+/* ---------- 游走容器 + 宠物 ---------- */
+
+.mp-pet-roam {
+  position: relative;
+  width: 100%;
+  background: #ffffff;
+  border-radius: 24rpx;
+  overflow: hidden;
+}
+
+.mp-pet-avatar {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  box-shadow: 0 8rpx 20rpx rgba(0, 0, 0, 0.12);
+  transition: left 0.8s linear, top 0.8s linear;
+}
+
+.mp-pet-avatar--bounce {
+  animation: mp-pet-bounce 0.6s ease;
+}
+
+@keyframes mp-pet-bounce {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.25); }
+  70% { transform: scale(0.92); }
+  100% { transform: scale(1); }
+}
+
+.mp-pet-avatar-emoji {
+  font-size: 40rpx;
+  line-height: 1;
+}
+
+/* 互动反馈浮动数值（游走区顶部居中气泡） */
+.mp-pet-feedback {
+  position: absolute;
+  top: 16rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.72);
+  color: #ffffff;
+  font-size: 24rpx;
+  padding: 10rpx 24rpx;
+  border-radius: 999rpx;
+  white-space: nowrap;
+  animation: mp-pet-feedback-in 0.25s ease;
+  z-index: 10;
+}
+
+@keyframes mp-pet-feedback-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(8rpx); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* ---------- 状态面板 ---------- */
+
+.mp-pet-status {
+  margin-top: 24rpx;
+  background: #ffffff;
+  border-radius: 24rpx;
+  padding: 24rpx;
+}
+
+.mp-pet-status-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12rpx;
+  margin-bottom: 16rpx;
+}
+
+.mp-pet-status-name {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #1f2329;
+}
+
+.mp-pet-status-species {
+  font-size: 24rpx;
+  color: #8c8c8c;
+}
+
+.mp-pet-status-level {
+  margin-left: auto;
+  font-size: 26rpx;
+  color: #4f7cff;
+  font-weight: 600;
+}
+
+.mp-pet-status-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-top: 14rpx;
+}
+
+.mp-pet-status-icon {
+  width: 72rpx;
+  font-size: 24rpx;
+  color: #8c8c8c;
+  flex-shrink: 0;
+}
+
+.mp-pet-status-bar {
+  flex: 1;
+  height: 16rpx;
+  background: #f0f2f5;
+  border-radius: 999rpx;
+  overflow: hidden;
+}
+
+.mp-pet-status-fill {
+  height: 100%;
+  border-radius: 999rpx;
+  transition: width 0.5s ease;
+}
+
+.mp-pet-status-value {
+  font-size: 22rpx;
+  color: #8c8c8c;
+  width: 200rpx;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.mp-pet-status-meta {
+  display: flex;
+  gap: 32rpx;
+  margin-top: 18rpx;
+}
+
+.mp-pet-status-meta-item {
+  font-size: 24rpx;
+  color: #5a5f66;
+}
+
+/* ---------- 互动按钮条 ---------- */
+
+.mp-pet-interact-bar {
+  margin-top: 24rpx;
+  display: flex;
+  gap: 24rpx;
+}
+
+.mp-pet-interact-btn {
+  flex: 1;
+  text-align: center;
+  padding: 22rpx 0;
+  border-radius: 16rpx;
+  background: #ff9f43;
+  color: #ffffff;
+  font-size: 28rpx;
+}
+
+.mp-pet-interact-btn--play {
+  background: #4f7cff;
+}
+
+.mp-pet-interact-btn--busy {
+  opacity: 0.45;
+}
+
+/* ---------- 创建引导 ---------- */
+
+.mp-pet-create {
+  margin-top: 48rpx;
+  background: #ffffff;
+  border-radius: 24rpx;
+  padding: 40rpx 32rpx;
+  display: flex;
+  flex-direction: column;
+}
+
+.mp-pet-create-title {
+  font-size: 36rpx;
+  font-weight: 600;
+  color: #1f2329;
+  text-align: center;
+}
+
+.mp-pet-create-desc {
+  margin-top: 12rpx;
+  font-size: 26rpx;
+  color: #8c8c8c;
+  text-align: center;
+}
+
+.mp-pet-create-field {
+  margin-top: 32rpx;
+}
+
+.mp-pet-create-label {
+  display: block;
+  font-size: 26rpx;
+  color: #5a5f66;
+  margin-bottom: 16rpx;
+}
+
+.mp-pet-create-chips {
+  display: flex;
+  gap: 24rpx;
+}
+
+.mp-pet-create-chip {
+  flex: 1;
+  padding: 20rpx 0;
+  border: 2rpx solid #e0e3e8;
+  border-radius: 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  font-size: 28rpx;
+  color: #495057;
+}
+
+.mp-pet-create-chip--active {
+  background: #f0f5ff;
+  color: #4f7cff;
+  font-weight: 600;
+}
+
+.mp-pet-create-input {
+  background: #f5f7fa;
+  border-radius: 16rpx;
+  padding: 20rpx 24rpx;
+  font-size: 28rpx;
+}
+
+.mp-pet-create-btn {
+  margin-top: 40rpx;
+  text-align: center;
+  padding: 22rpx 0;
+  border-radius: 16rpx;
+  background: #4f7cff;
+  color: #ffffff;
+  font-size: 30rpx;
+}
+
+.mp-pet-create-btn--busy {
+  opacity: 0.45;
+}

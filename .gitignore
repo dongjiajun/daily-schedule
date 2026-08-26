@@ -35,3 +35,6 @@ playwright-report/
 
 # === Crash dumps ===
 *.stackdump
+
+# === Miniprogram build ===
+apps/miniprogram/dist/
