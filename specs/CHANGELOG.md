@@ -8,6 +8,18 @@
 
 ---
 
+## [3.5.1] — 2026-08-17
+
+微信小程序登录（MINOR）：`wx.login` code 换 JWT，未注册自动开户（静默注册），与 Web 用户名密码登录共用同一会话体系。
+
+### Added — Auth
+- `POST /auth/wechat-login` — 微信小程序登录（`WechatLoginRequest { code }` → `LoginResponse`）。code 无效（微信 errcode 40029）→ 400；微信上游错误 → 502。
+
+### Added — 数据库
+- `V9__add_user_openid.sql` — `user.openid VARCHAR(64) NULL` + `uk_user_openid` 唯一索引（可空列 UNIQUE 允许多个 NULL，Web 老用户不受影响）。
+
+---
+
 ## [3.5.0] — 2026-08-15
 
 宠物装扮系统（MINOR）：配饰装备语义落地——购买即装备（覆盖旧装备）、取下端点、11 个节日配饰种子。

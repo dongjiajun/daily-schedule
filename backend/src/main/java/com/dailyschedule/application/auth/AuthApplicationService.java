@@ -7,12 +7,14 @@ import com.dailyschedule.domain.user.PasswordHasher;
 import com.dailyschedule.domain.user.User;
 import com.dailyschedule.domain.user.UserRepository;
 import com.dailyschedule.infrastructure.security.JwtUtil;
+import com.dailyschedule.infrastructure.wechat.WechatAuthPort;
 import io.jsonwebtoken.Claims;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * 认证用例编排。<br>
@@ -35,15 +37,18 @@ public class AuthApplicationService {
     private final CategoryRepository categoryRepository;
     private final PasswordHasher passwordHasher;
     private final JwtUtil jwtUtil;
+    private final WechatAuthPort wechatAuthPort;
 
     public AuthApplicationService(UserRepository userRepository,
                                   CategoryRepository categoryRepository,
                                   PasswordHasher passwordHasher,
-                                  JwtUtil jwtUtil) {
+                                  JwtUtil jwtUtil,
+                                  WechatAuthPort wechatAuthPort) {
         this.userRepository = userRepository;
         this.categoryRepository = categoryRepository;
         this.passwordHasher = passwordHasher;
         this.jwtUtil = jwtUtil;
+        this.wechatAuthPort = wechatAuthPort;
     }
 
     @Transactional
@@ -89,6 +94,39 @@ public class AuthApplicationService {
         user.recordLogin(now);
         userRepository.updateLastLogin(user.getId(), now);
         return issueTokens(user, now);
+    }
+
+    /**
+     * 微信小程序登录：code → openid → 按 openid 分流（命中登录 / 未命中静默注册）。
+     * 微信上游错误（{@link com.dailyschedule.infrastructure.wechat.WechatApiException}）直接上抛由 API 层映射。
+     */
+    @Transactional
+    public Tokens wechatLogin(WechatLoginCommand cmd) {
+        if (cmd == null || cmd.code() == null || cmd.code().isBlank()) {
+            throw new IllegalArgumentException("登录凭证不能为空");
+        }
+        String openid = wechatAuthPort.resolveOpenId(cmd.code());
+        User user = userRepository.findByOpenid(openid)
+            .orElseGet(() -> registerWechatUser(openid));
+        return issueTokens(user, LocalDateTime.now());
+    }
+
+    /**
+     * 静默注册：username 取 {@code wx_} + openid 前 12 位（去连字符），
+     * password_hash 存随机 UUID 的 BCrypt 哈希（不可通过密码登录）。
+     */
+    private User registerWechatUser(String openid) {
+        String safe = openid.replace("-", "");
+        String usernameBase = safe.length() >= 12 ? safe.substring(0, 12) : safe;
+        String suffix = safe.length() >= 4 ? safe.substring(safe.length() - 4) : safe;
+        User user = new User();
+        user.setOpenid(openid);
+        user.setUsername("wx_" + usernameBase);
+        user.setDisplayName("微信用户_" + suffix);
+        user.setPasswordHash(passwordHasher.hash(UUID.randomUUID().toString()));
+        userRepository.save(user);
+        seedDefaultCategories(user.getId());
+        return user;
     }
 
     public Tokens refresh(String refreshToken) {

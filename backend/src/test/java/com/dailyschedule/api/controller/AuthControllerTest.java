@@ -74,6 +74,19 @@ class AuthControllerTest {
     }
 
     @Test
+    @DisplayName("POST /api/v1/auth/wechat-login -> 登录成功返回 200")
+    void wechatLogin_shouldReturn200() throws Exception {
+        when(authAppService.wechatLogin(any())).thenReturn(createTokens());
+
+        mockMvc.perform(post("/api/v1/auth/wechat-login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"code\":\"wx-login-code\"}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.accessToken").value("access-token"))
+            .andExpect(jsonPath("$.user.username").value("testuser"));
+    }
+
+    @Test
     @DisplayName("POST /api/v1/auth/refresh -> 续签成功返回 200")
     void refreshToken_shouldReturn200() throws Exception {
         when(authAppService.refresh(anyString())).thenReturn(createTokens());

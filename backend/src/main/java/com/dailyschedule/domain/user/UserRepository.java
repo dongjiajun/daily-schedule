@@ -14,6 +14,9 @@ public interface UserRepository {
     /** 通过 username 或 email 任一匹配（登录场景）。 */
     Optional<User> findByUsernameOrEmail(String usernameOrEmail);
 
+    /** 通过微信 openid 匹配（小程序登录场景）。 */
+    Optional<User> findByOpenid(String openid);
+
     boolean existsByUsername(String username);
 
     boolean existsByEmail(String email);

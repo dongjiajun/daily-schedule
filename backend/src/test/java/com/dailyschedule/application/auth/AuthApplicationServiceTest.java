@@ -10,6 +10,8 @@ import com.dailyschedule.domain.user.User;
 import com.dailyschedule.domain.user.UserRepository;
 import com.dailyschedule.domain.user.UserStatus;
 import com.dailyschedule.infrastructure.security.JwtUtil;
+import com.dailyschedule.infrastructure.wechat.WechatApiException;
+import com.dailyschedule.infrastructure.wechat.WechatAuthPort;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -37,6 +39,7 @@ class AuthApplicationServiceTest {
     @Mock private UserRepository userRepository;
     @Mock private CategoryRepository categoryRepository;
     @Mock private PasswordHasher passwordHasher;
+    @Mock private WechatAuthPort wechatAuthPort;
 
     private JwtUtil jwtUtil;
     private AuthApplicationService svc;
@@ -44,7 +47,7 @@ class AuthApplicationServiceTest {
     @BeforeEach
     void setUp() {
         jwtUtil = new JwtUtil(SECRET, 900, 604800, null);
-        svc = new AuthApplicationService(userRepository, categoryRepository, passwordHasher, jwtUtil);
+        svc = new AuthApplicationService(userRepository, categoryRepository, passwordHasher, jwtUtil, wechatAuthPort);
     }
 
     @Test
@@ -247,6 +250,69 @@ class AuthApplicationServiceTest {
         when(userRepository.findById(99L)).thenReturn(Optional.empty());
         assertThatThrownBy(() -> svc.currentUser(99L))
             .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("wechatLogin：首次登录（openid 无关联用户）→ 静默注册 wx_ 前缀用户 + 默认分类 + tokens")
+    void wechatLogin_firstLogin_createsWechatUser() {
+        when(wechatAuthPort.resolveOpenId("fresh-code")).thenReturn("oX1xK4abcdefghijklmn");
+        when(userRepository.findByOpenid("oX1xK4abcdefghijklmn")).thenReturn(Optional.empty());
+        when(passwordHasher.hash(anyString())).thenReturn("$2a$10$random");
+        when(userRepository.save(any())).thenAnswer(inv -> {
+            User u = inv.getArgument(0);
+            u.setId(7L);
+            return u;
+        });
+
+        Tokens tokens = svc.wechatLogin(new WechatLoginCommand("fresh-code"));
+
+        ArgumentCaptor<User> userCap = ArgumentCaptor.forClass(User.class);
+        verify(userRepository).save(userCap.capture());
+        User saved = userCap.getValue();
+        assertThat(saved.getUsername()).startsWith("wx_").hasSize(15);
+        assertThat(saved.getUsername()).matches("^[a-zA-Z0-9_]+$");
+        assertThat(saved.getOpenid()).isEqualTo("oX1xK4abcdefghijklmn");
+        assertThat(saved.getDisplayName()).startsWith("微信用户_");
+        assertThat(saved.getPasswordHash()).isEqualTo("$2a$10$random");
+        verify(categoryRepository, times(6)).save(any(Category.class));
+        assertThat(tokens.accessToken()).isNotBlank();
+        assertThat(tokens.user().getId()).isEqualTo(7L);
+    }
+
+    @Test
+    @DisplayName("wechatLogin：再次登录（openid 已关联）→ 不注册新用户，直接签发 tokens")
+    void wechatLogin_existingOpenid_returnsSameUser() {
+        User existing = activeUser(9L, "wx_oX1xK4abcdef", "wx@example.com");
+        existing.setOpenid("oX1xK4abcdefghijklmn");
+        when(wechatAuthPort.resolveOpenId("code-again")).thenReturn("oX1xK4abcdefghijklmn");
+        when(userRepository.findByOpenid("oX1xK4abcdefghijklmn")).thenReturn(Optional.of(existing));
+
+        Tokens tokens = svc.wechatLogin(new WechatLoginCommand("code-again"));
+
+        verify(userRepository, never()).save(any());
+        verify(categoryRepository, never()).save(any(Category.class));
+        assertThat(tokens.user().getId()).isEqualTo(9L);
+        assertThat(tokens.user().getUsername()).isEqualTo("wx_oX1xK4abcdef");
+    }
+
+    @Test
+    @DisplayName("wechatLogin：code 为空 → IllegalArgumentException（映射 400）")
+    void wechatLogin_blankCode_throwsIllegalArgument() {
+        assertThatThrownBy(() -> svc.wechatLogin(new WechatLoginCommand(" ")))
+            .isInstanceOf(IllegalArgumentException.class);
+        verify(wechatAuthPort, never()).resolveOpenId(anyString());
+    }
+
+    @Test
+    @DisplayName("wechatLogin：微信上游异常 → 直接上抛（不落库）")
+    void wechatLogin_wechatError_propagates() {
+        when(wechatAuthPort.resolveOpenId("bad-code"))
+            .thenThrow(new WechatApiException(WechatApiException.ERR_INVALID_CODE, "登录凭证无效或已过期"));
+
+        assertThatThrownBy(() -> svc.wechatLogin(new WechatLoginCommand("bad-code")))
+            .isInstanceOf(WechatApiException.class)
+            .satisfies(e -> assertThat(((WechatApiException) e).isInvalidCode()).isTrue());
+        verify(userRepository, never()).save(any());
     }
 
     private static User activeUser(Long id, String username, String email) {

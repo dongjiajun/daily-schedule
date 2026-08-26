@@ -32,3 +32,6 @@ Thumbs.db
 logs/
 test-results/
 playwright-report/
+
+# === Crash dumps ===
+*.stackdump

@@ -18,6 +18,9 @@ public interface UserMapper extends BaseMapper<UserPO> {
     @Select("SELECT * FROM `user` WHERE email = #{email}")
     UserPO selectByEmail(@Param("email") String email);
 
+    @Select("SELECT * FROM `user` WHERE openid = #{openid}")
+    UserPO selectByOpenid(@Param("openid") String openid);
+
     @Select("SELECT * FROM `user` WHERE username = #{q} OR email = #{q}")
     UserPO selectByUsernameOrEmail(@Param("q") String usernameOrEmail);
 

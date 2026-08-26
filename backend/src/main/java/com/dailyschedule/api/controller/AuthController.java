@@ -7,9 +7,11 @@ import com.dailyschedule.api.generated.dto.LoginResponse;
 import com.dailyschedule.api.generated.dto.RefreshRequest;
 import com.dailyschedule.api.generated.dto.RegisterRequest;
 import com.dailyschedule.api.generated.dto.UserResponse;
+import com.dailyschedule.api.generated.dto.WechatLoginRequest;
 import com.dailyschedule.application.auth.AuthApplicationService;
 import com.dailyschedule.application.auth.RegisterCommand;
 import com.dailyschedule.application.auth.Tokens;
+import com.dailyschedule.application.auth.WechatLoginCommand;
 import com.dailyschedule.infrastructure.security.CurrentUserService;
 import com.dailyschedule.infrastructure.security.JwtAuthFilter;
 import jakarta.servlet.http.Cookie;
@@ -57,6 +59,14 @@ public class AuthController implements AuthApi {
         log.info("login: usernameOrEmail={}", request.getUsernameOrEmail());
         Tokens tokens = authAppService.login(request.getUsernameOrEmail(), request.getPassword());
         setSseCookie(tokens.accessToken());
+        return UserAssembler.toLoginResponse(tokens);
+    }
+
+    @Override
+    public LoginResponse wechatLogin(WechatLoginRequest request) {
+        log.info("wechatLogin: code=<redacted>");
+        Tokens tokens = authAppService.wechatLogin(new WechatLoginCommand(request.getCode()));
+        // 小程序走 Bearer header 鉴权，不使用 EventSource，故不下发 dsa_sse_session Cookie（与 Web 端 login/refresh 不同）
         return UserAssembler.toLoginResponse(tokens);
     }
 

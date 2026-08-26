@@ -47,11 +47,12 @@ public class SecurityConfig {
                     response.sendError(HttpStatus.UNAUTHORIZED.value());
                 }))
             .authorizeHttpRequests(auth -> auth
-                // 公开端点：注册 / 登录 / 刷新；Swagger UI 文档；Actuator 探活（仅 health 暴露）
+                // 公开端点：注册 / 登录 / 刷新 / 微信登录；Swagger UI 文档；Actuator 探活（仅 health 暴露）
                 .requestMatchers(
                     "/api/v1/auth/register",
                     "/api/v1/auth/login",
                     "/api/v1/auth/refresh",
+                    "/api/v1/auth/wechat-login",
                     "/actuator/health",
                     "/swagger-ui/**",
                     "/api-docs/**"

@@ -41,6 +41,11 @@ public class UserRepositoryImpl implements UserRepository {
     }
 
     @Override
+    public Optional<User> findByOpenid(String openid) {
+        return Optional.ofNullable(userMapper.selectByOpenid(openid)).map(this::toDomain);
+    }
+
+    @Override
     public boolean existsByUsername(String username) {
         return userMapper.selectByUsername(username) != null;
     }
@@ -72,6 +77,7 @@ public class UserRepositoryImpl implements UserRepository {
     private User toDomain(UserPO po) {
         User u = new User();
         u.setId(po.getId());
+        u.setOpenid(po.getOpenid());
         u.setUsername(po.getUsername());
         u.setEmail(po.getEmail());
         u.setPasswordHash(po.getPasswordHash());
@@ -89,6 +95,7 @@ public class UserRepositoryImpl implements UserRepository {
     private UserPO toPO(User u) {
         UserPO po = new UserPO();
         po.setId(u.getId());
+        po.setOpenid(u.getOpenid());
         po.setUsername(u.getUsername());
         po.setEmail(u.getEmail());
         po.setPasswordHash(u.getPasswordHash());

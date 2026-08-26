@@ -3,6 +3,7 @@ package com.dailyschedule.api.exception;
 import com.dailyschedule.api.generated.dto.ModelApiResponse;
 import com.dailyschedule.application.auth.AuthApplicationService.DuplicateAccountException;
 import com.dailyschedule.application.auth.AuthApplicationService.InvalidCredentialsException;
+import com.dailyschedule.infrastructure.wechat.WechatApiException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -57,6 +58,37 @@ class GlobalExceptionHandlerTest {
         ModelApiResponse resp = handler.handleIllegalArgument(new IllegalArgumentException("名称不能为空"));
         assertThat(resp.getCode()).isEqualTo(400);
         assertThat(resp.getMessage()).isEqualTo("名称不能为空");
+    }
+
+    @Test
+    @DisplayName("WechatApiException 40029（code 无效）→ HTTP 400 + body 400")
+    void wechatInvalidCode_maps400() {
+        var resp = handler.handleWechat(
+            new WechatApiException(WechatApiException.ERR_INVALID_CODE, "登录凭证无效或已过期"));
+        assertThat(resp.getStatusCode().value()).isEqualTo(400);
+        assertThat(resp.getBody()).isNotNull();
+        assertThat(resp.getBody().getCode()).isEqualTo(400);
+        assertThat(resp.getBody().getMessage()).isEqualTo("登录凭证无效或已过期");
+    }
+
+    @Test
+    @DisplayName("WechatApiException 其他 errcode → HTTP 502 + body 502")
+    void wechatUpstreamError_maps502() {
+        var resp = handler.handleWechat(
+            new WechatApiException(40125, "微信登录服务错误"));
+        assertThat(resp.getStatusCode().value()).isEqualTo(502);
+        assertThat(resp.getBody()).isNotNull();
+        assertThat(resp.getBody().getCode()).isEqualTo(502);
+    }
+
+    @Test
+    @DisplayName("WechatApiException 网络异常（errcode -1）→ HTTP 502 + body 502")
+    void wechatNetworkError_maps502() {
+        var resp = handler.handleWechat(
+            new WechatApiException(WechatApiException.ERR_NETWORK, "微信服务暂不可用"));
+        assertThat(resp.getStatusCode().value()).isEqualTo(502);
+        assertThat(resp.getBody()).isNotNull();
+        assertThat(resp.getBody().getCode()).isEqualTo(502);
     }
 
     @Test

@@ -3,11 +3,13 @@ package com.dailyschedule.api.exception;
 import com.dailyschedule.api.generated.dto.ModelApiResponse;
 import com.dailyschedule.application.auth.AuthApplicationService.DuplicateAccountException;
 import com.dailyschedule.application.auth.AuthApplicationService.InvalidCredentialsException;
+import com.dailyschedule.infrastructure.wechat.WechatApiException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -49,6 +51,22 @@ public class GlobalExceptionHandler {
         String msg = ex instanceof DuplicateAccountException ? ex.getMessage() : "资源已存在";
         log.warn("资源冲突: {}", msg);
         return buildResponse(409, msg);
+    }
+
+    /**
+     * 微信 API 错误：40029（code 无效，客户端语义）→ HTTP 400；其余 → HTTP 502（上游服务错误）。
+     * 两种状态码动态返回，故用 ResponseEntity 而非 @ResponseStatus。
+     */
+    @ExceptionHandler(WechatApiException.class)
+    public ResponseEntity<ModelApiResponse> handleWechat(WechatApiException ex) {
+        if (ex.isInvalidCode()) {
+            log.warn("微信登录凭证无效: errcode={}", ex.getErrcode());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(buildResponse(400, ex.getMessage()));
+        }
+        log.error("微信登录上游错误: errcode={}", ex.getErrcode());
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+            .body(buildResponse(502, ex.getMessage()));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

@@ -20,6 +20,13 @@ export type RefreshRequest = {
     refreshToken: string;
 };
 
+export type WechatLoginRequest = {
+    /**
+     * wx.login 返回的临时登录凭证（5 分钟有效、一次性）
+     */
+    code: string;
+};
+
 export type LoginResponse = {
     accessToken: string;
     refreshToken: string;
@@ -311,6 +318,35 @@ export type LoginResponses = {
 };
 
 export type LoginResponse2 = LoginResponses[keyof LoginResponses];
+
+export type WechatLoginData = {
+    body: WechatLoginRequest;
+    path?: never;
+    query?: never;
+    url: '/auth/wechat-login';
+};
+
+export type WechatLoginErrors = {
+    /**
+     * 请求参数不合法
+     */
+    400: ApiResponse;
+    /**
+     * 上游服务错误（微信 jscode2session 调用失败）
+     */
+    502: ApiResponse;
+};
+
+export type WechatLoginError = WechatLoginErrors[keyof WechatLoginErrors];
+
+export type WechatLoginResponses = {
+    /**
+     * 登录成功（小程序走 Bearer 鉴权，不下发 SSE Cookie）
+     */
+    200: LoginResponse;
+};
+
+export type WechatLoginResponse = WechatLoginResponses[keyof WechatLoginResponses];
 
 export type RefreshTokenData = {
     body: RefreshRequest;
