@@ -1,7 +1,7 @@
 # API 规范
 
 > **唯一真相源**: `specs/openapi.yaml`  
-> **当前 API 版本**: 3.5.0  
+> **当前 API 版本**: 3.5.1  
 > **变更历史**: `specs/CHANGELOG.md`  
 > 本文档提供叙事性说明与使用示例；Schema 细节与端点定义以 OpenAPI 文件为准。
 
@@ -9,7 +9,7 @@ Base URL: `/api/v1`
 
 ## 认证
 
-所有端点（除 `/auth/register`、`/auth/login`、`/auth/refresh`、`/sse/notifications`）需携带 JWT：
+所有端点（除 `/auth/register`、`/auth/login`、`/auth/refresh`、`/auth/wechat-login`、`/sse/notifications`）需携带 JWT：
 
 ```
 Authorization: Bearer <accessToken>
@@ -24,6 +24,7 @@ Token 通过注册/登录获取，access token 有效期 15 分钟，refresh tok
 | POST | `/auth/register` | 注册（需 username + email + password，可选 displayName），返回 `LoginResponse` |
 | POST | `/auth/login` | 登录（usernameOrEmail + password），返回 `LoginResponse` 并下发 `dsa_sse_session` Cookie |
 | POST | `/auth/refresh` | 用 refresh token 续签，返回新的 `LoginResponse` |
+| POST | `/auth/wechat-login` | 微信小程序登录（`{ code }`），未注册自动开户（静默注册），返回 `LoginResponse`；code 无效 → 400，微信上游错误 → 502 |
 | POST | `/auth/logout` | 注销（清除 SSE Cookie），返回 204 |
 | GET | `/auth/me` | 获取当前用户信息 `UserResponse` |
 
@@ -46,6 +47,14 @@ Token 通过注册/登录获取，access token 有效期 15 分钟，refresh tok
   "email": "zhangsan@example.com",
   "password": "password123",
   "displayName": "张三"
+}
+```
+
+**微信登录请求示例**（小程序 `wx.login` 的 code，5 分钟有效、一次性）：
+
+```json
+{
+  "code": "0b1xK4testlogin-code"
 }
 ```
 

@@ -78,6 +78,26 @@ pnpm run dev
 
 访问 http://localhost:5173，注册账号后即可使用。
 
+**4. 微信小程序**（可选，Phase 2 开发中）
+
+```powershell
+cd apps/miniprogram
+pnpm run build        # 构建 → dist/
+```
+
+用微信开发者工具「导入项目」选择 `apps/miniprogram/` 目录（appid 使用测试号，`miniprogramRoot` 已配置指向 `dist/`）。开发监听构建用 `pnpm run dev`。
+
+登录后可在 TabBar「日历」查看当月日程（月视图只读：切月/选中日期事件列表；无新建/编辑），在 TabBar「任务」管理任务（三组分组：待办/进行中/已完成；状态移动/新建/删除），在 TabBar「宠物」陪宠物互动（创建宠物/喂食玩耍/状态展示/游走动效）。
+
+小程序登录（v3.5.1+）需后端配置微信凭证环境变量后启动：
+
+```powershell
+$env:WECHAT_APP_ID="<你的 appid>"; $env:WECHAT_APP_SECRET="<你的 secret>"
+cd backend; mvn spring-boot:run -Dspring-boot.run.profiles=dev
+```
+
+开发者工具中勾选「不校验合法域名」（骨架阶段 API 指向 localhost:8080；真机发布需配置合法域名）。
+
 ### 使用 Docker（备选，需 Docker Desktop）
 
 ```powershell

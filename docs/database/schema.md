@@ -1,6 +1,6 @@
 # 数据库设计
 
-> 当前状态: v3.5.0，对应 Flyway 迁移 V1–V8  
+> 当前状态: v3.5.1，对应 Flyway 迁移 V1–V10  
 > 迁移脚本: `backend/src/main/resources/db/migration/`
 
 ## ER 图
@@ -9,9 +9,10 @@
 ┌───────────────────────────────────────────────┐
 │                    user                       │
 ├───────────────────────────────────────────────┤
-│ id (PK) · username · email · display_name     │
-│ avatar_url · password_hash · status           │
-│ last_login_at · created_at · updated_at       │
+│ id (PK) · openid · username · email           │
+│ display_name · avatar_url · password_hash     │
+│ status · last_login_at · created_at           │
+│ updated_at                                    │
 └───────────────────┬───────────────────────────┘
                     │ 1:N 归属 — 各业务表均含
                     │ user_id（索引关联，非外键约束）
@@ -58,8 +59,9 @@
 | 字段 | 类型 | 约束 | 默认值 | 说明 |
 |------|------|------|--------|------|
 | id | BIGINT | PK, AUTO | | |
-| username | VARCHAR(50) | NOT NULL, UNIQUE | | 字母/数字/下划线 |
-| email | VARCHAR(120) | NOT NULL, UNIQUE | | v3.0 新增 |
+| openid | VARCHAR(64) | UNIQUE | NULL | v3.5.1 新增；微信 openid，Web 老用户为 NULL |
+| username | VARCHAR(50) | NOT NULL, UNIQUE | | 字母/数字/下划线（微信用户自动生成 `wx_` 前缀） |
+| email | VARCHAR(120) | UNIQUE | NULL | v3.0 新增；v3.5.1 起可空（微信用户无邮箱） |
 | password_hash | VARCHAR(255) | NOT NULL | | BCrypt 加密 |
 | display_name | VARCHAR(50) | | NULL | v3.0 新增 |
 | avatar_url | VARCHAR(255) | | NULL | v3.0 新增 |
@@ -68,7 +70,7 @@
 | created_at | DATETIME | NOT NULL | NOW() | |
 | updated_at | DATETIME | NOT NULL | NOW() ON UPDATE | |
 
-索引: `uk_user_email` (email UNIQUE)
+索引: `uk_user_email` (email UNIQUE)；`uk_user_openid` (openid UNIQUE，可空列允许多个 NULL)
 
 ### category（分类）
 

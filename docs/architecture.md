@@ -49,9 +49,10 @@
 
 - **JWT 无状态认证**: Spring Security + `JwtAuthFilter`，除 `/auth/**` 外所有 `/api/v1/**` 需认证
 - **注册/登录**: `POST /api/v1/auth/register` 与 `POST /api/v1/auth/login`
-- **密码**: BCrypt 加密存储
+- **微信小程序登录**: `POST /api/v1/auth/wechat-login`（wx.login code → openid → 静默登录/注册，返回同构 `LoginResponse`）——`WechatClient`（RestClient）调 jscode2session，appid/secret 环境变量注入；code 无效（errcode 40029）→ 400，其余上游错误 → 502
+- **密码**: BCrypt 加密存储（微信用户 password_hash 为随机哈希，不可密码登录；`user.openid` 唯一索引关联微信账号）
 - **数据隔离**: 所有业务表含 `user_id`，查询强制按当前用户过滤
-- **前端**: token 存 localStorage，`core/lib/authInterceptor.ts`（main.tsx 启动时注册到 hey-api 客户端）自动附加 `Authorization: Bearer` 头
+- **前端**: token 存 localStorage，`core/lib/authInterceptor.ts`（main.tsx 启动时注册到 hey-api 客户端）自动附加 `Authorization: Bearer` 头；小程序侧 `apps/miniprogram/src/lib/auth.ts` 独立实现（Taro.login → wechat-login → Storage 持久化），业务请求经 `lib/api.ts` 统一注入 Bearer（401 清态 + 静默重登，日历月视图与任务列表均已消费该链路）
 
 ## 响应契约
 
@@ -188,6 +189,11 @@ daily-schedule/
 │       ├── pages/            # LoginPage
 │       ├── lib/              # colors.ts (re-export 兼容层)
 │       └── api/              # 自动生成的 API SDK
+├── apps/
+│   └── miniprogram/          # 微信小程序（Taro 4.2 + React 18 + NutUI，Phase 2 M2.1-2.2）
+│       ├── config/           # Taro 编译配置（webpack5、designWidth 750）
+│       ├── src/              # app + 页面（TabBar：首页/日历/任务/宠物/我的）+ lib/（auth 登录库 + 业务数据层）+ __tests__（vitest 纯逻辑）
+│       └── types/            # 全局类型声明
 ├── packages/
 │   └── shared/               # @daily-schedule/shared — 跨平台共享库
 │       └── src/              # 类型定义、EventBus、业务常量、
@@ -197,8 +203,8 @@ daily-schedule/
 ```
 
 **包管理器**: pnpm（workspace 协议），强制使用（`.npmrc` `engine-strict=true`）
-**任务编排**: Turborepo — `turbo run build` 按依赖顺序构建（shared → frontend）
-**共享库**: `@daily-schedule/shared` — 纯 TypeScript（无 React/DOM 依赖），供 Web + 未来小程序共用
+**任务编排**: Turborepo — `turbo run build` 按依赖顺序构建（shared → frontend / miniprogram）；`turbo run verify` 覆盖全部包 lint + build + test
+**共享库**: `@daily-schedule/shared` — 纯 TypeScript（无 React/DOM 依赖），Web 与小程序共用（小程序侧复用 holiday/pet 引擎已由 miniprogram-foundation 验证）
 
 ## 事件总线 + 模块注册中心
 
@@ -251,8 +257,9 @@ ModuleDefinition {
 
 ## 测试
 
-- **后端**: 44 个测试类，327 个用例，0 失败。H2 内存数据库（MySQL 兼容模式）。`<!-- DOCS-CHECK: backend-test-classes=44 -->`
+- **后端**: 45 个测试类，342 个用例，0 失败。H2 内存数据库（MySQL 兼容模式）。`<!-- DOCS-CHECK: backend-test-classes=45 -->`
 - **前端**: 51 个测试文件，267 个用例，0 失败。vitest + jsdom。`<!-- DOCS-CHECK: frontend-test-files=51 -->`
+- **小程序**: 7 个测试文件，83 个用例（vitest 纯逻辑——shared 跨端复用回归 + wechat-auth 登录响应解析 + miniprogram-calendar 日期纯函数/数据层/请求封装 + miniprogram-todo 任务数据层分组/校验/四函数请求路径 + miniprogram-pet 宠物数据层校验/换算纯函数/三函数请求路径与 404 业务态）。Taro 组件渲染级测试待业务变更引入
 - **E2E**: 13 个 spec 文件，57 条 Playwright 用例（auth/calendar/task/pet），CI 集成。webServer 复用后台启动的后端 + 自动启动前端 Vite。`<!-- DOCS-CHECK: e2e-files=13 -->`
 - **CI**: GitHub Actions — version-check（版本 + 文档一致性）→ backend mvn test → frontend lint → test → build（含 SDK freshness）三道阻断门禁 + E2E（`continue-on-error` 软性，不阻断）
 - **运行**: `cd backend && mvn test` / `cd frontend && pnpm run test`
@@ -266,5 +273,5 @@ docker-compose up -d   # MySQL 8.0 + 后端 8080 + 前端 :5173
 ## 设计文档
 
 - `specs/openapi.yaml` — API 契约（唯一真相源）
-- `openspec/specs/` — 60 个能力规格文档（`<!-- DOCS-CHECK: specs-count=61 -->`）
+- `openspec/specs/` — 66 个能力规格文档（`<!-- DOCS-CHECK: specs-count=66 -->`）
 - `docs/planning/execution-plan.md` — 产品愿景与路线图（规划）

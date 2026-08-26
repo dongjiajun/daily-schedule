@@ -9,6 +9,7 @@
 │                    User                          │
 ├──────────────────────────────────────────────────┤
 │ + id: Long                                       │
+│ + openid: String          ── 微信登录（v3.5.1）   │
 │ + username: String                               │
 │ + email: String                                  │
 │ + passwordHash: String                           │

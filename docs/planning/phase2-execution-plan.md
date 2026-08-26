@@ -38,11 +38,11 @@ Week 1 ────────────────────────�
 
 ### M2.1-2.2 微信小程序（主链，Week 1-8）
 
-- [ ] miniprogram-foundation — Taro 4.x + NutUI 脚手架、pnpm workspace 接入、shared 包复用验证
-- [ ] wechat-auth — Flyway V7 user.openid + wx.login code→JWT
-- [ ] miniprogram-calendar — 日历月视图只读
-- [ ] miniprogram-todo — 任务列表
-- [ ] miniprogram-pet — 宠物互动
+- [x] miniprogram-foundation — Taro 4.x + NutUI 脚手架、pnpm workspace 接入、shared 包复用验证
+- [x] wechat-auth — Flyway V9/V10 user.openid + wx.login code→JWT
+- [x] miniprogram-calendar — 日历月视图只读
+- [x] miniprogram-todo — 任务列表（TabBar 第 4 入口 + 三组分组 + 状态移动 + 新建/删除）
+- [x] miniprogram-pet — 宠物互动
 - [ ] subscribe-message — 订阅消息替代 SSE
 - [ ] miniprogram-habit — 习惯打卡（依赖 M2.3 后端 API）
 
@@ -77,4 +77,4 @@ Week 1 ────────────────────────�
 - 全部 16 项任务 `[x]` 且 marker 声明 = 16 → **移除本文件**（`docs-check` 对该 marker 的检查随文档消失自然跳过，不留残留约束）
 - 移除后更新 `docs/planning/execution-plan.md` 的 Phase 2 状态为已完成
 
-<!-- DOCS-CHECK: phase2-changes=0 -->
+<!-- DOCS-CHECK: phase2-changes=5 -->

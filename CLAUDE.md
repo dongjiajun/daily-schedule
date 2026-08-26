@@ -35,7 +35,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 pnpm install                    # 安装所有 workspace 依赖
-turbo run build                 # 按依赖顺序构建（shared → frontend）
+turbo run build                 # 按依赖顺序构建（shared → frontend / miniprogram）
 turbo run verify                # 全量 lint + build + test
 ```
 
@@ -44,6 +44,21 @@ turbo run verify                # 全量 lint + build + test
 import { holidayEngine } from '@daily-schedule/shared/holiday'
 import { computeNextTarget, createDefaultConfig } from '@daily-schedule/shared/pet'
 ```
+
+**小程序**（`apps/miniprogram/`，Taro 4.2 + React 18 + NutUI 4.0.0-beta.5）：
+```bash
+cd apps/miniprogram
+pnpm run build      # taro build --type weapp → dist/（导入微信开发者工具）
+pnpm run dev        # watch 构建
+pnpm run verify     # lint + test + build（turbo run verify 覆盖）
+```
+React 18 是 Taro 4.2 与 NutUI beta 的 peer 共同支持面（frontend 的 React 19 与之并存，pnpm 按包隔离）。NutUI 用组件级按需引入（`dist/es/packages/<name>` + `style/css`），勿用 barrel 入口。
+
+**日历月视图**（`pages/calendar/`，miniprogram-calendar）：月网格（42 格周一起始 + 跨月补位）+ 选中日事件列表（只读），复用 `GET /events`（无新端点）；`lib/api.ts` 统一 Bearer 注入 + 401 清态静默重登（无 refresh 预续签，留待后续）；日期处理为字符串切片纯函数（`lib/calendar-date.ts`，不 new Date 后端日期串——iOS JSC 兼容）
+
+**任务列表**（`pages/todo/`，miniprogram-todo）：TabBar 第 4 入口 + 恒定三组分组（待办/进行中/已完成）+ ActionSheet 状态移动 + 新建弹层（title 必填/优先级 chips/DatePicker 截止日期）+ 删除确认，复用 `/tasks` 四端点（list/create/move/delete，无新端点）；变更成功 = 本地同步 + refetch 对账（非乐观猜测）；`dueDate` 为字符串比较（过期红/今天高亮，iOS JSC 兼容）
+
+**宠物互动**（`pages/pet/`，miniprogram-pet）：TabBar 第 5 入口 + 宠物状态展示（等级/心情/饥饿/经验/金币）+ 创建引导（物种二选一/命名）+ 喂食玩耍（复用 `/pets/me` 三端点，无新端点）+ 游走动效（shared/pet roam engine `computeNextTarget` wandering 模式，View 绝对定位 px + CSS transition + setTimeout 链，卸载/隐藏双路清理）；形象为 emoji 🐱/🐕 + 颜色圈底（微信 image 不支持 svg）；404 = 无宠物业务态（创建引导）；互动成功 = InteractionResult 本地同步 + refetch 对账；坐标全程 px（引擎 px 语义）
 
 **后端**（`mvn clean test` 全量测试；`mvn spring-boot:run -Dspring-boot.run.profiles=dev` 启动需本地 MySQL）：
 ```bash
@@ -116,7 +131,7 @@ specs/openapi.yaml
 | API | `api/controller/`, `api/assembler/`, `api/exception/` | REST 端点、DTO↔Domain 转换、全局异常处理 |
 | 应用 | `application/event/`, `application/category/`, `application/tag/`, `application/auth/` | 用例编排、事务、缓存注解、重名校验 |
 | 领域 | `domain/event/`, `domain/category/`, `domain/tag/`, `domain/user/`, `domain/notification/` | 实体 + 仓储接口 + DomainService（纯 POJO） |
-| 基础设施 | `infrastructure/persistence/`, `infrastructure/security/`, `infrastructure/config/`, `infrastructure/scheduled/`, `infrastructure/notification/` | MyBatis-Plus 仓储实现（PO + Mapper）、JWT/Spring Security、Caffeine 缓存、提醒调度、SSE |
+| 基础设施 | `infrastructure/persistence/`, `infrastructure/security/`, `infrastructure/config/`, `infrastructure/scheduled/`, `infrastructure/notification/`, `infrastructure/wechat/` | MyBatis-Plus 仓储实现（PO + Mapper）、JWT/Spring Security、Caffeine 缓存、提醒调度、SSE、微信 API 客户端 |
 
 依赖方向：API → 应用 → 领域 ← 基础设施
 
@@ -151,6 +166,7 @@ src/
 
 ### 认证与数据隔离
 - JWT 无状态认证：access 15min + refresh 7d，BCrypt 密码加密
+- 微信小程序登录：`POST /auth/wechat-login`（code→openid→静默登录/注册；`user.openid` 唯一索引；appid/secret 走 `WECHAT_APP_ID`/`WECHAT_APP_SECRET` 环境变量，仓库不落明文）
 - `JwtAuthFilter` 支持 Bearer header 和 `dsa_sse_session` Cookie 两路 token
 - SSE 鉴权用 Cookie（v3.0+），不再用 `?token=` 查询参数
 - 所有业务表含 `user_id`，查询通过 `CurrentUserService` 强制按当前用户过滤
@@ -171,7 +187,7 @@ API 契约版本号在三个文件中保持一致：`specs/openapi.yaml` → `ba
 - MySQL 8.0.29（服务名 `MySQL80`），root/123456；开发库 `daily_schedule_dev`，测试库 `daily_schedule_test`
 - JDK 21 / Node 22；Swagger UI（dev）: http://localhost:8080/swagger-ui.html
 
-## 当前版本：v3.5.0（2026-08-15）
+## 当前版本：v3.5.1（2026-08-17）
 
-核心能力：Event 状态闭环 + 日历拖拽改期/拉伸时长 + 标签筛选 + 5 套主题 + 节日主题自动切换 + 特效系统（6 种）+ 键盘快捷键 + JWT 自动续签 + SSE 提醒推送 + ICS 导出 + PWA + 移动端适配 + 宠物养成（区域感知游走/小窝进窝休息/日程框互动：格内物理四边绕行+吸附落地弹跳/情绪/粒子；动作动画层：eat 进食 + idle 小动作 stretch/yawn/scratch/look + 情绪眨眼过渡；昼夜节律：夜间回窝/早晨唤醒问候/午后小憩/深夜打哈欠提示；健壮性：兴趣区惰性过期 + 游走节奏与渲染解耦）+ 任务看板（三列看板+列表+拖拽）
-测试覆盖：44 类 327 用例（后端 H2，`<!-- DOCS-CHECK: backend-test-classes=44 -->`）+ 51 文件 267 用例（前端 vitest，`<!-- DOCS-CHECK: frontend-test-files=51 -->`）+ 13 文件 57 用例（Playwright E2E，`<!-- DOCS-CHECK: e2e-files=13 -->`）
+核心能力：Event 状态闭环 + 日历拖拽改期/拉伸时长 + 标签筛选 + 5 套主题 + 节日主题自动切换 + 特效系统（6 种）+ 键盘快捷键 + JWT 自动续签 + SSE 提醒推送 + ICS 导出 + PWA + 移动端适配 + 宠物养成（区域感知游走/小窝进窝休息/日程框互动：格内物理四边绕行+吸附落地弹跳/情绪/粒子；动作动画层：eat 进食 + idle 小动作 stretch/yawn/scratch/look + 情绪眨眼过渡；昼夜节律：夜间回窝/早晨唤醒问候/午后小憩/深夜打哈欠提示；健壮性：兴趣区惰性过期 + 游走节奏与渲染解耦）+ 任务看板（三列看板+列表+拖拽）+ 微信小程序（Taro 4.2 骨架 + 微信登录：wx.login code→JWT 静默注册 + 日历月视图只读 + 任务列表：三组分组/状态移动/新建/删除 + 宠物互动：状态/创建/喂食玩耍/游走动效）
+测试覆盖：45 类 342 用例（后端 H2，`<!-- DOCS-CHECK: backend-test-classes=45 -->`）+ 51 文件 267 用例（前端 vitest，`<!-- DOCS-CHECK: frontend-test-files=51 -->`）+ 13 文件 57 用例（Playwright E2E，`<!-- DOCS-CHECK: e2e-files=13 -->`）+ 7 文件 83 用例（小程序 vitest）

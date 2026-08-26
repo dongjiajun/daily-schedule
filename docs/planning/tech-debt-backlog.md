@@ -62,6 +62,14 @@
 | pet-economy-loop | ① 逾期惩罚未做（需 sweep 调度器）；② 删除 DONE 任务后撤销（新 taskId）可再领奖——已知局限，M2.4 调参时处理 |
 | backend-observability | docker-compose healthcheck 配置已写入，本机 Docker 不可用未实测——首次部署时确认镜像含 curl，否则改 bash /dev/tcp 方案 |
 
+## 小程序（Phase 2 起步，2026-08-16 miniprogram-foundation 交付）
+
+| # | 优先级 | 问题 | 备注 |
+|---|--------|------|------|
+| MP1 | P3 | miniprogram bundle 体积：首页 339 KiB（>244 KiB 警告线，React 18 + Taro runtime 固有开销，NutUI 已组件级按需引入） | 页面增多后考虑分包；244 KiB 为 webpack 建议线，小程序真机上传另有压缩 |
+| MP2 | P3 | 小程序渲染级测试缺失（vitest 纯逻辑测试已就位，Taro 组件渲染测试无） | 首个业务变更（wechat-auth）前评估 @tarojs/test-utils-react |
+| MP3 | P3 | miniprogram-pet 宠物移动手感：游走视觉体验「有点问题」（用户 2026-08-24 smoke 反馈，未定具体根因）——候选：① `randomMoveDuration`/`randomWanderInterval` 节奏常量与 `transition: left/top 0.8s` 时长匹配不佳（早期版本曾因签名误用传入 config 对象致 NaN 狂转，已修复）；② wandering 目标跳迁的 discrete 移动感 vs Web 端连续动画；③ 真机 setData 节流 | 排查方向：真机/工具对照 + 节奏常量调优（MP 下个变更或独立 polish） |
+
 ## 已知 Bug（待修复）
 
 | 问题 | 备注 |
