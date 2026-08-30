@@ -261,7 +261,7 @@ ModuleDefinition {
 - **前端**: 51 个测试文件，267 个用例，0 失败。vitest + jsdom。`<!-- DOCS-CHECK: frontend-test-files=51 -->`
 - **小程序**: 7 个测试文件，83 个用例（vitest 纯逻辑——shared 跨端复用回归 + wechat-auth 登录响应解析 + miniprogram-calendar 日期纯函数/数据层/请求封装 + miniprogram-todo 任务数据层分组/校验/四函数请求路径 + miniprogram-pet 宠物数据层校验/换算纯函数/三函数请求路径与 404 业务态）。Taro 组件渲染级测试待业务变更引入
 - **E2E**: 13 个 spec 文件，57 条 Playwright 用例（auth/calendar/task/pet），CI 集成。webServer 复用后台启动的后端 + 自动启动前端 Vite。`<!-- DOCS-CHECK: e2e-files=13 -->`
-- **CI**: GitHub Actions — version-check（版本 + 文档一致性）→ backend mvn test → frontend lint → test → build（含 SDK freshness）三道阻断门禁 + E2E（`continue-on-error` 软性，不阻断）
+- **CI**: GitHub Actions — version-check（版本 + 文档一致性）→ openspec-validation（OpenSpec 一致性：validate --all --strict + doctor + 主 spec 无 delta 头 + CLI 版本=CLAUDE.md 声明 + 归档完整性 validate --archived）→ backend mvn test → frontend lint → test → build（含 SDK freshness）四道阻断门禁 + E2E（`continue-on-error` 软性，不阻断）
 - **运行**: `cd backend && mvn test` / `cd frontend && pnpm run test`
 
 ## 容器化部署
@@ -273,5 +273,5 @@ docker-compose up -d   # MySQL 8.0 + 后端 8080 + 前端 :5173
 ## 设计文档
 
 - `specs/openapi.yaml` — API 契约（唯一真相源）
-- `openspec/specs/` — 66 个能力规格文档（`<!-- DOCS-CHECK: specs-count=66 -->`）
+- `openspec/specs/` — 68 个能力规格文档（`<!-- DOCS-CHECK: specs-count=68 -->`）
 - `docs/planning/execution-plan.md` — 产品愿景与路线图（规划）

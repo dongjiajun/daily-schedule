@@ -10,7 +10,8 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "verify": "turbo run verify",
-    "docs:check": "node scripts/docs-check.mjs"
+    "docs:check": "node scripts/docs-check.mjs",
+    "openspec:check": "node scripts/openspec-check.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.0",

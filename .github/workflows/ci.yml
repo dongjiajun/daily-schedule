@@ -31,6 +31,27 @@ jobs:
       - name: Check docs consistency
         run: node scripts/docs-check.mjs
 
+  openspec-validation:
+    name: OpenSpec Validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          # 本 job 仅跑 openspec CLI（npm 全局安装），无 pnpm 步骤；
+          # 禁用包缓存避免 setup-node 缓存检测失败
+          package-manager-cache: false
+
+      - name: Install OpenSpec CLI (pinned)
+        # ⚠️ 升级 OpenSpec 时须同步：本安装行版本 + CLAUDE.md 的 "OpenSpec CLI <version>" 声明
+        run: npm install -g @fission-ai/openspec@1.11.0
+
+      - name: Validate OpenSpec consistency
+        run: node scripts/openspec-check.mjs
+
   backend:
     name: Backend (Maven compile)
     runs-on: ubuntu-latest
