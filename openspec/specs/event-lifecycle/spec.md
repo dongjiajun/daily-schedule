@@ -1,7 +1,9 @@
 # event-lifecycle Specification
 
 ## Purpose
-TBD - created by archiving change backfill-event-lifecycle-spec. Update Purpose after archive.
+
+日程事件的三态生命周期（PLANNED/COMPLETED/CANCELLED）：新事件默认计划中、状态经查询与展示完整流转，并保证前后端与持久层的状态语义一致。
+
 ## Requirements
 ### Requirement: Event 具有三种生命周期状态
 系统 SHALL 定义 `EventStatus` 枚举：`PLANNED`（计划中）、`COMPLETED`（已完成）、`CANCELLED`（已取消）。新建事件时默认状态 SHALL 为 `PLANNED`。`fromString(null)` SHALL 返回 `PLANNED`。数据库列 `status VARCHAR(20) NOT NULL DEFAULT 'PLANNED'` SHALL 保证所有已有事件有默认值。

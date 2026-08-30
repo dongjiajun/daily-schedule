@@ -1,7 +1,9 @@
 # authentication Specification
 
 ## Purpose
-TBD - created by archiving change backfill-auth-spec. Update Purpose after archive.
+
+认证与授权体系：JWT 无状态令牌签发与校验（access 15min + refresh 7d，HS384），支持密码登录与微信小程序静默注册，保证经过认证的用户身份可注入上下文并用于多用户数据隔离。
+
 ## Requirements
 ### Requirement: 系统生成 access token 和 refresh token 双 token
 系统 SHALL 使用 HS384 算法生成 JWT。access token SHALL 包含 claims: `sub`（userId）、`username`、`typ=access`、`iat`、`exp`，有效期由 `jwt.access-ttl-seconds` 配置（默认 900s = 15min）。refresh token SHALL 包含 claims: `sub`（userId）、`username`、`typ=refresh`、`iat`、`exp`，有效期由 `jwt.refresh-ttl-seconds` 配置（默认 604800s = 7d）。v1.1 兼容入口 `generateToken()` SHALL 等同于 `generateAccessToken()`。

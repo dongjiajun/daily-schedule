@@ -1,7 +1,9 @@
 # multi-user-isolation Specification
 
 ## Purpose
-TBD - created by archiving change backfill-multi-user-isolation-spec. Update Purpose after archive.
+
+多用户数据隔离：JWT 中的 userId 经 JwtAuthFilter → CurrentUserService 完整注入，使所有业务查询与写入强制按当前登录用户过滤，防止跨用户数据访问。
+
 ## Requirements
 ### Requirement: userId 通过 JwtAuthFilter → CurrentUserService 完整注入链路
 `JwtAuthFilter` SHALL 从 JWT 中提取 `userId`（Long 类型），注入 `SecurityContextHolder` 的 Authentication principal。`CurrentUserService.getCurrentUserId()` SHALL 从 SecurityContext 中提取 principal——当 principal 为 Long 时返回该值，否则抛出 `IllegalStateException("未登录")`。此链路 SHALL 使得所有下游代码可通过 `CurrentUserService` 获取当前用户 ID，无需从 token 重复解析。

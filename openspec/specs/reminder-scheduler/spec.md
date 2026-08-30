@@ -1,7 +1,9 @@
 # reminder-scheduler Specification
 
 ## Purpose
-TBD - created by archiving change backfill-reminder-spec. Update Purpose after archive.
+
+提醒调度器：定时轮询未来 1 小时内的待提醒事件（fixedDelay 30s，注入 Clock），触发通知推送，保证用户不错过日程提醒并可稳定测试。
+
 ## Requirements
 ### Requirement: 定时轮询未来 1 小时内的待提醒事件
 `ReminderScheduler.checkReminders()` SHALL 以 `fixedDelay=30s` 的频率执行（上一次执行结束后 30s 启动下一次）。每次执行时 SHALL 查询 `start_time` 在 `[now, now+1h]` 范围内、`reminder_minutes IS NOT NULL`、`status='PLANNED'` 的事件。SHALL 使用注入的 `Clock` 获取当前时间（便于测试）。
