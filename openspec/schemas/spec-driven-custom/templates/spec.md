@@ -2,6 +2,11 @@
 
 <!-- 参考: specs/openapi.yaml + docs/api/overview.md + docs/database/schema.md -->
 
+## Purpose
+<!-- 仅新能力：1-2 句描述该能力用途（≥50 字符，openspec validate --strict 会校验过短）。
+     已存在能力的 delta 不得携带本节（主 spec 已有 Purpose，delta 的会被忽略）；
+     修改已有 Purpose 直接编辑 openspec/specs/<capability>/spec.md。 -->
+
 ## ADDED Requirements
 
 ### Requirement: <!-- 需求名称 -->

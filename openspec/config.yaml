@@ -2,20 +2,22 @@ schema: spec-driven-custom
 
 context: |
   ## 项目概要
-  日程管理系统（Spring Boot 3.4 + React 19 + MySQL 8.0），v3.3.0。
+  日程管理系统（Spring Boot 3.4 + React 19 + MySQL 8.0），v3.5.1（2026-08-17）。
 
   ## 技术栈
   - 后端: Java 21, Spring Boot 3.4, MyBatis-Plus 3.5, Flyway, Spring Security + JWT, Caffeine Cache, Maven
-  - 前端: React 19, TypeScript 6, Tailwind CSS 4, Vite 8, react-big-calendar + dayjs,
+  - 前端: React 19, TypeScript, Tailwind CSS 4, Vite, react-big-calendar + dayjs,
     Zustand (UI 状态), TanStack React Query (服务端数据), Framer Motion, sonner Toast
+  - 小程序: Taro 4.2 + React 18 + NutUI 4.0.0-beta.5（apps/miniprogram，微信小程序）
+  - 共享包: @daily-schedule/shared/holiday（HolidayEngine）+ @daily-schedule/shared/pet（roam engine）独立导出
   - 数据库: MySQL 8.0 生产 / H2 测试
   - API 契约: specs/openapi.yaml 是唯一真相源, Maven 插件生成 Java 接口+DTO,
-    @hey-api/openapi-ts 生成前端 SDK (openapi-ts.config.ts)
+    @hey-api/openapi-ts 生成前端 SDK (src/api/，生成器清空重写，自定义逻辑只能放 src/lib/)
 
   ## 后端架构: DDD 四层
-  API 层 (controller/assembler/exception) → 应用层 (application/*/ApplicationService)
+  API 层 (api/controller|assembler|exception) → 应用层 (application/*/ApplicationService)
   → 领域层 (domain/*/Entity + DomainService + Repository 接口)
-  ← 基础设施层 (infrastructure/persistence/security/config/scheduled/notification)
+  ← 基础设施层 (infrastructure/persistence|security|config|scheduled|notification|wechat)
 
   关键约定:
   - Controller 必须实现 generated/api/ 下的接口, 编译期契约同步
@@ -23,25 +25,29 @@ context: |
   - 所有业务表含 user_id, 通过 CurrentUserService 强制多用户数据隔离
   - Flyway 迁移: src/main/resources/db/migration/V*__*.sql, 启动自动执行
 
-  ## API 契约驱动
-  任何 API 变更都从 specs/openapi.yaml 开始:
-  - 后端: mvn compile 触发 openapi-generator-maven-plugin → target/generated-sources/
-  - 前端: npm run generate:api → src/api/ (sdk.gen.ts + types.gen.ts + client.gen.ts)
-  - client.gen.ts 会被生成覆盖, 自定义逻辑必须在 api/authInterceptor.ts 中
-  - 变更后同步更新 specs/CHANGELOG.md + 三处版本号
+  ## 前端模块化架构
+  - src/core（稳定基础设施: eventBus/moduleRegistry/unwrap/authInterceptor; store: auth/settings; components/ui; hooks; styles）
+  - src/modules/{calendar,pet,todo}（可插拔模块，各含 index.ts + routes.tsx + components/hooks/store/lib）
+  - components/layout + pages（LoginPage）+ lib（兼容层）+ api（自动生成 SDK）
+  - 状态管理两层: Zustand (UI) + React Query (服务端数据)；模块间通信唯一通道 core/lib/eventBus.ts；模块注册 core/lib/moduleRegistry.ts
+
+  ## 小程序（apps/miniprogram）
+  - 微信登录: wx.login code → openid → JWT 静默注册（POST /auth/wechat-login）
+  - 页面: 日历月视图（只读复用 GET /events）、任务列表（复用 /tasks 四端点）、宠物互动（复用 /pets/me 三端点 + shared/pet roam engine）
+  - lib/api.ts 统一 Bearer 注入 + 401 清态静默重登
 
   ## 认证
   JWT 无状态 (access 15min + refresh 7d), BCrypt 加密, SSE Cookie 鉴权 (dsa_sse_session)
   前端 authInterceptor: 请求注入 Bearer + 过期预刷新 + 401 强制登出
 
-  ## 前端状态管理
-  - Zustand stores: authStore (认证), calendarStore (视图), settingsStore (偏好)
-  - React Query hooks: useEvents, useCategories, useTags
-  - 路由: LoginPage + HomePage, shadcn/ui 风格组件 (components/ui/)
-
   ## 测试
-  - 后端: JUnit 5 + H2 内存数据库 (test profile)
-  - 前端: vitest 单元测试 (store/hooks/组件) + Playwright E2E (`e2e/*.spec.ts`, `npm run test:e2e`) + ESLint
+  - 后端: JUnit 5 + H2 内存数据库 (test profile)，45 类 342 用例
+  - 前端: vitest 单元测试（51 文件 267 用例）+ Playwright E2E（13 文件 57 用例）+ ESLint
+  - 小程序: vitest（7 文件 83 用例）
+
+  ## 文档一致性自动化
+  - scripts/sync-version.sh --check：openapi.yaml / pom.xml / package.json 三处版本一致
+  - scripts/docs-check.mjs：版本声明/端点覆盖/结构计数（DOCS-CHECK markers）一致性，CI version-check job 已接入
 
   ## 版本号位置
   specs/openapi.yaml (version), backend/pom.xml (version), frontend/package.json (version)
@@ -52,25 +58,21 @@ rules:
     - 必须标注对 DDD 各层的影响 (API/应用/领域/基础设施)
     - 涉及数据库变更时必须标注 Flyway 迁移版本号 (V5, V6...)
     - 标记是否为 BREAKING 变更 (影响契约兼容性)
-    - 必须按 templates/proposal.md 的结构撰写（含 Capabilities 子标题格式），不得自创章节结构
+    - "无行为变化（纯重构/工具链/文档/热修）时必须在 .openspec.yaml 设 skip_specs: true，不得绕过 OpenSpec 流程"
   specs:
     - 新增 API 端点时必须引用 OpenAPI schema 中的字段名和类型
     - 数据库变更必须列出表名、列名、类型、约束
-    - delta 操作块（ADDED/MODIFIED/REMOVED Requirements）必须按 templates/spec.md 格式撰写
   design:
     - 必须明确改动涉及的后端包路径 (api/controller, application, domain, infrastructure)
     - 涉及新依赖时必须说明选型理由
     - 涉及认证/权限时必须说明安全影响
-    - "Decision 必须采用 `### Decision N: <名称>` 编号 + 三段式（选择/理由/备选方案），按 templates/design.md 结构撰写"
   tasks:
     - "按 DDD 分层编排任务顺序: 数据库迁移 → 领域层 → 基础设施层 → 应用层 → API 层 → 前端"
     - API 契约变更后必须包含 "重新生成 SDK" 任务
     - 每个后端任务完成后应包含对应的测试任务
     - 前端任务必须包含 vitest 单元测试更新 + Playwright E2E 测试更新 (`e2e/*.spec.ts`)
-    - "涉及新前端组件或修改现有组件行为时必须在 tasks 中包含 component-catalog.md 更新"
-    - "涉及新实体/数据库表/字段或修改表结构/领域模型时必须在 tasks 中包含 schema.md + uml/README.md 更新"
-    - "涉及新 API 端点或修改现有端点时必须在 tasks 中包含 api/overview.md 更新"
-    - "涉及架构/模块结构/测试规模/版本号变更时必须包含 architecture.md + CLAUDE.md + README.md 更新"
-    - "8. 文档同步阶段的条目必须逐项评估（未触及的文档类别须写明'现有描述已核对仍准确'结论），不得仅以'无新增'标记 N/A"
-    - "文档同步阶段必须包含运行 `node scripts/docs-check.mjs` 且通过的验证条目"
-    - 必须保持 1-9 固定分组编号（按 templates/tasks.md），无变更的分组标记 N/A 打勾，不得自创分组编号
+    - 涉及新前端组件或修改现有组件行为时必须在 tasks 中包含 component-catalog.md 更新
+    - 涉及新实体/数据库表/字段或修改表结构/领域模型时必须在 tasks 中包含 schema.md + uml/README.md 更新
+    - 涉及新 API 端点或修改现有端点时必须在 tasks 中包含 api/overview.md 更新
+    - 涉及架构/模块结构/测试规模/版本号变更时必须包含 architecture.md + CLAUDE.md + README.md 更新
+    - 文档同步阶段必须包含运行 `node scripts/docs-check.mjs` 且通过的验证条目

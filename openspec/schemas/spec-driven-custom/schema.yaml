@@ -25,6 +25,8 @@ artifacts:
       - **Impact**: 受影响的代码、前端组件、依赖
 
       保持 1-2 页，聚焦 "why" 而非 "how"。
+
+      skip_specs（无行为变化时）：纯重构/工具链/文档/热修等无 spec 级行为变化的变更，必须在 .openspec.yaml 设 `skip_specs: true`，不得绕过 OpenSpec 流程；`openspec validate` 放行零 delta + skip_specs 的变更。行为变化的变更必须提供 delta specs，不得用 skip_specs 逃避。
     requires: []
 
   - id: specs
@@ -45,6 +47,11 @@ artifacts:
       - **MODIFIED Requirements**: 变更行为 — 必须包含完整内容（非片段）
       - **REMOVED Requirements**: 废弃 — 必须含 **Reason** + **Migration**
       - **RENAMED Requirements**: 仅改名 — 用 FROM:/TO: 格式
+
+      Purpose（官方 1.11.0 规范）：
+      - **新能力**：delta 必须以 `## Purpose` 段开头，1-2 句描述用途，内容 ≥50 字符（`openspec validate --strict` 对过短报 WARNING）；归档/同步时由此种子新主 spec 的 Purpose
+      - **已存在能力**：delta 不得携带 `## Purpose` 段（主 spec 已有，delta 的会被忽略）；修改已有 Purpose 直接编辑 openspec/specs/<cap>/spec.md
+      - REMOVED 删掉某能力最后一个 requirement 时，归档需在 .openspec.yaml 声明 `retire_capabilities: true`（否则归档中止）
 
       格式规范：
       - 每条需求: `### Requirement: <名称>` + 描述（用 SHALL/MUST）
@@ -99,6 +106,8 @@ artifacts:
       - 后端任务后紧跟对应测试任务
       - 前端任务包含 SDK 重新生成、组件开发、状态管理、样式，以及 vitest 单元测试（store/hooks/组件）和 Playwright E2E 测试（`e2e/*.spec.ts`）
       - 涉及 Canvas/WASM/Web API 等 mock 无法覆盖的技术时，必须在全量验证中加 smoke test（浏览器手工验证）
+
+      **归档前验证门禁**：真实代码变更（触碰 backend/、frontend/src/、apps/miniprogram/、packages/ 源码）须包含 `/opsx:verify` 任务；纯工具链/文档/元数据变更在第 9 组（全量验证）注明等效依据（全量验证组套件 + validate --archived 全绿）。
 
       格式：
       - 每个任务: `- [ ] X.Y 任务描述`

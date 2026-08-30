@@ -13,7 +13,8 @@
 
 ### New Capabilities
 <!-- 新增能力，kebab-case 命名 (如 event-recurrence, dark-mode, ics-import)
-     每个将生成 specs/<name>/spec.md -->
+     每个将生成 specs/<name>/spec.md；无行为变化（纯重构/工具链/文档/热修）时
+     在 .openspec.yaml 设 skip_specs: true，本小节留空，不得绕过 OpenSpec -->
 - `<name>`: <简述>
 
 ### Modified Capabilities

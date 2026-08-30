@@ -7,19 +7,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 开发工作流（OpenSpec）
 
-本项目使用 **OpenSpec** 进行 artifact-driven 开发，schema 为 `spec-driven-custom`。
+本项目使用 **OpenSpec** 进行 artifact-driven 开发，schema 为 `spec-driven-custom`（OpenSpec CLI 1.11.0，skills/commands 同步于 `.dsh/skills/` 与 `.dsh/commands/opsx/`）。
 **所有变更都走这个流程**，不直接在代码库中"裸写"代码。
 
 ### Artifact 序列
 
 ```
-/opsx:new <name> → proposal → design → spec → tasks → /opsx:apply → /opsx:verify → /opsx:archive
+/opsx:new <name> → proposal → specs → design → tasks → /opsx:apply → /opsx:verify → /opsx:archive
 ```
 
 | 命令 | 用途 |
 |------|------|
 | `/opsx:new <kebab-case-name>` | 创建新变更，生成目录骨架 |
-| `/opsx:continue` | 继续下一步 artifact（proposal → design → spec → tasks） |
+| `/opsx:continue` | 继续下一步 artifact（proposal → specs → design → tasks） |
 | `/opsx:ff` | 一次性生成全部 artifacts（快速通道） |
 | `/opsx:apply` | 按 tasks.md 逐项实施 |
 | `/opsx:verify` | 验证实现与 artifacts 一致 |
@@ -28,8 +28,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | `/opsx:explore` | 进入探索模式，梳理需求 |
 | `/opsx:update` | 修订已有 artifacts |
 
-- **变更目录**: `openspec/changes/archive/<date>-<name>/`（proposal / design / spec / tasks）
+- **变更目录**: `openspec/changes/archive/<date>-<name>/`（proposal / specs / design / tasks）
 - **主 specs**: `openspec/specs/<capability>/spec.md`
+- **skip_specs**: 无行为变化变更（纯重构/工具链/文档/热修）在 `.openspec.yaml` 设 `skip_specs: true`，保留流程留痕，不"裸写"绕开
+- **新能力 delta 规范**: 必须以 `## Purpose` 段开头（≥50 字符）；已存在能力的 delta 不得携带；改已有 Purpose 直接编辑主 spec
+- **CI 门禁**: `openspec-validation` job 运行 `pnpm run openspec:check`（`scripts/openspec-check.mjs`：validate --all --strict + doctor + 主 spec 无 delta 头 + CLI 版本=CLAUDE.md 声明 + validate --archived 归档完整性）——OpenSpec 一致性不合规会阻断 CI；升级 OpenSpec 须同步 ci.yml 钉版安装行与本节版本声明
+- **归档前验证门禁**: 真实代码变更（`backend/`、`frontend/src/`、`apps/miniprogram/`、`packages/` 源码）归档前必须运行 `/opsx:verify` 且报告无 CRITICAL；纯工具链/文档/元数据变更可由 tasks 全量验证组套件（custom 第 9 组 / lite 第 3 组）+ `validate --archived` 等效替代，归档条目注明等效依据
+- **lite 工作流**: 小规模/单模块/无架构决策变更可用 `openspec new change <name> --schema spec-driven-custom-lite`（proposal → specs → tasks，无 design 工件）；复杂变更（跨模块/新架构/外部依赖/安全/性能/迁移）必须用默认 `spec-driven-custom`；默认 schema 不变，两 schema 模板单源同步（custom 为先）
 
 ## 常用命令
 
@@ -83,7 +88,7 @@ pnpm run generate:api # 从 ../specs/openapi.yaml 生成 SDK
 turbo run verify && cd backend && mvn test && cd frontend && npm run test:e2e
 ```
 
-**CI 五层门禁**: 后端 `mvn test` + 前端 `pnpm run lint` + `pnpm run test` + `pnpm run build`（含 SDK freshness check）+ `npm run test:e2e`
+**CI 门禁**: openspec-validation（OpenSpec 一致性：validate --all --strict + doctor + 主 spec 无 delta 头 + CLI 版本=声明 + 归档完整性 validate --archived）+ version-check（版本同步 + 文档一致性）+ 后端 `mvn test` + 前端 `pnpm run lint` + `pnpm run test` + `pnpm run build`（含 SDK freshness check）为阻断门禁；`npm run test:e2e`（continue-on-error 软性）
 **常见失败**: `@typescript-eslint/no-explicit-any` / `tsc -b` 类型错误 / 后端单测失败
 
 **文档检查**（每次变更后逐项确认——未触及的类别须写明"现有描述已核对仍准确"，不得仅以"无新增"跳过；不走 OpenSpec 流程的小改动（热修/文档勘误）同样适用，提交前逐项核对）：
@@ -92,7 +97,7 @@ turbo run verify && cd backend && mvn test && cd frontend && npm run test:e2e
 - API 端点/契约（新增**或修改**）→ `docs/api/overview.md`
 - 架构/模块/测试规模变动 → `docs/architecture.md` + `CLAUDE.md`
 - 版本号/测试数/模块列表变动 → `CLAUDE.md` 底部版本声明 + `README.md`
-- **自动化验证**: 提交前运行 `pnpm run docs:check`（`scripts/docs-check.mjs`）——版本声明/端点覆盖/结构计数与代码不一致会非零退出（CI version-check job 已接入）
+- **自动化验证**: 提交前运行 `pnpm run docs:check`（`scripts/docs-check.mjs`）——版本声明/端点覆盖/结构计数与代码不一致会非零退出（CI version-check job 已接入）；`pnpm run openspec:check`（`scripts/openspec-check.mjs`）——OpenSpec 一致性不合规会非零退出（CI openspec-validation job 已接入）
 
 ## 关键文档
 
