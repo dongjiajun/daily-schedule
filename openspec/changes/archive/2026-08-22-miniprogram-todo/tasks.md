@@ -1,4 +1,5 @@
 # Tasks: miniprogram-todo
+<!-- backfilled: 2026-08-30 (change: backfill-archive-task-completion) — 勾选补正：任务均已落地（功能/修复/验证在 v3.5.1 生效）；用户跟进观感项已移交用户实机目测 -->
 
 <!--
   按 DDD 分层编排，每个任务 - [ ] X.Y 格式，apply 阶段据此追踪进度。
@@ -39,7 +40,7 @@
 - [x] 7.2 `lib/tasks.ts` — 四个 API 薄封装：`fetchTasks()` / `createTask()` / `moveTask(id, status)` / `deleteTask(id)`（复用 `lib/api.ts` `apiRequest`，不重复错误处理；`lib/api.ts` `ApiMethod` 扩展 PATCH）
 - [x] 7.3 `components/todo/TaskItem.tsx` — 任务行：状态标识（点击→onPickStatus）+ title + priority 标签色点 + dueDate（过期红/今天高亮，字符串比较）+ tags 色点名称 + description 截断 + 尾部删除按钮；DONE 项弱化（`--done`）
 - [x] 7.4 `components/todo/TaskList.tsx` — 三组恒定渲染：组头（STATUS_LABEL + 计数）+ TaskItem×n + 空组空态文案
-- [ ] 7.5 `components/todo/TaskFormPopup.tsx` — 新建弹层（NutUI Popup 组件级引入）：Input(title, 空提示不提交) + TextArea(description) + Picker(priority 默认 MEDIUM) + DatePicker(dueDate，默认不设)；提交回调 createTask
+- [x] 7.5 `components/todo/TaskFormPopup.tsx` — 新建弹层（NutUI Popup 组件级引入）：Input(title, 空提示不提交) + TextArea(description) + Picker(priority 默认 MEDIUM) + DatePicker(dueDate，默认不设)；提交回调 createTask
 - [x] 7.6 `pages/todo/index.tsx` + `index.config.ts` — 页面集成：`loading` 派生（tasks===null && error===null）、effect deps `[reloadKey]`、错误态+重试、401 catch 分支静默重登（wechatLogin → fetchTasks）、ActionSheet 状态移动（movingTask）、Taro.showModal 删除确认、变更成功后本地同步 + refetch 对账
 - [x] 7.7 样式 `pages/todo/index.scss`（+ 组件样式随附，类名前缀 `mp-todo-`）+ `app.config.ts` TabBar 追加「任务」第 4 tab
 - [x] 7.8 编写 `__tests__/tasks.test.ts` — vitest 单元测试：parseTaskSummary 校验、groupTasksByStatus 分组/排序/缺失兜底、四函数请求路径与错误透传（`vi.mock('../lib/api')`，沿用 events.test.ts 模式）

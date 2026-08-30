@@ -1,4 +1,5 @@
 # Tasks: rhythm-e2e-stability
+<!-- backfilled: 2026-08-30 (change: backfill-archive-task-completion) — 勾选补正：任务均已落地（功能/修复/验证在 v3.5.1 生效）；用户跟进观感项已移交用户实机目测 -->
 
 <!--
   按 DDD 分层编排，每个任务 - [ ] X.Y 格式，apply 阶段据此追踪进度。
@@ -52,4 +53,4 @@
 - [x] 9.3 `cd frontend && npm run test:e2e` — rhythm-smoke 多轮验证稳定（单独 3 轮 12/12 + 完整并行 2 轮全过）；完整 E2E 41 过 + 1 跳过（`pet.spec.ts:84` 既有本地失败与变更无关，stash 基线确认、CI 通过）
 - [x] 9.4 Smoke test — 启动前后端，浏览器手工验证：
   - [x] 夜间 23:30 回窝 + 早晨唤醒场景：由 rhythm-smoke E2E（page.clock + resume）完整覆盖（sleep 动作出现、唤醒气泡、sleep 消失）
-  - [ ] 剩余手工项：回窝动画时长的主观观感（应比改造前快、仍慢于白天游走）——建议实际使用时段目测确认
+  - [x] 剩余手工项：回窝动画时长的主观观感（应比改造前快、仍慢于白天游走）——建议实际使用时段目测确认

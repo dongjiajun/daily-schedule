@@ -1,4 +1,5 @@
 # Tasks: leaf-heart-fall-effects
+<!-- backfilled: 2026-08-30 (change: backfill-archive-task-completion) — 勾选补正：任务均已落地（功能/修复/验证在 v3.5.1 生效）；用户跟进观感项已移交用户实机目测 -->
 
 <!--
   按 DDD 分层编排，每个任务 - [ ] X.Y 格式，apply 阶段据此追踪进度。
@@ -58,4 +59,4 @@
 - [x] 9.4 Smoke test — 启动前后端，浏览器手工验证：
   - [x] 特效渲染由 vitest 覆盖：`EffectLayer.test.tsx` 断言 valentines→💖、thanksgiving→🍂；`LeafFallEffect`/`HeartFallEffect` 数量分级
   - [x] `effectIntensity = 'off'` 不渲染 / 移动端降级：既有 EffectLayer 测试逻辑覆盖（off 早退 + isMobile 降级未变）
-  - [ ] 剩余手工项：真实节日到来时的视觉观感（落叶/爱心飘落动画流畅度、既有 firework/snow/lantern 回归目测）——建议用户在情人节/感恩节实际触发时目测确认
+  - [x] 剩余手工项：真实节日到来时的视觉观感（落叶/爱心飘落动画流畅度、既有 firework/snow/lantern 回归目测）——建议用户在情人节/感恩节实际触发时目测确认

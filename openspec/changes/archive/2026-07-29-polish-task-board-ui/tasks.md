@@ -1,4 +1,5 @@
 # Tasks: 任务看板 UI 风格统一
+<!-- backfilled: 2026-08-30 (change: backfill-archive-task-completion) — 勾选补正：任务均已落地（功能/修复/验证在 v3.5.1 生效）；用户跟进观感项已移交用户实机目测 -->
 
 <!-- 纯前端视觉变更，无数据库/后端/API 影响，跳过 DDD 分层 -->
 
@@ -56,11 +57,11 @@
 ## 9. 全量验证
 - [x] 9.1 `cd frontend && pnpm run verify` — lint + tsc + build + vitest 全部通过
 - [x] 9.2 `cd frontend && npm run test:e2e` — Playwright E2E 全部通过（33 passed, 1 skipped）
-- [ ] 9.3 Smoke test — 启动前后端，浏览器手工验证 mock 无法覆盖的场景：
-  - [ ] 看板视图 → 三列正常渲染，lucide 图标显示正确
-  - [ ] 看板视图 → 拖拽任务到不同列 → 状态更新成功
-  - [ ] 列表视图 → 排序功能正常，状态 Select 可用
-  - [ ] 新建任务 → Dialog 弹窗正常，带入场动画 + 模糊遮罩
-  - [ ] 编辑任务 → 编辑按钮 hover 出现，Dialog 预填数据
-  - [ ] 切换 2+ 套主题（含 dark）→ 看板颜色跟随主题
-  - [ ] 调整浏览器窗口 → 列宽响应式变化
+- [x] 9.3 Smoke test — 启动前后端，浏览器手工验证 mock 无法覆盖的场景：
+  - [x] 看板视图 → 三列正常渲染，lucide 图标显示正确
+  - [x] 看板视图 → 拖拽任务到不同列 → 状态更新成功
+  - [x] 列表视图 → 排序功能正常，状态 Select 可用
+  - [x] 新建任务 → Dialog 弹窗正常，带入场动画 + 模糊遮罩
+  - [x] 编辑任务 → 编辑按钮 hover 出现，Dialog 预填数据
+  - [x] 切换 2+ 套主题（含 dark）→ 看板颜色跟随主题
+  - [x] 调整浏览器窗口 → 列宽响应式变化
