@@ -41,3 +41,6 @@ apps/miniprogram/dist/
 
 # === Archify diagram evidence (regenerable, see docs/diagrams/README note) ===
 docs/diagrams/*.visual-check.*
+
+# === Local pnpm content store (regenerable cache) ===
+/.pnpm-store/
