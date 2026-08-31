@@ -60,6 +60,7 @@
 3. 主 spec delta 头守卫——`openspec/specs/` 下所有 spec.md SHALL NOT 包含 `## ADDED Requirements`、`## MODIFIED Requirements`、`## REMOVED Requirements`、`## RENAMED Requirements` 或 `### (Modified|Removed|Renamed) Requirement` 行（delta 专用标记仅允许存在于 `openspec/changes/` 的变更内）
 4. CLI 版本守卫——`openspec --version` SHALL 与 CLAUDE.md 声明的 OpenSpec 版本一致
 5. `openspec validate --archived --no-interactive`——归档变更的 tasks SHALL 全部勾选完成（`- [x]`），任一归档变更残留 `- [ ]` 即失败（`backfill-archive-task-completion` 补正后的历史归档须保持全绿）
+6. test-plan 内容门禁——活动变更：存在 test-plan.md 时，其行 SHALL 对 delta specs 中的每个 `#### Scenario:` 逐条对应（Requirement/Scenario 引用一致，无遗漏）；归档变更：含 test-plan.md 时其 `Initial State` SHALL 无残留 `🔴`（全部翻绿）
 
 `version-check` job 的 docs-check 门禁与 OpenSpec 门禁相互独立：任一门的检查失败 SHALL 各自以非零退出码阻断 CI。
 
@@ -86,6 +87,10 @@
 #### Scenario: 钉版本安装与声明一致时 CI 绿
 - **WHEN** `npm install -g @fission-ai/openspec@<version>` 安装的版本等于 CLAUDE.md 声明版本，且主 specs/活动变更/归档变更/关系健康/主 spec 无 delta 头
 - **THEN** `openspec-check.mjs` 通过全部检查，openspec-validation job 绿色
+
+#### Scenario: test-plan 门禁拦截风险
+- **WHEN** 活动变更的 delta 场景与 test-plan 行不一致（缺行/引用错），或归档变更的 test-plan.md 残留 `🔴`
+- **THEN** test-plan 内容门禁输出变更名与问题行并失败，CI 红（须补齐映射或翻绿后通过）
 
 ### Requirement: 归档前验证门禁
 项目 OpenSpec 工作流 SHALL 在归档前执行验证门禁：

@@ -93,6 +93,24 @@ artifacts:
     requires:
       - proposal
 
+  - id: test-plan
+    generates: test-plan.md
+    description: 测试计划 — 场景到命名测试的映射活账本
+    template: test-plan.md
+    instruction: |
+      创建测试计划，将 delta specs 中每个 `#### Scenario:` 映射到命名测试。
+      **格式纪律（MUST）**：撰写前先读取模板 `templates/test-plan.md`，采用 6 列表格（Requirement | Scenario | Test File | Test Name | Initial State | Coverage Notes）。
+
+      纪律：
+      - 每个 delta 场景必须有对应行（Requirement/Scenario 引用一致），无遗漏
+      - 未实现场景 Initial State 记 `🔴`；实现并通过验证后改写 `🟢`
+      - 无独立测试面的场景（纯配置/手工验证）在 Coverage Notes 注明理由
+      - **红绿纪律**：apply 时逐场景先写/改对应测试（红）再实现至通过（绿），账本行同步翻转
+      - **漂移停流**：spec 变化（需求变更）时停止实施 → 更新 delta spec → 重审 → 更新本表 → 继续
+    requires:
+      - specs
+      - design
+
   - id: tasks
     generates: tasks.md
     description: 实现任务清单，可追踪的 checkbox 格式
@@ -178,6 +196,7 @@ artifacts:
     requires:
       - specs
       - design
+      - test-plan
 
 apply:
   requires: [tasks]
