@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "日程管理系统 整体系统架构",
+    "quality_profile": "showcase"
+  },
+  "components": [
+    { "id": "browser", "type": "frontend", "label": "Web 前端", "sublabel": "React 19 · PWA · Vite", "pos": [40, 160], "size": [170, 68] },
+    { "id": "miniprogram", "type": "frontend", "label": "微信小程序", "sublabel": "Taro 4.2 · React 18 · NutUI", "pos": [40, 272], "size": [170, 68] },
+    { "id": "shared", "type": "frontend", "label": "共享层", "sublabel": "@daily-schedule/shared", "pos": [40, 40], "size": [170, 60] },
+    { "id": "api-layer", "type": "backend", "label": "API 层", "sublabel": "controller · assembler", "tag": "7 个 Controller", "pos": [430, 40], "size": [210, 68] },
+    { "id": "app-layer", "type": "backend", "label": "应用层", "sublabel": "event · category · pet · todo", "tag": "用例编排 · 事务", "pos": [430, 138], "size": [210, 68] },
+    { "id": "domain-layer", "type": "backend", "label": "领域层", "sublabel": "domain/* · 纯 POJO", "tag": "35 个文件", "pos": [430, 236], "size": [210, 68] },
+    { "id": "infra-layer", "type": "backend", "label": "基础设施层", "sublabel": "persistence · security · sse", "tag": "MyBatis-Plus/Flyway/SSE", "pos": [430, 334], "size": [210, 68] },
+    { "id": "mysql", "type": "database", "label": "MySQL 8.0", "sublabel": "Flyway V1–V10 · InnoDB", "tag": "user_id 数据隔离", "pos": [760, 334], "size": [200, 68] },
+    { "id": "wechat", "type": "external", "label": "微信开放平台", "sublabel": "jscode2session", "tag": "appid/secret 环境变量", "pos": [430, 432], "size": [210, 56] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "Spring Boot 3.4 后端（Java 21）", "wraps": ["api-layer", "app-layer", "domain-layer", "infra-layer"] }
+  ],
+  "connections": [
+    { "id": "browser-rest", "from": "browser", "to": "api-layer", "label": "REST · JWT Bearer", "variant": "emphasis", "labelAt": [265, 236] },
+    { "id": "browser-sse", "from": "browser", "to": "api-layer", "label": "SSE · Cookie", "variant": "dashed", "labelAt": [265, 268] },
+    { "id": "mini-rest", "from": "miniprogram", "to": "api-layer", "label": "REST · wx.login code", "variant": "emphasis", "labelAt": [265, 352] },
+    { "id": "api-app", "from": "api-layer", "to": "app-layer", "label": "用例编排 · 事务", "labelDy": 24 },
+    { "id": "app-domain", "from": "app-layer", "to": "domain-layer", "label": "领域规则 · 仓储接口", "labelDy": 24 },
+    { "id": "infra-domain", "from": "infra-layer", "to": "domain-layer", "label": "实现仓储端口", "variant": "security" },
+    { "id": "infra-mysql", "from": "infra-layer", "to": "mysql", "label": "MyBatis-Plus · SQL", "variant": "emphasis" },
+    { "id": "infra-wechat", "from": "infra-layer", "to": "wechat", "label": "jscode2session", "labelDy": 24 },
+    { "id": "browser-shared", "from": "browser", "to": "shared", "label": "复用", "variant": "dashed" },
+    { "id": "mini-shared", "from": "miniprogram", "to": "shared", "label": "复用", "variant": "dashed", "fromSide": "left", "toSide": "left", "via": [[20, 306], [20, 70]] }
+  ],
+  "cards": [
+    { "dot": "violet", "title": "安全与可观测", "items": [
+      "JwtAuthFilter 两路 token：Bearer（REST 主路径）与 dsa_sse_session Cookie（SSE）",
+      "RequestIdFilter：X-Request-Id → MDC，错误响应携带 requestId 可检索日志",
+      "Actuator 仅暴露 /actuator/health；所有业务表含 user_id 强制按用户过滤"
+    ]},
+    { "dot": "cyan", "title": "性能与调度", "items": [
+      "Caffeine 缓存 categories/tags（5 分钟，按 userId 隔离），写操作精确 @CacheEvict",
+      "TaskScheduler pool 2：提醒扫描与宠物衰减独立线程互不阻塞"
+    ]},
+    { "dot": "emerald", "title": "共享与数据层", "items": [
+      "@daily-schedule/shared 纯 TS（holiday 节日 + pet 游走引擎）供 Web/小程序复用",
+      "Flyway V1–V10；event/task N:M tag；pet_rewards UNIQUE(pet_id,source,ref_id) 幂等",
+      "微信登录：code 无效（40029）→ 400，其余上游错误 → 502"
+    ]}
+  ]
+}

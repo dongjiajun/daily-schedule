@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "diagram_type": "lifecycle",
+  "meta": {
+    "title": "宠物情绪状态机",
+    "output": "docs/diagrams/pet-emotion-lifecycle.html",
+    "quality_profile": "showcase",
+    "viewBox": [1000, 630]
+  },
+  "lanes": [
+    { "id": "main", "label": "情绪主轨 · 瞬态循环" },
+    { "id": "sub", "label": "触发与稳定态" },
+    { "id": "terminal", "label": "持久化 / 恢复" }
+  ],
+  "states": [
+    { "id": "idle", "type": "start", "label": "idle · 平静", "sublabel": "emotionState 默认", "lane": "main", "col": 0, "step": "01", "tag": "默认" },
+    { "id": "state_happy", "type": "active", "label": "happy · 开心", "sublabel": "正面事件触发", "lane": "main", "col": 1, "step": "02", "tag": "瞬态" },
+    { "id": "state_excited", "type": "active", "label": "excited · 兴奋", "sublabel": "连击 >= 3 升级", "lane": "main", "col": 2, "step": "03", "tag": "瞬态" },
+    { "id": "settle_idle", "type": "success", "label": "回落 idle", "sublabel": "stateTimer 到期归一", "lane": "main", "col": 3, "step": "04", "tag": "归一" },
+    { "id": "state_sad", "type": "active", "label": "sad · 失落", "sublabel": "event:cancelled 取消", "lane": "sub", "col": 0, "tag": "负面瞬态" },
+    { "id": "state_idle_variant", "type": "active", "label": "idle_variant · 小动作", "sublabel": "task:created 触发", "lane": "sub", "col": 1, "tag": "稳定态" },
+    { "id": "persist_normalize", "type": "waiting", "label": "写盘归一", "sublabel": "partialize: 瞬态 -> idle", "lane": "terminal", "col": 0, "tag": "normalize" },
+    { "id": "rehydrate", "type": "neutral", "label": "刷新恢复", "sublabel": "读回 + 视口钳制", "lane": "terminal", "col": 1, "tag": "rehydrate" }
+  ],
+  "transitions": [
+    { "id": "t_cancel_sad", "from": "idle", "to": "state_sad", "note": "event:cancelled -> resetCombo() + setEmotion('sad', 5000)", "fromSide": "bottom", "toSide": "top", "route": "drop", "channelY": 210 },
+    { "id": "t_sad_settle", "from": "state_sad", "to": "idle", "note": "stateTimer 到期归一 idle", "fromSide": "top", "toSide": "bottom", "route": "drop", "channelY": 246 },
+    { "id": "t_task_idlevariant", "from": "idle", "to": "state_idle_variant", "note": "setEmotion('idle_variant', 2500 / 45000)", "fromSide": "bottom", "toSide": "top", "route": "drop", "channelY": 200 },
+    { "id": "t_variant_settle", "from": "state_idle_variant", "to": "settle_idle", "note": "格内 CELL_MAX_SESSION_MS=45s", "fromSide": "top", "toSide": "bottom", "route": "straight" },
+    { "id": "t_refresh_persist", "from": "idle", "to": "persist_normalize", "note": "petStore zustand persist 中间件", "fromSide": "bottom", "toSide": "top", "via": [[94, 233], [480, 233], [480, 410], [402, 410]] },
+    { "id": "t_persist_restore", "from": "persist_normalize", "to": "rehydrate", "note": "key pet-roaming-state · version 1", "fromSide": "right", "toSide": "left", "route": "straight" },
+    { "id": "t_restore_idle", "from": "rehydrate", "to": "idle", "note": "merge 白名单字段 + clampPositionToViewport(-90px)", "fromSide": "right", "toSide": "top", "via": [[633, 479], [633, 90], [94, 90]] }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "瞬态循环主轨",
+      "items": [
+        "主轨按列推进：01 idle -> 02 happy -> 03 excited -> 04 回落 idle（step 传达进度）",
+        "happy 3.0s/5.0s、excited 5.0s、sad 5.0s、idle_variant 2.5s/45s 到期一律归一；动作动画层与情绪正交"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "稳定态与持久化",
+      "items": [
+        "白名单 STABLE_EMOTIONS：idle / idle_variant / hungry / sleepy；瞬态写盘归一不残留；localStorage pet-roaming-state v1 + 白名单 merge + -90px 钳制",
+        "hungry / sleepy / surprised 仅渲染态（无前端触发源）"
+      ]
+    }
+  ]
+}

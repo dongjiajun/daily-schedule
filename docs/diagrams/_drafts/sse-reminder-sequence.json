@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "提醒推送与 SSE 全链路时序",
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "viewBox": [1520, 830]
+  },
+  "participants": [
+    { "id": "browser", "type": "frontend", "label": "Browser", "sublabel": "useSseNotifications · Notification API" },
+    { "id": "sse", "type": "backend", "label": "SseEmitterManager", "sublabel": "infrastructure/notification · 按 userId 路由" },
+    { "id": "channel", "type": "backend", "label": "BrowserNotificationService", "sublabel": "NotificationChannel · 通知通道实现" },
+    { "id": "scheduler", "type": "backend", "label": "ReminderScheduler", "sublabel": "30s fixedDelay · pool 2" },
+    { "id": "repo", "type": "backend", "label": "EventRepository", "sublabel": "findUpcoming(now, now+1h)" },
+    { "id": "mysql", "type": "database", "label": "MySQL", "sublabel": "event.last_reminded_at 幂等标记" }
+  ],
+  "segments": [
+    { "from": 168, "to": 352, "label": "链路 1 · 建立连接" },
+    { "from": 368, "to": 530, "label": "链路 2 · 30s 轮询：查询 + 判定" },
+    { "from": 540, "to": 648, "label": "链路 2 · 分发提醒" },
+    { "from": 664, "to": 740, "label": "链路 2 · 幂等标记" }
+  ],
+  "messages": [
+    { "id": "login-cookie", "from": "browser", "to": "sse", "y": 196, "variant": "security", "label": "登录成功：后端下发 dsa_sse_session Cookie", "note": "Set-Cookie: dsa_sse_session=<jwt>; HttpOnly; SameSite=Lax; Path=/api/v1/sse。EventSource 不支持自定义 header，故采用 Cookie 而非 Bearer。" },
+    { "id": "sse-subscribe", "from": "browser", "to": "sse", "y": 240, "variant": "emphasis", "label": "GET /api/v1/sse/notifications", "note": "new EventSource(url, {withCredentials:true})，自动携带同源 Cookie；SseController.subscribe() 注册 emitter。" },
+    { "id": "connect-event", "from": "sse", "to": "browser", "y": 284, "variant": "return", "label": "`connect` 事件：'connected'", "note": "register(userId) 完成，服务端确认流建立，data='connected'。" },
+    { "id": "heartbeat", "from": "sse", "to": "browser", "y": 328, "variant": "dashed", "label": "`heartbeat` 事件：'ping'", "note": "之后每 30s 心跳保活。" },
+    { "id": "find-upcoming", "from": "scheduler", "to": "repo", "y": 374, "variant": "emphasis", "label": "findUpcoming(now, now+1h)", "note": "查询 [now, now+1h] 内开始、设置了 reminderMinutes 且仍为 PLANNED 的日程。" },
+    { "id": "select-upcoming", "from": "repo", "to": "mysql", "y": 418, "variant": "emphasis", "label": "SELECT upcoming（PLANNED ∧ reminderMinutes 非空）", "note": "WHERE status='PLANNED' AND reminder_minutes IS NOT NULL AND start_time <= now+1h。" },
+    { "id": "upcoming-rows", "from": "mysql", "to": "repo", "y": 460, "variant": "return", "label": "upcoming[]" },
+    { "id": "upcoming-return", "from": "repo", "to": "scheduler", "y": 500, "variant": "return", "label": "upcoming[]", "note": "仅 PLANNED 且 reminderMinutes 非空的事件进入判定。" },
+    { "id": "dispatch", "from": "scheduler", "to": "channel", "y": 546, "variant": "emphasis", "label": "channel.send(event)", "note": "判定 withinWindow（now 距 startTime - reminderMinutes ≤ ±30s）与 alreadyReminded（last_reminded_at >= remindAt 幂等跳过）通过后，遍历所有 NotificationChannel（按 userId）。" },
+    { "id": "send-to-user", "from": "channel", "to": "sse", "y": 590, "variant": "emphasis", "label": "sendToUser(userId, ReminderEvent)", "note": "ReminderEvent JSON：{ id, title, startTime, reminderMinutes }。" },
+    { "id": "reminder-event", "from": "sse", "to": "browser", "y": 632, "variant": "emphasis", "label": "`reminder` 事件：ReminderEvent JSON", "note": "仅推送给该 event 所属用户的连接；reminder.data 为 ReminderEvent JSON。前端 useNotification.notify() 弹出系统通知（Notification API）。" },
+    { "id": "mark-reminded", "from": "scheduler", "to": "repo", "y": 676, "variant": "emphasis", "label": "markReminded(id, now)" },
+    { "id": "update-last-reminded", "from": "repo", "to": "mysql", "y": 720, "variant": "emphasis", "label": "UPDATE event SET last_reminded_at = now", "note": "写回幂等标记，保证同一次提醒不重复推送。" }
+  ],
+  "activations": [
+    { "participant": "sse", "from": 240, "to": 328, "type": "backend" },
+    { "participant": "scheduler", "from": 374, "to": 738, "type": "backend" },
+    { "participant": "repo", "from": 418, "to": 500, "type": "backend" },
+    { "participant": "mysql", "from": 418, "to": 460, "type": "database" },
+    { "participant": "channel", "from": 546, "to": 590, "type": "backend" }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "主链路",
+      "items": [
+        "链路 1：登录下发 dsa_sse_session Cookie → GET /api/v1/sse/notifications → connect → 30s heartbeat 保活",
+        "链路 2：30s 轮询 findUpcoming → withinWindow ±30s → 分发 → `reminder` 事件 → markReminded",
+        "按 userId 经 SseEmitterManager.sendToUser 单播到对应连接"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "触发窗口与幂等",
+      "items": [
+        "withinWindow：now 距 (startTime - reminderMinutes) ≤ ±30s，否则跳过",
+        "alreadyReminded：last_reminded_at >= remindAt 则幂等跳过，不重复推送",
+        "分发成功后 markReminded(id, now) 写回 last_reminded_at"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "旁路与约束",
+      "items": [
+        "COMPLETED / CANCELLED 不触发提醒、不参与冲突检测（仅 PLANNED）",
+        "断线：前端指数退避自动重连（上限 30s）",
+        "401：清态并登出"
+      ]
+    }
+  ]
+}

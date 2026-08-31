@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "diagram_type": "lifecycle",
+  "meta": {
+    "title": "日程状态生命周期（EventStatus）",
+    "quality_profile": "showcase",
+    "viewBox": [1000, 630]
+  },
+  "lanes": [
+    { "id": "main", "label": "主生命周期" },
+    { "id": "return", "label": "取消与回迁" },
+    { "id": "terminal", "label": "删除出口" }
+  ],
+  "states": [
+    { "id": "planned", "type": "start", "label": "PLANNED · 计划中", "sublabel": "默认 · 冲突检测与提醒", "lane": "main", "col": 0, "step": "01", "tag": "活跃" },
+    { "id": "completed", "type": "success", "label": "COMPLETED · 已完成", "sublabel": "+20币+30经验 · 幂等", "lane": "main", "col": 1, "step": "02", "tag": "完成" },
+    { "id": "cancelled", "type": "failure", "label": "CANCELLED · 已取消", "sublabel": "可回迁 · 重新激活", "lane": "return", "col": 0, "tag": "可恢复" },
+    { "id": "removed", "type": "neutral", "label": "已删除 · 物理移除", "sublabel": "DELETE /events/{id}", "lane": "terminal", "col": 0, "tag": "终态" }
+  ],
+  "transitions": [
+    { "id": "t_plan_cancel", "from": "planned", "to": "cancelled", "note": "PUT /events/{id} · status=CANCELLED：更新取消不发放奖励", "fromSide": "bottom", "toSide": "top", "via": [[94, 230], [402, 230]] },
+    { "id": "t_cancel_react", "from": "cancelled", "to": "planned", "note": "PUT /events/{id} · status=PLANNED：回迁重新激活，重新参与冲突检测与提醒", "variant": "dashed", "fromSide": "left", "toSide": "top", "via": [[20, 307], [20, 80], [94, 80]] },
+    { "id": "t_cancel_removed", "from": "cancelled", "to": "removed", "note": "DELETE /events/{id}：existing.status != COMPLETED → EVENT_CANCELLED -10心情（幂等）", "fromSide": "bottom", "toSide": "top", "route": "straight" }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "主生命周期",
+      "items": [
+        "创建即写入 PLANNED（默认）；PLANNED 是唯一活跃态，参与冲突检测与提醒",
+        "PLANNED → COMPLETED 同事务发放 EVENT_COMPLETED（+20币+30经验，幂等）"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "取消 · 删除 · 回迁",
+      "items": [
+        "更新为 CANCELLED 无奖励；COMPLETED / CANCELLED 无守卫可回迁 PLANNED 重新激活",
+        "DELETE /events/{id}：未完成（≠COMPLETED）触发 EVENT_CANCELLED -10心情（幂等），完成无奖励"
+      ]
+    }
+  ]
+}

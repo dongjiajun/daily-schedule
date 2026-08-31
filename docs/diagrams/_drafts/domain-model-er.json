@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "领域模型 ER 关系图",
+    "output": "domain-model-er.html",
+    "quality_profile": "showcase",
+    "viewBox": [1350, 786]
+  },
+  "components": [
+    { "id": "user", "type": "database", "label": "用户 User", "sublabel": "user", "tag": "username/email 唯一 · openid 唯一可空 · BCrypt", "pos": [60, 340], "size": [200, 90] },
+
+    { "id": "category", "type": "database", "label": "分类 Category", "sublabel": "category", "tag": "UNIQUE(user_id,name)", "pos": [300, 70], "size": [170, 80] },
+    { "id": "event", "type": "database", "label": "日程 Event", "sublabel": "event", "tag": "status PLANNED/COMPLETED/CANCELLED · allDay", "pos": [560, 70], "size": [190, 86] },
+    { "id": "eventTag", "type": "database", "label": "日程标签 EventTag", "sublabel": "event_tag", "tag": "复合主键(event_id, tag_id) · CASCADE", "pos": [830, 88], "size": [170, 74] },
+    { "id": "tag", "type": "database", "label": "标签 Tag", "sublabel": "tag", "tag": "UNIQUE(user_id,name)", "pos": [1090, 70], "size": [190, 86] },
+
+    { "id": "task", "type": "database", "label": "任务 Task", "sublabel": "tasks", "tag": "status TODO/IN_PROGRESS/DONE · sortOrder · dueDate", "pos": [300, 342], "size": [190, 86] },
+    { "id": "taskTag", "type": "database", "label": "任务标签 TaskTag", "sublabel": "task_tags", "tag": "复合主键(task_id, tag_id) · CASCADE", "pos": [560, 348], "size": [170, 74] },
+
+    { "id": "pet", "type": "database", "label": "宠物 Pet", "sublabel": "pets", "tag": "species ORANGE_CAT/SHIBA_INU · level 1-50", "pos": [300, 540], "size": [190, 86] },
+    { "id": "petAccessory", "type": "database", "label": "配饰目录 PetAccessory", "sublabel": "pet_accessories", "tag": "FOOD/ACCESSORY · 11 ACCESSORY 种子", "pos": [60, 540], "size": [170, 80] },
+    { "id": "petInteraction", "type": "database", "label": "互动记录 PetInteraction", "sublabel": "pet_interactions", "tag": "FEED/PLAY · 仅持久化", "pos": [560, 540], "size": [180, 80] },
+    { "id": "petReward", "type": "database", "label": "奖励记录 PetReward", "sublabel": "pet_rewards", "tag": "UNIQUE(pet_id, source, ref_id) 幂等键", "pos": [830, 550], "size": [180, 80] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "用户归属 (user_id)", "wraps": ["user"] },
+    { "kind": "region", "label": "日程域 (schedule)", "wraps": ["category", "event", "eventTag", "tag"] },
+    { "kind": "region", "label": "任务域 (task)", "wraps": ["task", "taskTag"] },
+    { "kind": "region", "label": "宠物域 (pet)", "wraps": ["pet", "petAccessory", "petInteraction", "petReward"] }
+  ],
+  "connections": [
+    { "id": "user-owns-category", "from": "user", "to": "category", "label": "1:N 归属", "fromSide": "top", "toSide": "bottom", "labelAt": [220, 200] },
+    { "id": "user-owns-event", "from": "user", "to": "event", "label": "1:N 归属", "fromSide": "top", "toSide": "bottom", "labelAt": [450, 200] },
+    { "id": "user-owns-tag", "from": "user", "to": "tag", "label": "1:N 归属", "fromSide": "top", "toSide": "bottom", "labelAt": [600, 200] },
+    { "id": "user-owns-task", "from": "user", "to": "task", "label": "1:N 归属", "fromSide": "right", "toSide": "left", "labelAt": [284, 444] },
+    { "id": "user-has-pet", "from": "user", "to": "pet", "label": "1:1 每用户一只", "fromSide": "bottom", "toSide": "top" },
+
+    { "id": "event-belongs-category", "from": "event", "to": "category", "label": "N:1 分类", "fromSide": "left", "toSide": "right" },
+    { "id": "event-has-eventtag", "from": "event", "to": "eventTag", "label": "1:N 关联", "fromSide": "right", "toSide": "left" },
+    { "id": "eventtag-tag", "from": "eventTag", "to": "tag", "label": "N:M 标签", "fromSide": "right", "toSide": "left" },
+    { "id": "task-has-tasktag", "from": "task", "to": "taskTag", "label": "1:N 关联", "fromSide": "right", "toSide": "left" },
+    { "id": "tasktag-tag", "from": "taskTag", "to": "tag", "label": "N:M 标签", "fromSide": "top", "toSide": "bottom", "labelAt": [780, 430] },
+
+    { "id": "pet-accessory", "from": "pet", "to": "petAccessory", "label": "N:1 配饰", "fromSide": "left", "toSide": "right" },
+    { "id": "pet-interaction", "from": "pet", "to": "petInteraction", "label": "1:N 互动", "fromSide": "right", "toSide": "left" },
+    { "id": "pet-reward", "from": "pet", "to": "petReward", "label": "1:N 奖励", "fromSide": "top", "toSide": "top", "via": [[395, 490], [920, 490]], "labelAt": [657, 480] }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "日程与任务读写路径投影", "items": [
+      "Event/Task：写路径 tagIds、读路径投影 tags（N:M 关联表 CASCADE）",
+      "Event 读投影 categoryName/categoryColor；category_id FK ON DELETE SET NULL",
+      "reminderMinutes + last_reminded_at 幂等去重；priority LOW/MED/HIGH/URGENT"
+    ] },
+    { "dot": "violet", "title": "奖励数值与用户归属", "items": [
+      "RewardSource：TASK +10/+20 · EVENT +20/+30 · CANCELLED 心情-10 · FOCUS +5/+10 · CHECKIN +15/+10 · HABIT +5/+10",
+      "pet_rewards UNIQUE(pet_id, source, ref_id) 只发放一次；pet.current_accessory SET NULL",
+      "业务表 user_id 索引关联（非外键）按当前用户过滤；category/tag 用户内唯一"
+    ] }
+  ]
+}

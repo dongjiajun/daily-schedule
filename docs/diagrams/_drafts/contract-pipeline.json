@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "契约驱动的 API 生成管道",
+    "output": "docs/diagrams/contract-pipeline.html",
+    "quality_profile": "showcase"
+  },
+  "lanes": [
+    { "id": "contract", "label": "契约源" },
+    { "id": "backend", "label": "后端生成" },
+    { "id": "frontend", "label": "前端 SDK" },
+    { "id": "gates", "label": "CI 门禁" },
+    { "id": "fail", "label": "失败路径", "variant": "exception" }
+  ],
+  "phases": [
+    { "id": "author", "label": "契约编辑", "fromCol": 0, "toCol": 0 },
+    { "id": "generate", "label": "双向生成", "fromCol": 1, "toCol": 4, "variant": "emphasis" },
+    { "id": "gate", "label": "CI 门禁", "fromCol": 5, "toCol": 5, "variant": "security" }
+  ],
+  "groups": [
+    { "id": "backendTrack", "label": "编译期强约束", "lane": "backend", "fromCol": 2, "toCol": 4, "variant": "emphasis" },
+    { "id": "frontendTrack", "label": "SDK 受管", "lane": "frontend", "fromCol": 1, "toCol": 3, "variant": "default" },
+    { "id": "gateTrack", "label": "汇入门禁", "lane": "gates", "fromCol": 4, "toCol": 5, "variant": "security" }
+  ],
+  "mainPath": ["contract", "be-gen", "be-test", "gate-version", "gate-openspec"],
+  "nodes": [
+    { "id": "contract", "lane": "contract", "col": 0, "width": 92, "type": "database", "label": "openapi.yaml", "sublabel": "契约唯一真相源" },
+    { "id": "fe-gen", "lane": "frontend", "col": 1, "width": 96, "type": "frontend", "label": "generate:api", "sublabel": "@hey-api/openapi-ts" },
+    { "id": "be-gen", "lane": "backend", "col": 2, "width": 96, "type": "backend", "label": "后端生成", "sublabel": "openapi-generator" },
+    { "id": "fe-build", "lane": "frontend", "col": 3, "width": 92, "type": "frontend", "label": "pnpm run build", "sublabel": "SDK freshness 检查" },
+    { "id": "be-test", "lane": "backend", "col": 4, "width": 92, "type": "backend", "label": "mvn test", "sublabel": "Controller 实现" },
+    { "id": "gate-version", "lane": "gates", "col": 4, "width": 92, "type": "security", "label": "版本门禁", "sublabel": "version-check" },
+    { "id": "gate-openspec", "lane": "gates", "col": 5, "width": 92, "type": "security", "label": "OpenSpec 门禁", "sublabel": "openspec-check" },
+    { "id": "fail-sdk", "lane": "fail", "col": 3, "width": 92, "type": "security", "label": "SDK 过期", "sublabel": "生成物陈旧" },
+    { "id": "fail-version", "lane": "fail", "col": 5, "width": 92, "type": "security", "label": "版本不一致", "sublabel": "三处版本号须一致" }
+  ],
+  "edges": [
+    { "from": "contract", "to": "be-gen", "role": "main", "fromSide": "bottom", "toSide": "left", "via": [[88, 243], [252, 243]] },
+    { "from": "contract", "to": "fe-gen", "role": "branch", "route": "drop", "fromSide": "bottom", "toSide": "top", "via": [[88, 159], [88, 341]] },
+    { "from": "fe-gen", "to": "fe-build", "role": "branch" },
+    { "from": "be-gen", "to": "be-test", "role": "main" },
+    { "from": "fe-build", "to": "gate-version", "role": "branch", "fromSide": "bottom", "toSide": "left", "via": [[430, 491]] },
+    { "from": "be-test", "to": "gate-version", "role": "main", "route": "drop", "fromSide": "bottom", "toSide": "top" },
+    { "from": "gate-version", "to": "gate-openspec", "role": "main", "label": "全部通过", "labelAt": [566, 528] },
+    { "from": "fe-build", "to": "fail-sdk", "role": "error", "variant": "security", "route": "drop", "fromSide": "bottom", "toSide": "top" },
+    { "from": "gate-version", "to": "fail-version", "role": "error", "variant": "security", "route": "drop", "fromSide": "bottom", "toSide": "top" },
+    { "from": "fail-sdk", "to": "fe-gen", "role": "return", "variant": "dashed", "fromSide": "left", "toSide": "left", "via": [[24, 615], [24, 367]] },
+    { "from": "fail-version", "to": "contract", "role": "return", "variant": "dashed", "fromSide": "right", "toSide": "right", "via": [[700, 615], [700, 119]] }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "契约唯一真相源", "items": ["specs/openapi.yaml 是前后端唯一真相源", "后端 openapi-generator-maven-plugin 编译期生成 api/*.java，Controller 必须实现", "前端 @hey-api/openapi-ts 清空重写 src/api/"] },
+    { "dot": "emerald", "title": "双向生成 + 自定义隔离", "items": ["生成物受管，禁止手改 src/api/", "自定义逻辑（unwrap / authInterceptor）只能放 src/lib/，main.tsx 启动注册", "pnpm run build 含 SDK freshness 检查"] },
+    { "dot": "amber", "title": "四件套同步门禁", "items": ["API 变更须同步 openapi.yaml + CHANGELOG.md + pom.xml 版本 + package.json 版本", "三处版本号必须一致", "version-check / openspec-validation 不合规即阻断 CI"] }
+  ]
+}

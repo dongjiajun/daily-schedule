@@ -275,3 +275,17 @@ docker-compose up -d   # MySQL 8.0 + 后端 8080 + 前端 :5173
 - `specs/openapi.yaml` — API 契约（唯一真相源）
 - `openspec/specs/` — 69 个能力规格文档（`<!-- DOCS-CHECK: specs-count=69 -->`）
 - `docs/planning/execution-plan.md` — 产品愿景与路线图（规划）
+
+## 交互式架构图（Archify）
+
+自包含 HTML 图（浏览器直接打开，支持暗/亮主题、缩放、聚焦与 PNG/SVG/WebM 导出；候选规格在 `docs/diagrams/_drafts/`）：
+
+| 图 | 说明 |
+|----|------|
+| [architecture-overview.html](diagrams/architecture-overview.html) | 整体系统架构：Web / 小程序 → Spring Boot DDD 四层 → MySQL（含 SSE 通道、共享层、外部依赖） |
+| [frontend-module-platform.html](diagrams/frontend-module-platform.html) | 前端插件式模块平台：core + modules + ModuleRegistry / EventBus 边界（模块间禁止直接 import） |
+| [pet-economy.html](diagrams/pet-economy.html) | 宠物经济闭环：行为触发 → RewardSource 数值 → 幂等闸门 grantReward → 发放 → 落库 → 前端反馈 |
+| [contract-pipeline.html](diagrams/contract-pipeline.html) | 契约驱动 API 管道：openapi.yaml → 后端生成（编译期强制）→ 前端 SDK → freshness / 版本 / OpenSpec 门禁 |
+| [sse-reminder-sequence.html](diagrams/sse-reminder-sequence.html) | SSE 提醒推送时序（与 `docs/uml/README.md` 交互式图同源） |
+
+领域模型 ER / EventStatus 生命周期 / 宠物情绪状态机见 `docs/uml/README.md` 交互式图段。

@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "前端插件式模块平台边界",
+    "output": "frontend-module-platform.html",
+    "quality_profile": "showcase"
+  },
+  "components": [
+    { "id": "main", "type": "frontend", "label": "main.tsx", "sublabel": "启动入口", "pos": [80, 80], "size": [180, 74], "tag": "VITE_USE_MODULE_CALENDAR 可回退" },
+    { "id": "moduleRegistry", "type": "frontend", "label": "ModuleRegistry", "sublabel": "core/lib/moduleRegistry.ts", "pos": [360, 80], "size": [220, 74] },
+    { "id": "appshell", "type": "frontend", "label": "AppShell / Sidebar", "sublabel": "components/layout", "pos": [640, 80], "size": [240, 74] },
+    { "id": "authInterceptor", "type": "frontend", "label": "authInterceptor + unwrap", "sublabel": "core/lib", "pos": [80, 300], "size": [210, 74] },
+    { "id": "eventBus", "type": "messagebus", "label": "eventBus 单例", "sublabel": "core/lib/eventBus.ts", "pos": [440, 300], "size": [200, 74] },
+    { "id": "apiSdk", "type": "external", "label": "src/api SDK", "sublabel": "@hey-api 生成", "pos": [80, 520], "size": [200, 74], "tag": "generate:api 清空重写" },
+    { "id": "shared", "type": "messagebus", "label": "shared 契约", "sublabel": "EventBus 类 · SystemEvent · 纯 TS", "pos": [440, 520], "size": [210, 74] },
+    { "id": "calendar", "type": "frontend", "label": "modules/calendar", "sublabel": "日程管理", "pos": [900, 120], "size": [160, 74] },
+    { "id": "petEventBridge", "type": "frontend", "label": "petEventBridge", "sublabel": "订阅 SystemEvent → 宠物反应", "pos": [700, 300], "size": [180, 74] },
+    { "id": "pet", "type": "frontend", "label": "modules/pet", "sublabel": "宠物养成", "pos": [900, 300], "size": [160, 74] },
+    { "id": "todo", "type": "frontend", "label": "modules/todo", "sublabel": "任务看板", "pos": [900, 480], "size": [160, 74] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "平台核心 core/（稳定基础设施）", "wraps": ["moduleRegistry", "authInterceptor", "eventBus"] },
+    { "kind": "region", "label": "可插拔模块 modules/（模块内自治）", "wraps": ["calendar", "todo", "pet", "petEventBridge"] },
+    { "kind": "region", "label": "跨端契约 packages/shared", "wraps": ["shared"] }
+  ],
+  "connections": [
+    { "id": "main-register", "from": "main", "to": "moduleRegistry", "label": "register(calendar/pet/todo)", "labelAt": [310, 168] },
+    { "id": "main-interceptor", "from": "main", "to": "authInterceptor", "label": "installAuthInterceptor()", "fromSide": "bottom", "toSide": "top" },
+    { "id": "auth-sdk", "from": "authInterceptor", "to": "apiSdk", "label": "注入 Bearer · 401 强制登出", "fromSide": "bottom", "toSide": "top" },
+    { "id": "registry-shell", "from": "moduleRegistry", "to": "appshell", "label": "getRoutes() · sidebarComponent", "labelAt": [580, 168] },
+    { "id": "bus-shared", "from": "eventBus", "to": "shared", "label": "new EventBus() · SystemEvent", "fromSide": "bottom", "toSide": "top" },
+    { "id": "calendar-emit", "from": "calendar", "to": "eventBus", "label": "emit('event:completed' 等)" },
+    { "id": "todo-emit", "from": "todo", "to": "eventBus", "label": "emit('task:completed' 等)" },
+    { "id": "bus-bridge", "from": "eventBus", "to": "petEventBridge", "label": "on(...) 同步派发", "labelAt": [615, 388] },
+    { "id": "forbidden-direct", "from": "calendar", "to": "pet", "label": "禁止直接依赖：仅经 EventBus", "variant": "dashed", "labelAt": [980, 208] }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "状态分层", "items": [
+      "Zustand 管 UI 状态：authStore / settingsStore / 模块 stores",
+      "React Query 管服务端数据：useEvents / useTasks / usePet"
+    ] },
+    { "dot": "violet", "title": "ModuleDefinition 接口", "items": [
+      "id / name / icon / order / routes / sidebarComponent / petActions",
+      "onInit 注册监听 · onDestroy 注销 · register() 返回注销函数",
+      "模块间不直接 import，唯一通信通道 EventBus"
+    ] },
+    { "dot": "rose", "title": "唯一通信通道 EventBus", "items": [
+      "同步派发、类型安全；emit 方不感知消费方",
+      "SystemEvent：event:created/completed/cancelled · task:completed · focus:completed 等"
+    ] }
+  ]
+}

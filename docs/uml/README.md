@@ -2,6 +2,19 @@
 
 > **领域模型图用于表达实体关系与字段，方法签名以代码为准**（仅修改方法签名而不改实体关系时不必更新本图）。
 
+## 交互式图（Archify）
+
+自包含 HTML 图，浏览器直接打开（支持暗/亮主题、缩放、聚焦与 PNG/SVG/WebM 导出）；候选规格（含交付快照）在 `docs/diagrams/_drafts/`：
+
+| 图 | 说明 |
+|----|------|
+| [domain-model-er.html](../diagrams/domain-model-er.html) | 领域模型 ER：User / Event / Category / Tag / Task / Pet + 关联表（基数与 FK 语义） |
+| [event-status-lifecycle.html](../diagrams/event-status-lifecycle.html) | EventStatus 日程状态生命周期：PLANNED / COMPLETED / CANCELLED + 奖励挂钩 / 回迁 / 删除 |
+| [pet-emotion-lifecycle.html](../diagrams/pet-emotion-lifecycle.html) | 宠物情绪状态机：瞬态循环（happy/excited/sad）+ 稳定态落盘 + 持久化恢复 |
+| [sse-reminder-sequence.html](../diagrams/sse-reminder-sequence.html) | 提醒推送 + SSE 全链路时序：±30s 窗口 / last_reminded_at 幂等 / 心跳 / 退避重连 |
+
+其余交互式图（系统架构 / 前端模块平台 / 宠物经济闭环 / 契约管道）见 `docs/architecture.md` 设计文档段。
+
 ## 领域模型
 
 ```

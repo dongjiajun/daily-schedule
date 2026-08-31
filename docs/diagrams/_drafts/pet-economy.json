@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "宠物经济闭环：行为奖励资源管线",
+    "output": "docs/diagrams/pet-economy.html",
+    "viewBox": [1120, 620],
+    "quality_profile": "showcase"
+  },
+  "stages": [
+    { "label": "触发源 · 上游生产者" },
+    { "label": "数值映射 · RewardSource" },
+    { "label": "幂等闸门" },
+    { "label": "发放 · 状态应用" },
+    { "label": "落库 · 消费者" }
+  ],
+  "nodes": [
+    { "id": "backend-hooks", "type": "backend", "label": "后端应用服务挂钩", "sublabel": "任务/日程 完成·取消", "stage": 0, "row": 0, "width": 150, "tag": "同事务挂钩" },
+    { "id": "frontend-bridge", "type": "frontend", "label": "POST /pets/me/rewards", "sublabel": "前端事件桥接", "stage": 0, "row": 2, "width": 150, "tag": "habit/focus/checkin" },
+    { "id": "reward-map", "type": "backend", "label": "RewardSource 数值映射", "sublabel": "全系统奖励唯一来源", "stage": 1, "row": 1, "width": 170, "tag": "6 种 source" },
+    { "id": "gate", "type": "backend", "label": "幂等闸门 grantReward", "sublabel": "数据库层硬约束", "stage": 2, "row": 1, "width": 165, "tag": "幂等键" },
+    { "id": "skip", "type": "external", "label": "granted=false 静默跳过", "sublabel": "命中/无宠物｜不阻断", "stage": 2, "row": 2, "width": 165, "tag": "旁路" },
+    { "id": "grant", "type": "backend", "label": "发放 · grant", "sublabel": "PetDomainService.grant", "stage": 3, "row": 1, "width": 170, "tag": "币/经验/心情" },
+    { "id": "apply", "type": "backend", "label": "宠物状态应用", "sublabel": "Pet.applyInteraction", "stage": 3, "row": 2, "width": 175, "tag": "钳制/等级" },
+    { "id": "persist", "type": "database", "label": "pet_rewards 落库", "sublabel": "唯一键兜底并发", "stage": 4, "row": 2, "width": 152, "tag": "幂等审计" },
+    { "id": "consumer", "type": "frontend", "label": "前端消费者反馈", "sublabel": "invalidate 宠物查询", "stage": 4, "row": 1, "width": 155, "tag": "happy/连击/粒子" }
+  ],
+  "flows": [
+    { "from": "backend-hooks", "to": "reward-map", "label": "TASK/EVENT 完成", "classification": "+10币/+20经验 · +20币/+30经验", "variant": "emphasis", "route": "vertical-channel", "channelX": 185 },
+    { "from": "frontend-bridge", "to": "reward-map", "label": "习惯/专注/签到", "classification": "+5币/+10经验 · +15币/+10经验", "variant": "default", "route": "vertical-channel", "channelX": 220 },
+    { "from": "reward-map", "to": "gate", "label": "数值映射", "classification": "资源：币/经验/心情", "variant": "emphasis", "route": "auto", "labelDy": 50 },
+    { "from": "gate", "to": "grant", "label": "未命中 → 发放", "classification": "granted=true", "variant": "emphasis", "route": "auto", "labelDy": 50 },
+    { "from": "gate", "to": "skip", "label": "命中 / 无宠物", "classification": "granted=false · 不阻断", "variant": "dashed", "route": "auto", "labelDy": 24 },
+    { "from": "grant", "to": "apply", "label": "InteractionResult", "classification": "币/经验/心情", "variant": "emphasis", "route": "auto", "labelDy": 24 },
+    { "from": "apply", "to": "persist", "label": "宠物数值应用", "classification": "mood/hunger 0-100 · level 1-50", "variant": "emphasis", "route": "auto", "labelDy": 50 },
+    { "from": "persist", "to": "consumer", "label": "响应 granted=true", "classification": "数值变化", "variant": "emphasis", "route": "auto", "labelDy": 24 }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "RewardSource 数值唯一来源", "items": [
+      "完成类：TASK +10币/+20经验 · EVENT +20币/+30经验",
+      "激励类：FOCUS +5币/+10经验 · HABIT +5币/+10经验 · CHECKIN +15币/+10经验",
+      "负面：EVENT_CANCELLED 心情 -10"
+    ] },
+    { "dot": "amber", "title": "幂等闸门", "items": [
+      "pet_rewards UNIQUE(pet_id, source, ref_id) 数据库层硬约束",
+      "命中(重复) 或 无宠物 → granted=false，静默、不阻断主流程",
+      "未命中 → 发放一次；先查后插，唯一键兜底并发"
+    ] },
+    { "dot": "rose", "title": "数值钳制与闭环", "items": [
+      "Pet.applyInteraction 钳制 mood/hunger 0-100、level 1-50（唯一实现点）",
+      "Hook：TodoApplicationService.moveTask / EventApplicationService.update / delete",
+      "前端反馈：invalidate 宠物查询 + petEventBridge（happy/连击/粒子）"
+    ] }
+  ]
+}
