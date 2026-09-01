@@ -3,13 +3,14 @@
  * OpenSpec 一致性检查 — CI 门禁（openspec-validation job）+ 本地复跑。
  * 用法: node scripts/openspec-check.mjs [--self-test]
  *
- * 六类检查（依次执行，任一失败 → 非零退出）:
+ * 七类检查（依次执行，任一失败 → 非零退出）:
  *   1. validateAll      — openspec validate --all --strict --no-interactive（主 specs + 活动变更）
  *   2. doctor           — openspec doctor（OpenSpec 根与引用关系健康）
  *   3. guardDelta       — 主 spec 不得含 delta 标记行（openspec/specs/ 下所有 spec.md）
  *   4. checkVersion     — openspec --version ↔ CLAUDE.md "OpenSpec CLI <version>" 声明
  *   5. validateArchived — openspec validate --archived --no-interactive（归档变更 tasks 完整性）
  *   6. checkTestPlan    — test-plan 内容门禁（活动变更场景↔test-plan 行映射一致；归档含 test-plan.md 时无残留 🔴）
+ *   7. checkClaudeSequence — CLAUDE.md 工件序列声明 ↔ schema.yaml artifacts 链（指令层收敛守卫）
  *
  * 本地: pnpm run openspec:check（需全局 openspec CLI；未安装时给出安装指引）。
  * CI:   .github/workflows/ci.yml 的 openspec-validation job 内执行。
@@ -271,6 +272,44 @@ function checkTestPlan() {
   console.log(`✓ test-plan 归档检查（${archivedChecked}/${archived.length} 个归档变更含 test-plan，${redHits ? redHits + ' 处残留 🔴' : '无残留 🔴'}）`)
 }
 
+// ── 7. CLAUDE.md 工件序列一致性守卫 ───────────────────────────────────────
+
+/** 从 CLAUDE.md 文本提取 Artifact 序列声明（纯函数，供 --self-test） */
+function parseClaudeSequence(text) {
+  const m = text.match(/\/opsx:new <name>\s*→\s*(.+?)\s*→\s*\/opsx:apply/)
+  if (!m) return null
+  return m[1].split('→').map((s) => s.trim()).filter(Boolean)
+}
+
+/** 从 schema.yaml 文本提取 artifacts 链（纯函数，供 --self-test；`- id:` 仅出现在 artifacts 列表） */
+function parseSchemaArtifacts(text) {
+  const out = []
+  for (const line of text.split(/\r?\n/)) {
+    const m = line.match(/^\s+-\s+id:\s*(\S+)\s*$/)
+    if (m) out.push(m[1])
+  }
+  return out
+}
+
+function checkClaudeSequence() {
+  if (!exists('CLAUDE.md') || !exists('openspec/schemas/spec-driven-custom/schema.yaml')) return
+  const declared = parseClaudeSequence(read('CLAUDE.md'))
+  const schemaChain = parseSchemaArtifacts(read('openspec/schemas/spec-driven-custom/schema.yaml'))
+  if (!declared) {
+    FAILURES.push('[SEQUENCE] CLAUDE.md 未找到 Artifact 序列声明（/opsx:new <name> → … → /opsx:apply）— 请补声明或修正格式')
+    return
+  }
+  const decl = declared.join(' → ')
+  const chain = schemaChain.join(' → ')
+  if (decl !== chain) {
+    FAILURES.push(
+      `[SEQUENCE] CLAUDE.md 工件序列声明 "${decl}" 与 schema 链 "${chain}" 不一致（缺/多/乱序即漂移）— 修正 CLAUDE.md 或 schema.yaml`
+    )
+    return
+  }
+  console.log(`✓ CLAUDE.md 序列一致性守卫（CLAUDE.md=${decl} = schema=${chain}）`)
+}
+
 // ── 自检 ─────────────────────────────────────────────────────────────────
 
 function selfTest() {
@@ -333,12 +372,34 @@ function selfTest() {
     issues.push('parseTestPlanRows 未跳过注释占位行')
   }
 
+  // CLAUDE.md 序列解析器：正/负例
+  const seq = parseClaudeSequence(
+    '/opsx:new <name> → proposal → specs → design → test-plan → tasks → /opsx:apply → /opsx:verify → /opsx:archive'
+  )
+  if (seq?.join('|') !== 'proposal|specs|design|test-plan|tasks') {
+    issues.push('parseClaudeSequence 未正确提取工件序列')
+  }
+  if (parseClaudeSequence('# 无序列声明的文本') !== null) {
+    issues.push('parseClaudeSequence 对无声明文本误报')
+  }
+
+  // schema 工件链解析器：正/负例
+  const artifactChain = parseSchemaArtifacts(
+    'artifacts:\n  - id: proposal\n  - id: specs\n    requires:\n      - proposal\n  - id: tasks\n'
+  )
+  if (artifactChain.join('|') !== 'proposal|specs|tasks') {
+    issues.push('parseSchemaArtifacts 未正确提取 schema 工件链')
+  }
+  if (parseSchemaArtifacts('name: spec-driven-custom\nversion: 1').length !== 0) {
+    issues.push('parseSchemaArtifacts 对无工件链文本误报')
+  }
+
   if (issues.length) {
     console.error('✗ self-test failed（检测器自身不可用）：')
     for (const issue of issues) console.error(`  ✗ ${issue}`)
     process.exit(1)
   }
-  console.log('✓ self-test OK（守卫/版本检测器正负例通过）')
+  console.log('✓ self-test OK（守卫/版本/序列检测器正负例通过）')
 }
 
 // ── 主流程 ───────────────────────────────────────────────────────────────
@@ -352,6 +413,7 @@ guardDelta()
 checkCliVersion()
 validateArchived()
 checkTestPlan()
+checkClaudeSequence()
 
 console.log('openspec-check: 检查完成')
 for (const w of WARNINGS) console.log(`  ⚠ ${w}`)
