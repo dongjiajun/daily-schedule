@@ -1,0 +1,22 @@
+{
+  "description": "接星星 — 微信小游戏示例",
+  "packOptions": {
+    "ignore": [],
+    "include": []
+  },
+  "setting": {
+    "urlCheck": false,
+    "es6": true,
+    "enhance": true,
+    "postcss": true,
+    "minified": true,
+    "newFeature": true,
+    "coverView": true,
+    "compileHotReLoad": true
+  },
+  "compileType": "game",
+  "libVersion": "3.6.0",
+  "appid": "touristappid",
+  "projectname": "catch-stars",
+  "condition": {}
+}
