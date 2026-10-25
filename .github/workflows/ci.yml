@@ -47,7 +47,7 @@ jobs:
 
       - name: Install OpenSpec CLI (pinned)
         # ⚠️ 升级 OpenSpec 时须同步：本安装行版本 + CLAUDE.md 的 "OpenSpec CLI <version>" 声明
-        run: npm install -g @fission-ai/openspec@1.11.0
+        run: npm install -g @fission-ai/openspec@1.15.0
 
       - name: Validate OpenSpec consistency
         run: node scripts/openspec-check.mjs

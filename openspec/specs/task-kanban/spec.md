@@ -50,14 +50,18 @@
 ### Requirement: 颜色系统对齐 CSS 变量主题
 看板组件的背景、边框、文字颜色 SHALL 使用 `themes.css` 中定义的 CSS 变量（通过 Tailwind v4 `@theme` 注册的语义类），而非硬编码的 Tailwind 颜色值。
 
-- 卡面/容器背景：`bg-surface`（替代 `bg-white dark:bg-gray-800`）
-- 列背景：`bg-surface-elevated`（替代 `bg-gray-50 dark:bg-gray-900`）
-- 边框：`border-border`（替代 `border-gray-200 dark:border-gray-700`）
-- 主文字：`text-foreground`（替代 `text-gray-800 dark:text-gray-100`）
-- 次要文字：`text-foreground-muted`（替代 `text-gray-500`）
-- 悬停背景：`bg-hover`（替代 `bg-gray-100 dark:bg-gray-700`）
-- 主操作色：`bg-accent` / `text-accent-fg`（替代 `bg-blue-500`）
-- 系统圆角：`rounded-xl`（替代 `rounded-lg`）
+#### Scenario: 语义色类映射
+
+- **WHEN** 编写看板组件的背景/边框/文字/圆角样式
+- **THEN** SHALL 使用以下语义类（替代硬编码的 Tailwind 颜色值）：
+  - 卡面/容器背景：`bg-surface`（替代 `bg-white dark:bg-gray-800`）
+  - 列背景：`bg-surface-elevated`（替代 `bg-gray-50 dark:bg-gray-900`）
+  - 边框：`border-border`（替代 `border-gray-200 dark:border-gray-700`）
+  - 主文字：`text-foreground`（替代 `text-gray-800 dark:text-gray-100`）
+  - 次要文字：`text-foreground-muted`（替代 `text-gray-500`）
+  - 悬停背景：`bg-hover`（替代 `bg-gray-100 dark:bg-gray-700`）
+  - 主操作色：`bg-accent` / `text-accent-fg`（替代 `bg-blue-500`）
+  - 系统圆角：`rounded-xl`（替代 `rounded-lg`）
 
 #### Scenario: 主题切换时看板颜色跟随
 - **WHEN** 用户切换主题（default/warm/nature/dark/lavender）

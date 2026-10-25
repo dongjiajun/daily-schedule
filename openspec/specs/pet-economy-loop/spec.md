@@ -22,12 +22,14 @@
 - **THEN** 数值 SHALL 来自 `RewardSource` 枚举定义，禁止各路径硬编码
 
 ### Requirement: 幂等奖励发放
-`PetApplicationService.grantReward(RewardSource source, String refId)` SHALL 按 `(pet_id, source, ref_id)` 幂等发放奖励：
-- 当前用户无宠物时 SHALL 返回 `granted=false`，不抛异常、不阻断调用方业务流程
-- 已发放过相同 `(source, refId)` 时 SHALL 返回 `granted=false`，不重复发放
-- 首次发放时 SHALL 应用数值（mood 钳制 0-100，coins/experience 累加，level 按 `PetDomainService.calculateLevel` 重算），写入 `pet_rewards` 记录，返回 `granted=true` 及数值变化与最新值
+`PetApplicationService.grantReward(RewardSource source, String refId)` SHALL 按 `(pet_id, source, ref_id)` 幂等发放奖励：当前用户无宠物时 SHALL 返回 `granted=false`，不抛异常、不阻断调用方业务流程；已发放过相同 `(source, refId)` 时 SHALL 返回 `granted=false`，不重复发放；首次发放时 SHALL 应用数值（mood 钳制 0-100，coins/experience 累加，level 按 `PetDomainService.calculateLevel` 重算），写入 `pet_rewards` 记录，返回 `granted=true` 及数值变化与最新值。
 
-数据库 SHALL 新增 `pet_rewards` 表：
+数据库 SHALL 新增 `pet_rewards` 表。
+
+#### Scenario: pet_rewards 表结构与唯一索引
+
+- **WHEN** Flyway 迁移创建奖励记录表 `pet_rewards`
+- **THEN** 表 SHALL 包含以下列：
 
 | 列 | 类型 | 约束 |
 |----|------|------|
@@ -40,7 +42,7 @@
 | mood_change | INT NOT NULL DEFAULT 0 | |
 | created_at | DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP | |
 
-索引：`UNIQUE KEY uk_reward_pet_source_ref (pet_id, source, ref_id)`。
+- **THEN** SHALL 建立索引 `UNIQUE KEY uk_reward_pet_source_ref (pet_id, source, ref_id)`
 
 #### Scenario: 首次完成奖励发放
 - **WHEN** 拥有宠物的用户首次以 `(TASK_COMPLETED, "42")` 请求发放
@@ -133,9 +135,12 @@
 ### Requirement: 宠物仓储端口
 `PetApplicationService` SHALL 通过领域端口 `PetAccessoryRepository` / `PetInteractionRepository` / `PetRewardRepository` 访问持久化，SHALL NOT 注入 MyBatis Mapper（`PetAccessoryMapper` / `PetInteractionMapper`）。
 
-- `PetAccessoryRepository`：`findAllShopItems(): List<ShopItem>`、`findById(Long id): Optional<ShopItem>`（PO↔领域转换收口在基础设施实现）
-- `PetInteractionRepository`：`save(PetInteraction interaction)`（领域 POJO：petId/type/quantity/moodChange/hungerChange/experienceGain）
-- `PetRewardRepository`：`existsBySourceAndRefId(Long petId, RewardSource source, String refId)`、`save(PetReward reward)`
+#### Scenario: 三个仓储端口的方法定义
+
+- **WHEN** 应用层通过领域端口访问持久化
+- **THEN** `PetAccessoryRepository`：`findAllShopItems(): List<ShopItem>`、`findById(Long id): Optional<ShopItem>`（PO↔领域转换收口在基础设施实现）
+- **THEN** `PetInteractionRepository`：`save(PetInteraction interaction)`（领域 POJO：petId/type/quantity/moodChange/hungerChange/experienceGain）
+- **THEN** `PetRewardRepository`：`existsBySourceAndRefId(Long petId, RewardSource source, String refId)`、`save(PetReward reward)`
 
 #### Scenario: 端口注入
 - **WHEN** 构造 `PetApplicationService`

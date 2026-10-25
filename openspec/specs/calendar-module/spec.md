@@ -53,7 +53,12 @@ modules/calendar/
 - `order` MUST 为 `1`（首个模块）
 - `routes` MUST 包含 index route，lazy 加载 `HomePage`
 - `sidebarComponent` MUST 为 `CalendarSidebar` 组件
-- `petActions` MUST 声明以下行为：
+- `petActions` MUST 声明完成/创建/取消日程三类事件行为
+
+#### Scenario: 模块定义 petActions 声明
+
+- **WHEN** 校验 `calendarModule.petActions` 字段
+- **THEN** SHALL 声明以下三条行为：
   - `{ eventType: 'event:completed', description: '完成日程 → +专注币 +经验' }`
   - `{ eventType: 'event:created', description: '创建日程 → +少量经验' }`
   - `{ eventType: 'event:cancelled', description: '取消日程 → 宠物失落' }`

@@ -48,7 +48,7 @@ artifacts:
       - **REMOVED Requirements**: 废弃 — 必须含 **Reason** + **Migration**
       - **RENAMED Requirements**: 仅改名 — 用 FROM:/TO: 格式
 
-      Purpose（官方 1.11.0 规范）：
+      Purpose（官方 1.15.0 规范）：
       - **新能力**：delta 必须以 `## Purpose` 段开头，1-2 句描述用途，内容 ≥50 字符（`openspec validate --strict` 对过短报 WARNING）；归档/同步时由此种子新主 spec 的 Purpose
       - **已存在能力**：delta 不得携带 `## Purpose` 段（主 spec 已有，delta 的会被忽略）；修改已有 Purpose 直接编辑 openspec/specs/<cap>/spec.md
       - REMOVED 删掉某能力最后一个 requirement 时，归档需在 .openspec.yaml 声明 `retire_capabilities: true`（否则归档中止）
@@ -57,6 +57,7 @@ artifacts:
       - 每条需求: `### Requirement: <名称>` + 描述（用 SHALL/MUST）
       - 每个场景: `#### Scenario: <名称>` + WHEN/THEN（严格 4 个 #）
       - 每条需求至少一个场景
+      - 每条需求正文 ≤500 字符（官方 1.14.1+ strict 规则：超长报 WARNING → `validate --strict` 失败）；细节/示例/枚举移入 scenarios，或拆分为多条需求
       - 可选末尾 `## Test Coverage` 表格：回填历史 spec 时审计场景-测试映射，标记 ✅/⚠️/➕
 
       **lite 提示**：本 schema 无 design 工件——技术决策（如适用）请并入 proposal 的 What Changes/Impact 或 tasks 的实施条目；若变更需要架构级决策记录，请改用 `spec-driven-custom`。

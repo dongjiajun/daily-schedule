@@ -37,12 +37,17 @@ CLAUDE.md 的"提交前验证"章节 SHALL 要求提交前检查 `docs/` 下文�
 - **THEN** 清单明确提示"检查 docs/ 目录文档是否需要同步"并包含运行 docs-check 的验证步骤
 
 ### Requirement: 文档一致性自动化检查
-仓库 SHALL 提供 `scripts/docs-check.mjs`（可经 `pnpm run docs:check` 调用），从契约与代码树独立重算以下事实并与文档声明比对，任一不一致即以非零退出码失败并打印修复指引：
-- 版本声明：`specs/openapi.yaml` 的 `version` 与 `docs/api/overview.md`、`docs/database/schema.md`、`docs/planning/execution-plan.md`、`CLAUDE.md` 中的版本声明一致
-- 端点覆盖：`specs/openapi.yaml` 全部端点路径均出现在 `docs/api/overview.md` 中（`{id}` 归一化后做出现性匹配）；overview 中存在而 openapi 中不存在的路径仅告警，经确认后可加入脚本白名单
-- 结构计数：文档中可独立验证的计数声明以 `<!-- DOCS-CHECK: <key>=<value> -->` 注释就地标注（如 `frontend-test-files`、`backend-test-classes`、`domain-files`、`specs-count`、`e2e-files`、`theme-sets`、`holiday-themes`、`ui-components`），脚本从代码树现场重算并比对
+仓库 SHALL 提供 `scripts/docs-check.mjs`（可经 `pnpm run docs:check` 调用），从契约与代码树独立重算版本声明、端点覆盖、结构计数三类事实并与文档声明比对；任一不一致 SHALL 以非零退出码失败并打印修复指引。
 
 CI 的 `version-check` job SHALL 在版本同步检查之后执行 `node scripts/docs-check.mjs`；文档漂移 SHALL 阻断该 job。
+
+#### Scenario: 三类事实的独立重算口径
+
+- **GIVEN** 文档中声明了版本号、端点覆盖与结构计数
+- **WHEN** 运行 `node scripts/docs-check.mjs`
+- **THEN** 版本声明——`specs/openapi.yaml` 的 `version` SHALL 与 `docs/api/overview.md`、`docs/database/schema.md`、`docs/planning/execution-plan.md`、`CLAUDE.md` 中的版本声明一致
+- **THEN** 端点覆盖——`specs/openapi.yaml` 全部端点路径 SHALL 均出现在 `docs/api/overview.md` 中（`{id}` 归一化后做出现性匹配）；overview 中存在而 openapi 中不存在的路径仅告警，经确认后可加入脚本白名单
+- **THEN** 结构计数——文档中可独立验证的计数声明 SHALL 以 `<!-- DOCS-CHECK: <key>=<value> -->` 注释就地标注（如 `frontend-test-files`、`backend-test-classes`、`domain-files`、`specs-count`、`e2e-files`、`theme-sets`、`holiday-themes`、`ui-components`），脚本从代码树现场重算并比对
 
 #### Scenario: 新增端点未更新 overview 导致 CI 失败
 - **GIVEN** 开发者新增 `GET /pets/me/stats` 端点并提交（未更新 `docs/api/overview.md`）

@@ -6,13 +6,15 @@
 ## Requirements
 
 ### Requirement: 任务创建
-系统 SHALL 支持用户创建任务，包含标题（必填）、描述（可选）、优先级（默认 MEDIUM）、截止日期（可选）、关联标签（可选）。任务创建后状态默认为 `TODO`。
+系统 SHALL 支持用户创建任务，包含标题（必填）、描述（可选）、优先级（默认 MEDIUM）、截止日期（可选）、关联标签（可选）。任务创建后状态默认为 `TODO`；`sort_order` 初始值 SHALL 为该状态下最大 `sort_order + 1`。
 
-- API: `POST /tasks`，请求体 `CreateTaskRequest: { title: string, description?: string, priority?: 'LOW'|'MEDIUM'|'HIGH'|'URGENT', dueDate?: string, tagIds?: number[] }`
-- 响应: `TaskProfile: { id, title, description, status, priority, sortOrder, dueDate, tags[]?, createdAt, updatedAt }`
-- DB: `INSERT INTO tasks (user_id, title, description, priority, due_date, sort_order) VALUES (...)`
-- 标签关联: `INSERT INTO task_tags (task_id, tag_id) VALUES (...)`
-- `sort_order` 初始值 SHALL 为该状态下最大 `sort_order + 1`
+#### Scenario: 创建任务的 API 与入库契约
+
+- **WHEN** 客户端调用任务创建接口
+- **THEN** API SHALL 为 `POST /tasks`，请求体 `CreateTaskRequest: { title: string, description?: string, priority?: 'LOW'|'MEDIUM'|'HIGH'|'URGENT', dueDate?: string, tagIds?: number[] }`
+- **THEN** 响应 SHALL 为 `TaskProfile: { id, title, description, status, priority, sortOrder, dueDate, tags[]?, createdAt, updatedAt }`
+- **THEN** DB SHALL 执行 `INSERT INTO tasks (user_id, title, description, priority, due_date, sort_order) VALUES (...)`
+- **THEN** 标签关联 SHALL 执行 `INSERT INTO task_tags (task_id, tag_id) VALUES (...)`
 
 #### Scenario: 创建最简任务
 - **WHEN** 用户提交 `{ title: "买水果" }`
@@ -102,9 +104,12 @@
 ### Requirement: 数据库表结构
 系统 SHALL 使用 Flyway V6 迁移创建 `tasks` 和 `task_tags` 表。
 
-- `tasks` 表: `id BIGINT PK AUTO_INCREMENT`, `user_id BIGINT NOT NULL`, `title VARCHAR(200) NOT NULL`, `description TEXT`, `status VARCHAR(20) NOT NULL DEFAULT 'TODO'`, `priority VARCHAR(10) NOT NULL DEFAULT 'MEDIUM'`, `sort_order INT NOT NULL DEFAULT 0`, `due_date DATE`, `created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP`, `updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`
-- 索引: `INDEX idx_tasks_user_status (user_id, status)`, `INDEX idx_tasks_user_priority (user_id, priority)`
-- `task_tags` 表: `task_id BIGINT NOT NULL`, `tag_id BIGINT NOT NULL`, `PRIMARY KEY (task_id, tag_id)`
+#### Scenario: tasks 与 task_tags 表结构
+
+- **WHEN** Flyway V6 迁移执行
+- **THEN** `tasks` 表 SHALL 包含：`id BIGINT PK AUTO_INCREMENT`、`user_id BIGINT NOT NULL`、`title VARCHAR(200) NOT NULL`、`description TEXT`、`status VARCHAR(20) NOT NULL DEFAULT 'TODO'`、`priority VARCHAR(10) NOT NULL DEFAULT 'MEDIUM'`、`sort_order INT NOT NULL DEFAULT 0`、`due_date DATE`、`created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP`、`updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`
+- **THEN** SHALL 建立索引 `INDEX idx_tasks_user_status (user_id, status)` 与 `INDEX idx_tasks_user_priority (user_id, priority)`
+- **THEN** `task_tags` 表 SHALL 包含：`task_id BIGINT NOT NULL`、`tag_id BIGINT NOT NULL`、`PRIMARY KEY (task_id, tag_id)`
 
 #### Scenario: Flyway 迁移执行
 - **WHEN** 应用启动且 Flyway 检测到 V6 迁移脚本

@@ -341,14 +341,14 @@ function selfTest() {
   }
 
   // 版本解析器：正/负例
-  if (parseDeclaredVersion('OpenSpec CLI 1.11.0，skills/commands 同步于 .dsh/') !== '1.11.0') {
-    issues.push('版本解析器未提取 "OpenSpec CLI 1.11.0"')
+  if (parseDeclaredVersion('OpenSpec CLI 1.15.0，skills/commands 同步于 .dsh/') !== '1.15.0') {
+    issues.push('版本解析器未提取 "OpenSpec CLI 1.15.0"')
   }
   if (parseDeclaredVersion('OpenSpec CLI 无版本声明') !== null) {
     issues.push('版本解析器对无声明文本误报')
   }
-  if (parseDeclaredVersion('OpenSpec CLI v1.11.0') !== '1.11.0') {
-    issues.push('版本解析器未兼容 "OpenSpec CLI v1.11.0"')
+  if (parseDeclaredVersion('OpenSpec CLI v1.15.0') !== '1.15.0') {
+    issues.push('版本解析器未兼容 "OpenSpec CLI v1.15.0"')
   }
 
   // test-plan 解析器：正/负例

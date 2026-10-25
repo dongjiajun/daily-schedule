@@ -6,12 +6,15 @@
 ## Requirements
 
 ### Requirement: 购买语义按物品类型分流
-`PetApplicationService.purchase(itemId, quantity)` SHALL 按物品 `type` 分流：
-- **FOOD**：即时消费——效果（mood/hunger/experience）× quantity 立即应用，支持 `quantity ≥ 1` 批量购买
-- **ACCESSORY**：购买即装备——写入 `pets.current_accessory = itemId`（覆盖旧装备，无库存概念）；`quantity` 必须为 1（否则 400「配饰每次只能购买一件」）；效果数值 SHALL 为 0（纯外观，不改变 mood/hunger/experience）
-- 专注币不足 SHALL 返回 400「专注币不足」；无宠物 SHALL 返回 404
+`PetApplicationService.purchase(itemId, quantity)` SHALL 按物品 `type` 分流：FOOD 即时消费（效果 × quantity）且支持 `quantity ≥ 1` 批量；ACCESSORY 购买即装备（写入 `current_accessory`，覆盖旧装备，无库存概念），`quantity` 必须为 1、效果数值为 0（纯外观）；专注币不足 SHALL 返回 400「专注币不足」，无宠物 SHALL 返回 404。
 
-数值应用 SHALL 下沉到领域层：`PetDomainService.purchase(Pet, ShopItem, quantity)` 产出 `InteractionResult`（FOOD：coins -价格×数量 + 效果×数量；ACCESSORY：仅 coins -价格），由 `Pet.applyInteraction()` 统一钳制（mood/hunger 0-100、等级重算），应用层 SHALL NOT 手工 `Math.min`/`setCoins` 重复钳制（吸收线1 O8）。
+数值应用 SHALL 下沉到领域层由 `PetDomainService.purchase(Pet, ShopItem, quantity)` 产出 `InteractionResult`，经 `Pet.applyInteraction()` 统一钳制（mood/hunger 0-100、等级重算）；应用层 SHALL NOT 手工 `Math.min`/`setCoins` 重复钳制（吸收线1 O8）。
+
+#### Scenario: 购买分流的数值口径
+
+- **WHEN** 调用 `purchase` 购买 FOOD 或 ACCESSORY 物品
+- **THEN** FOOD 的 `InteractionResult` SHALL 为 coins - 价格 × 数量 叠加效果 × 数量（mood/hunger/experience）；ACCESSORY 的 SHALL 仅为 coins - 价格
+- **THEN** 两类结果 SHALL 均由 `Pet.applyInteraction()` 统一钳制，应用层不重复实现钳制逻辑（吸收线1 O8）
 
 #### Scenario: 购买配饰即装备
 - **WHEN** 拥有宠物的用户以 `{ itemId: 配饰id, quantity: 1 }` 购买 ACCESSORY 物品且专注币充足
@@ -52,7 +55,11 @@ OpenAPI `PurchaseResult` schema SHALL 新增可选字段 `equippedAccessoryId`�
 - **THEN** 响应中 `equippedAccessoryId` 为 null（或缺省）
 
 ### Requirement: 节日配饰种子
-数据库 SHALL 新增 11 个 ACCESSORY 类型物品（Flyway `V8__seed_pet_accessories.sql`），名称与 `packages/shared/src/holiday/themeMapping.ts` 的 `petAccessory` 声明逐一对齐，`effect_mood`/`effect_hunger`/`effect_experience` 均为 0：
+数据库 SHALL 新增 11 个 ACCESSORY 类型物品（Flyway `V8__seed_pet_accessories.sql`），名称与 `packages/shared/src/holiday/themeMapping.ts` 的 `petAccessory` 声明逐一对齐，`effect_mood`/`effect_hunger`/`effect_experience` 均为 0。
+
+#### Scenario: 商店包含节日配饰
+- **WHEN** 发送 `GET /api/v1/shop/items`
+- **THEN** 返回列表包含以下 11 个 `type="ACCESSORY"` 物品，名称与 themeMapping 一致：
 
 | 名称 | 价格 | 对应节日 |
 |------|------|----------|
@@ -66,11 +73,7 @@ OpenAPI `PurchaseResult` schema SHALL 新增可选字段 `equippedAccessoryId`�
 | 绿帽子 | 30 | st-patricks |
 | 樱花发饰 | 30 | sakura |
 | 印度象皮肤 | 80 | diwali |
-| 兔耳朵 | 30 | easter |
-
-#### Scenario: 商店包含节日配饰
-- **WHEN** 发送 `GET /api/v1/shop/items`
-- **THEN** 返回列表包含上述 11 个 `type="ACCESSORY"` 物品，名称与 themeMapping 一致
+| 兔耳朵 | 30 | easter
 
 ### Requirement: 装扮渲染层
 前端 SHALL 新增 `AccessoryOverlay` 组件渲染宠物装扮，与基础 SVG 同 `viewBox`（0 0 100 100）叠放：

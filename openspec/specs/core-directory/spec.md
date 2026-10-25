@@ -24,18 +24,22 @@ frontend SHALL 建立 `src/core/` 核心目录，包含以下子目录：
 
 ### Requirement: Import Path Update
 
-所有被迁移文件的 import 引用 SHALL 更新为新路径。
+所有被迁移文件的 import 引用 SHALL 更新为 `@/core/` 下的新路径：`@/store/*` → `@/core/store/*`、`@/lib/*` → `@/core/lib/*`、`@/components/ui/*` → `@/core/components/ui/*`、`@/hooks/*` → `@/core/hooks/*`。
 
-- `@/store/authStore` → `@/core/store/authStore`
-- `@/store/settingsStore` → `@/core/store/settingsStore`
-- `@/lib/utils` → `@/core/lib/utils`
-- `@/lib/unwrap` → `@/core/lib/unwrap`
-- `@/lib/ics` → `@/core/lib/ics`
-- `@/lib/authInterceptor` → `@/core/lib/authInterceptor`
-- `@/components/ui/*` → `@/core/components/ui/*`
-- `@/hooks/useTheme` → `@/core/hooks/useTheme`
-- `@/hooks/useNotification` → `@/core/hooks/useNotification`
-- `@/hooks/useSseNotifications` → `@/core/hooks/useSseNotifications`
+#### Scenario: import 路径逐项映射
+
+- **WHEN** 迁移后的文件引用被移动的核心基础设施模块
+- **THEN** import 路径 SHALL 按以下逐项映射更新：
+  - `@/store/authStore` → `@/core/store/authStore`
+  - `@/store/settingsStore` → `@/core/store/settingsStore`
+  - `@/lib/utils` → `@/core/lib/utils`
+  - `@/lib/unwrap` → `@/core/lib/unwrap`
+  - `@/lib/ics` → `@/core/lib/ics`
+  - `@/lib/authInterceptor` → `@/core/lib/authInterceptor`
+  - `@/components/ui/*` → `@/core/components/ui/*`
+  - `@/hooks/useTheme` → `@/core/hooks/useTheme`
+  - `@/hooks/useNotification` → `@/core/hooks/useNotification`
+  - `@/hooks/useSseNotifications` → `@/core/hooks/useSseNotifications`
 
 #### Scenario: 构建通过
 

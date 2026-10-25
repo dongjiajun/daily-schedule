@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 开发工作流（OpenSpec）
 
-本项目使用 **OpenSpec** 进行 artifact-driven 开发，schema 为 `spec-driven-custom`（OpenSpec CLI 1.11.0，skills/commands 同步于 `.dsh/skills/` 与 `.dsh/commands/opsx/`）。
+本项目使用 **OpenSpec** 进行 artifact-driven 开发，schema 为 `spec-driven-custom`（OpenSpec CLI 1.15.0；机制层 `.dsh/skills/` 由 CLI 本地生成、**不入库**——新环境执行 `openspec init --tools dsh` 生成；dsh 为 skills-only，无 `.claude/`、`.dsh/commands/`）。
 **所有变更都走这个流程**，不直接在代码库中"裸写"代码。
 
 ### Artifact 序列
@@ -29,14 +29,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | `/opsx:update` | 修订已有 artifacts |
 
 - **指令体系分层**（详见 `openspec-conventions` 主 spec「指令体系分层与收敛」）：
-  - **机制层** `.dsh/` + `.claude/` 技能与命令 — CLI 版本钉住（`generatedBy`），随 OpenSpec 升级经 `openspec update` 重生成；schema/工件链变更**不**触发重生成；禁止手改
+  - **机制层** 本地生成的 `.dsh/skills/`（CLI 版本钉住 `generatedBy`，随 OpenSpec 升级经 `openspec update` 重生成；**不入版本库**，`.gitignore` 已排除；dsh 为 skills-only、无 command adapter，DSH harness 仅扫描 `.dsh/skills`/`.agents/skills` 技能根，无 `.claude/` 与 `.dsh/commands/`）；schema/工件链变更**不**触发重生成；禁止手改
   - **指令层** `openspec instructions <artifact> --change <name>` — 按 schema（工件链 / instruction / 模板）+ `openspec/config.yaml`（context / rules）动态生成，为工件撰写 / apply / archive 的**唯一动态来源**（含格式纪律）；撰写工件前先取指令，本文件不重复工件格式
   - **文档层** 本文件 — 仅承载 CLI 无法表达的约定（流水线 / CI 门禁 / 验证 / 文档同步 / 工作流选择）
 - **变更目录**: `openspec/changes/archive/<date>-<name>/`（proposal / specs / design / test-plan / tasks；lite 无 design/test-plan）
 - **主 specs**: `openspec/specs/<capability>/spec.md`
 - **skip_specs**: 无行为变化变更（纯重构/工具链/文档/热修）在 `.openspec.yaml` 设 `skip_specs: true`，保留流程留痕，不"裸写"绕开
 - **新能力 delta 规范**: 必须以 `## Purpose` 段开头（≥50 字符）；已存在能力的 delta 不得携带；改已有 Purpose 直接编辑主 spec
-- **CI 门禁**: `openspec-validation` job 运行 `pnpm run openspec:check`（`scripts/openspec-check.mjs`：validate --all --strict + doctor + 主 spec 无 delta 头 + CLI 版本=CLAUDE.md 声明 + validate --archived 归档完整性 + test-plan 内容门禁（活动变更场景↔test-plan 行映射一致；归档含 test-plan.md 时无残留 🔴）+ CLAUDE.md 序列一致性守卫（工件序列声明 ↔ schema 链））——OpenSpec 一致性不合规会阻断 CI；升级 OpenSpec 须同步 ci.yml 钉版安装行与本节版本声明
+- **CI 门禁**: `openspec-validation` job 运行 `pnpm run openspec:check`（`scripts/openspec-check.mjs`：validate --all --strict + doctor + 主 spec 无 delta 头 + CLI 版本=CLAUDE.md 声明 + validate --archived 归档完整性 + test-plan 内容门禁（活动变更场景↔test-plan 行映射一致；归档含 test-plan.md 时无残留 🔴）+ CLAUDE.md 序列一致性守卫（工件序列声明 ↔ schema 链）+ 1.14.1 起需求正文 >500 字符为 WARNING（strict 失败））——OpenSpec 一致性不合规会阻断 CI；升级 OpenSpec 须同步 ci.yml 钉版安装行与本节版本声明
 - **归档前验证门禁**: 真实代码变更（`backend/`、`frontend/src/`、`apps/miniprogram/`、`packages/` 源码）归档前必须运行 `/opsx:verify` 且报告无 CRITICAL；纯工具链/文档/元数据变更可由 tasks 全量验证组套件（custom 第 9 组 / lite 第 3 组）+ `validate --archived` 等效替代，归档条目注明等效依据
 - **lite 工作流**: 小规模/单模块/无架构决策变更可用 `openspec new change <name> --schema spec-driven-custom-lite`（proposal → specs → tasks，无 design 工件）；复杂变更（跨模块/新架构/外部依赖/安全/性能/迁移）必须用默认 `spec-driven-custom`；默认 schema 不变，两 schema 模板单源同步（custom 为先）
 - **test-plan 工件**（custom 独有）: 复杂变更 apply 前须创建 `test-plan.md`——delta 场景 → 命名测试映射活账本；格式与红绿/漂移纪律以 `openspec instructions test-plan --change <name>` 为权威（schema.yaml instruction，此处不重复）；归档前须无残留 🔴（openspec-check 第 6 检）；lite 变更无此工件

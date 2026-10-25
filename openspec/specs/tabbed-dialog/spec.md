@@ -10,20 +10,22 @@
 
 ### Requirement: TabbedDialog Component
 
-`core/components/layout/` SHALL 提供 `TabbedDialog` 通用容器组件。
+`core/components/layout/` SHALL 提供 `TabbedDialog` 通用容器组件：以声明式 props 接收对话框开关状态、标题、标签页定义与受控/非受控的标签切换，并基于 `@/core/components/ui/dialog` 与 `@/core/components/ui/tabs` 中的 shadcn/ui 组件组合实现。
 
-`TabbedDialog` SHALL 接受以下 props：
-- `open: boolean` — 对话框开关状态
-- `onOpenChange: (open: boolean) => void` — 状态变更回调
-- `title: string` — 对话框标题
-- `tabs: Array<{ id: string; label: string; content: React.ReactNode }>` — 标签页定义
-- `activeTab?: string` — 受控模式的当前标签页
-- `onActiveTabChange?: (tabId: string) => void` — 受控模式的切换回调
-- `defaultTab?: string` — 非受控模式的默认标签页
+#### Scenario: TabbedDialog props 契约
 
-`TabbedDialog` SHALL 使用：
-- `Dialog` / `DialogContent` / `DialogHeader` / `DialogTitle` (来自 `@/core/components/ui/dialog`)
-- `Tabs` / `TabsList` / `TabsTrigger` / `TabsContent` (来自 `@/core/components/ui/tabs`)
+- **WHEN** 调用方以声明方式渲染 `TabbedDialog`
+- **THEN** SHALL 接受以下 props：
+  - `open: boolean` — 对话框开关状态
+  - `onOpenChange: (open: boolean) => void` — 状态变更回调
+  - `title: string` — 对话框标题
+  - `tabs: Array<{ id: string; label: string; content: React.ReactNode }>` — 标签页定义
+  - `activeTab?: string` — 受控模式的当前标签页
+  - `onActiveTabChange?: (tabId: string) => void` — 受控模式的切换回调
+  - `defaultTab?: string` — 非受控模式的默认标签页
+- **THEN** SHALL 使用以下组件：
+  - `Dialog` / `DialogContent` / `DialogHeader` / `DialogTitle` (来自 `@/core/components/ui/dialog`)
+  - `Tabs` / `TabsList` / `TabsTrigger` / `TabsContent` (来自 `@/core/components/ui/tabs`)
 
 #### Scenario: 渲染多标签对话框
 

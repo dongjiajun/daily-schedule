@@ -2,9 +2,10 @@
 
 ## Purpose
 
-定义项目 OpenSpec 工作流（spec-driven-custom）的规范约定：新能力 delta 的 Purpose 要求、无行为变化变更的 skip_specs 出口、项目 context 的事实同步、以及规范的单源化原则。使项目的 artifact 生成与官方 OpenSpec 1.11.0 约定一致。
+定义项目 OpenSpec 工作流（spec-driven-custom）的规范约定：新能力 delta 的 Purpose 要求、无行为变化变更的 skip_specs 出口、项目 context 的事实同步、以及规范的单源化原则。使项目的 artifact 生成与官方 OpenSpec 1.15.0 约定一致。
 
 ## Requirements
+
 ### Requirement: 新能力 delta 必须携带 Purpose 段
 项目 OpenSpec 工作流 SHALL 要求：为**新能力**创建的 delta spec 必须以 `## Purpose` 段开头，内容 SHALL ≥50 字符并描述该能力用途；归档/同步时，新建主 spec 的 Purpose SHALL 取自该 delta 的 `## Purpose` 段。为**已存在能力**创建的 delta SHALL NOT 携带 `## Purpose` 段（主 spec 已有，delta 的会被忽略）；修改已存在能力的 Purpose SHALL 直接编辑 `openspec/specs/<cap>/spec.md`。
 
@@ -54,15 +55,26 @@
 - **THEN** 指令不包含互相矛盾的规则（config rules 与 schema instruction 对同一规范态度一致）
 
 ### Requirement: 指令体系分层与收敛
-项目 OpenSpec 指令体系 SHALL 分三层管理，维护职责不得混淆：
+项目 OpenSpec 指令体系 SHALL 分三层管理，维护职责不得混淆：机制层（`.dsh/skills/`）由 CLI 在本地生成、禁止手改且不入版本库，项目 SHALL NOT 提交 `.dsh/`、`.claude/` 或维护 `.dsh/commands/`；指令层（`openspec instructions`）是工件撰写依据的唯一动态来源；文档层（`CLAUDE.md`）仅承载 CLI 无法表达的约定。
 
-1. **机制层**——`.dsh/` 与 `.claude/` 下的技能与命令文件 SHALL 由 CLI 随版本重生成：OpenSpec 升级后运行 `openspec update` 统一刷新（文件元数据 `generatedBy` 对应 CLI 版本）；schema/工件链变更 SHALL NOT 触发重生成；该层文件 SHALL NOT 被手改，以 CLI 版本内容为准。
-2. **指令层**——`openspec instructions <artifact> --change <name>` SHALL 按 schema（工件链/模板/instruction 字段）与 `openspec/config.yaml`（context/rules）动态生成工件撰写指引，是每个工件撰写依据的唯一动态来源；代理 SHALL NOT 以机制层技能中的示例工序文字或文档层重复描述替代动态指令。
-3. **文档层**——`CLAUDE.md` 工作流节 SHALL 仅承载 CLI 无法表达的约定（流水线/CI 门禁/验证/文档同步），工件格式与序列 SHALL 指向指令层（`openspec instructions <artifact>`）而不得重复撰写；CLAUDE.md 声明的工件序列 SHALL 与 schema 实际工件链一致，由 `openspec-check.mjs` 第 7 检自动校验。
+#### Scenario: 三层职责边界
+
+- **WHEN** 维护 OpenSpec 指令体系
+- **THEN** 机制层——`.dsh/skills/` 由 CLI 在本地生成（`openspec init --tools dsh` 或 `openspec update`，`generatedBy` 对应 CLI 版本），SHALL NOT 提交入库（`.gitignore` 排除 `.dsh/` 与 `.claude/`），SHALL NOT 被手改；项目 SHALL NOT 维护 `.claude/` 与 `.dsh/commands/`
+- **THEN** 指令层——`openspec instructions <artifact> --change <name>` SHALL 按 schema（工件链/模板/instruction 字段）与 `openspec/config.yaml`（context/rules）动态生成工件撰写指引，是每个工件撰写依据的唯一动态来源；代理 SHALL NOT 以机制层技能中的示例工序文字或文档层重复描述替代动态指令
+- **THEN** 文档层——`CLAUDE.md` 工作流节 SHALL 仅承载 CLI 无法表达的约定（流水线/CI 门禁/验证/文档同步），工件格式与序列 SHALL 指向指令层（`openspec instructions <artifact>`）而不得重复撰写；CLAUDE.md 声明的工件序列 SHALL 与 schema 实际工件链一致，由 `openspec-check.mjs` 第 7 检自动校验
 
 #### Scenario: 机制层随 CLI 升级重生成
-- **WHEN** 升级 OpenSpec CLI（如 1.11.0 → 1.12.0）并运行 `openspec update` 刷新指令文件
-- **THEN** `.dsh/` 与 `.claude/` 技能/命令刷新为当前 CLI 版本内容（`generatedBy` 对应新版本），覆盖旧版本文件
+- **WHEN** 升级 OpenSpec CLI（如 1.11.0 → 1.15.0）并运行 `openspec update` 刷新指令文件
+- **THEN** 本机 `.dsh/skills/` 刷新为当前 CLI 版本内容（`generatedBy` 对应新版本），覆盖旧版本文件；因 `.dsh/` 不入库，本次刷新 SHALL NOT 产生 `git status` 变更
+
+#### Scenario: 机制层本地生成不入库
+- **WHEN** 新环境克隆仓库（无 `.dsh/`）并安装 OpenSpec CLI
+- **THEN** 执行 `openspec init --tools dsh`（或 `openspec update`）生成 `.dsh/skills/openspec-*/SKILL.md` 共 12 个；`openspec/config.yaml` 保持已有 schema/context/rules 不变；`.dsh/` 始终不出现在版本控制中（`git ls-files .dsh` 为空）
+
+#### Scenario: dsh 机制层仅保留 skills
+- **WHEN** 检查 DeepSeek Harness 的机制层产物
+- **THEN** 仅 `.dsh/skills/openspec-*/SKILL.md` 由 `openspec update` 生成与刷新；`.dsh/commands/` 与 `.claude/` SHALL NOT 存在（OpenSpec 官方 `dsh` 适配器无 command adapter，DSH harness 只扫描 `.dsh/skills` 与 `.agents/skills` 技能根），项目 SHALL NOT 人工镜像命令文件
 
 #### Scenario: schema 变更不触发机制层重生成
 - **WHEN** 修改自定义 schema（如新增 test-plan 工件）但 CLI 版本不变
@@ -77,16 +89,20 @@
 - **THEN** 依据 `openspec instructions <artifact>` 的动态输出（模板 + instruction + rules），CLAUDE.md 中无对应工件格式的重复副本
 
 ### Requirement: CI 门禁执行 OpenSpec 一致性验证
-项目 OpenSpec 一致性 SHALL 由 CI 自动把关：`.github/workflows/ci.yml` 的 `openspec-validation` job SHALL 安装与 `CLAUDE.md` 声明版本一致的钉版本 `@fission-ai/openspec` CLI（npm 全局），并运行 `scripts/openspec-check.mjs`（可经 `pnpm run openspec:check` 调用）；该脚本 SHALL 依次执行以下检查，任一失败以非零退出码阻断 CI：
-1. `openspec validate --all --strict --no-interactive`——主 specs 与活动变更全部按 strict 校验，活动变更的 proposal/specs/design/tasks 未生成完整即失败
-2. `openspec doctor`——根与引用关系健康
-3. 主 spec delta 头守卫——`openspec/specs/` 下所有 spec.md SHALL NOT 包含 `## ADDED Requirements`、`## MODIFIED Requirements`、`## REMOVED Requirements`、`## RENAMED Requirements` 或 `### (Modified|Removed|Renamed) Requirement` 行（delta 专用标记仅允许存在于 `openspec/changes/` 的变更内）
-4. CLI 版本守卫——`openspec --version` SHALL 与 CLAUDE.md 声明的 OpenSpec 版本一致
-5. `openspec validate --archived --no-interactive`——归档变更的 tasks SHALL 全部勾选完成（`- [x]`），任一归档变更残留 `- [ ]` 即失败（`backfill-archive-task-completion` 补正后的历史归档须保持全绿）
-6. test-plan 内容门禁——活动变更：存在 test-plan.md 时，其行 SHALL 对 delta specs 中的每个 `#### Scenario:` 逐条对应（Requirement/Scenario 引用一致，无遗漏）；归档变更：含 test-plan.md 时其 `Initial State` SHALL 无残留 `🔴`（全部翻绿）
-7. CLAUDE.md 序列一致性守卫——CLAUDE.md 声明的工件序列 SHALL 与 schema 实际工件链一致（按当前 schema 工件链核对，漂移即失败，如漏写 test-plan）
+项目 OpenSpec 一致性 SHALL 由 CI 自动把关：`.github/workflows/ci.yml` 的 `openspec-validation` job SHALL 安装与 `CLAUDE.md` 声明版本一致的钉版本 `@fission-ai/openspec` CLI（npm 全局），并运行 `scripts/openspec-check.mjs`（可经 `pnpm run openspec:check` 调用）；该脚本 SHALL 依次执行七项检查（主 specs 与活动变更 strict 校验、doctor、主 spec delta 头守卫、CLI 版本守卫、归档 tasks 勾选校验、test-plan 内容门禁、CLAUDE.md 序列一致性守卫），任一失败 SHALL 以非零退出码阻断 CI。
 
 `version-check` job 的 docs-check 门禁与 OpenSpec 门禁相互独立：任一门的检查失败 SHALL 各自以非零退出码阻断 CI。
+
+#### Scenario: openspec-check 七项检查口径
+
+- **WHEN** CI 的 `openspec-validation` job 运行 `node scripts/openspec-check.mjs`
+- **THEN** 第 1 项：`openspec validate --all --strict --no-interactive`——主 specs 与活动变更全部按 strict 校验，活动变更的 proposal/specs/design/tasks 未生成完整即失败
+- **THEN** 第 2 项：`openspec doctor`——根与引用关系健康
+- **THEN** 第 3 项：主 spec delta 头守卫——`openspec/specs/` 下所有 spec.md SHALL NOT 包含 `## ADDED Requirements`、`## MODIFIED Requirements`、`## REMOVED Requirements`、`## RENAMED Requirements` 或 `### (Modified|Removed|Renamed) Requirement` 行（delta 专用标记仅允许存在于 `openspec/changes/` 的变更内）
+- **THEN** 第 4 项：CLI 版本守卫——`openspec --version` SHALL 与 CLAUDE.md 声明的 OpenSpec 版本一致
+- **THEN** 第 5 项：`openspec validate --archived --no-interactive`——归档变更的 tasks SHALL 全部勾选完成（`- [x]`），任一归档变更残留 `- [ ]` 即失败（`backfill-archive-task-completion` 补正后的历史归档须保持全绿）
+- **THEN** 第 6 项：test-plan 内容门禁——活动变更：存在 test-plan.md 时，其行 SHALL 对 delta specs 中的每个 `#### Scenario:` 逐条对应（Requirement/Scenario 引用一致，无遗漏）；归档变更：含 test-plan.md 时其 `Initial State` SHALL 无残留 `🔴`（全部翻绿）
+- **THEN** 第 7 项：CLAUDE.md 序列一致性守卫——CLAUDE.md 声明的工件序列 SHALL 与 schema 实际工件链一致（按当前 schema 工件链核对，漂移即失败，如漏写 test-plan）
 
 #### Scenario: 主 spec strict 漂移被拦截
 - **WHEN** 主 spec 违反 strict 规则（如新能力主 spec 的 Purpose 过短、格式错误）
@@ -121,12 +137,15 @@
 - **THEN** 第 7 检输出 CLAUDE.md 声明与 schema 链的差异并失败，CI 红（修正 CLAUDE.md 对齐后通过）
 
 ### Requirement: 归档前验证门禁
-项目 OpenSpec 工作流 SHALL 在归档前执行验证门禁：
-
-1. **真实代码变更**（触碰 `backend/`、`frontend/src/`、`apps/miniprogram/` 或 `packages/` 下源码）在 apply 后归档前 SHALL 运行 `/opsx:verify`（`openspec-verify-change`，输出 Completeness/Correctness/Coherence 三维报告）；报告 SHALL 无 CRITICAL 级别问题方可归档，存在 CRITICAL 时 SHALL 修复后重跑 `/opsx:verify` 并确认无 CRITICAL 再归档。
-2. **纯工具链/文档/元数据变更**（无源码行为变化）SHALL NOT 跳过验证，但可由 tasks 全量验证组套件（custom 第 9 组 / lite 第 3 组：`openspec validate --all --strict`、`pnpm run openspec:check`、`pnpm run docs:check` 及相关测试回归）加 `validate --archived` 等效替代；归档条目 SHALL 注明等效依据（如"零代码变更，全量验证组套件 + validate --archived 全绿"）。
+项目 OpenSpec 工作流 SHALL 在归档前执行验证门禁：真实代码变更 SHALL 经 `/opsx:verify` 确认无 CRITICAL 后方可归档；纯工具链/文档/元数据变更 SHALL NOT 跳过验证，但可以全量验证组套件加 `validate --archived` 等效替代并在归档条目注明等效依据。
 
 该门禁不改变任务的执行方式——任务勾选仍以实际完成为准；门禁只约束"归档动作"的前置状态。
+
+#### Scenario: 验证门禁的两条适用口径
+
+- **WHEN** 判断某变更归档前应执行哪种验证
+- **THEN** 真实代码变更（触碰 `backend/`、`frontend/src/`、`apps/miniprogram/` 或 `packages/` 下源码）在 apply 后归档前 SHALL 运行 `/opsx:verify`（`openspec-verify-change`，输出 Completeness/Correctness/Coherence 三维报告）；报告 SHALL 无 CRITICAL 级别问题方可归档，存在 CRITICAL 时 SHALL 修复后重跑 `/opsx:verify` 并确认无 CRITICAL 再归档
+- **THEN** 纯工具链/文档/元数据变更（无源码行为变化）SHALL NOT 跳过验证，但可由 tasks 全量验证组套件（custom 第 9 组 / lite 第 3 组：`openspec validate --all --strict`、`pnpm run openspec:check`、`pnpm run docs:check` 及相关测试回归）加 `validate --archived` 等效替代；归档条目 SHALL 注明等效依据（如"零代码变更，全量验证组套件 + validate --archived 全绿"）
 
 #### Scenario: 代码变更 verify 通过后归档
 - **WHEN** 变更触碰源码，apply 后运行 `/opsx:verify` 且报告无 CRITICAL
