@@ -1,4 +1,3 @@
-<!-- 单源同步：与 spec-driven-custom/templates/proposal.md 内容一致（custom 为先，修改须两处同步） -->
 # Proposal: <!-- 变更名称 -->
 
 ## Why

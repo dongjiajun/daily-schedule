@@ -27,11 +27,9 @@
 ## RENAMED Requirements
 <!-- 仅改名：FROM: 旧名 TO: 新名 -->
 
-## Test Coverage
-<!-- 可选。回填历史 spec 时用于审计现有测试覆盖；新建 spec 时可留空，apply 阶段再填充。 -->
+<!-- delta specs 不得携带 Test Coverage 段：官方 1.14.2 起 strict 会对 delta 中额外的 ## 段报错。
+     该表仅用于回填主 spec（openspec/specs/<capability>/spec.md）的历史审计，不进入 delta。 -->
 
-| Scenario | 测试类 | 测试方法 | 状态 |
-|----------|--------|----------|------|
-| <!-- WHEN...THEN... --> | <!-- TestClass --> | <!-- testMethod --> | <!-- ✅/⚠️/➕ --> |
+<!-- 场景质量：每条需求至少 1 个正常路径（happy-path）场景 + 1 个失败/边界（failure/edge）场景；
+     确无边界场景时须在场景正文说明理由。 -->
 
-<!-- 状态: ✅ 已有覆盖 / ⚠️ 缺少覆盖(需补测试) / ➕ 本次新增 -->

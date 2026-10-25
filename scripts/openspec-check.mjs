@@ -3,7 +3,7 @@
  * OpenSpec 一致性检查 — CI 门禁（openspec-validation job）+ 本地复跑。
  * 用法: node scripts/openspec-check.mjs [--self-test]
  *
- * 八类检查（依次执行，任一失败 → 非零退出）:
+ * 九类检查（依次执行，任一失败 → 非零退出）:
  *   1. validateAll      — openspec validate --all --strict --no-interactive（主 specs + 活动变更）
  *   2. doctor           — openspec doctor（OpenSpec 根与引用关系健康）
  *   3. guardDelta       — 主 spec 不得含 delta 标记行（openspec/specs/ 下所有 spec.md）
@@ -12,6 +12,7 @@
  *   6. checkTestPlan    — test-plan 内容门禁（活动变更场景↔test-plan 行映射一致；归档含 test-plan.md 时无残留 🔴）
  *   7. checkDocSequence — AGENTS.md 工件序列声明 ↔ schema.yaml artifacts 链（指令层收敛守卫）
  *   8. checkMechanismLayer — 机制层完整性（.agents/skills generatedBy = 锁定版本；update --dry-run 无变更；.dsh 不被跟踪）
+ *   9. checkSchemaTemplates — 模板单源同步（node scripts/sync-schema-templates.mjs --check；custom 为源）
  *
  * 本地: pnpm run openspec:check（优先使用仓库 node_modules 内锁定 CLI，缺失时回退全局安装；
  *       依赖未安装时给出 `pnpm install` 指引）。
@@ -421,6 +422,30 @@ function checkMechanismLayer() {
   console.log(`✓ 机制层完整性守卫（${skillFiles.length} 个 openspec-* skills，generatedBy=${pinned}）`)
 }
 
+// ── 9. 模板单源同步守卫 ──────────────────────────────────────────────────
+
+function checkSchemaTemplates() {
+  const script = path.join(ROOT, 'scripts', 'sync-schema-templates.mjs')
+  if (!fs.existsSync(script)) {
+    FAILURES.push('[TEMPLATES] 缺少 scripts/sync-schema-templates.mjs — 无法校验三档 schema 共享模板单源')
+    return
+  }
+  try {
+    execFileSync(process.execPath, [script, '--check'], {
+      cwd: ROOT,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    })
+    console.log('✓ 模板单源同步守卫（proposal/spec → 三档，design → standard）')
+  } catch (err) {
+    FAILURES.push(
+      '[TEMPLATES] 共享模板不一致 — 请运行 node scripts/sync-schema-templates.mjs --write 后提交（openspec-check 第 9 检）'
+    )
+    const detail = `${err.stdout ?? ''}${err.stderr ?? ''}`.trim()
+    if (detail) console.log(detail)
+  }
+}
+
 // ── 自检 ─────────────────────────────────────────────────────────────────
 
 function selfTest() {
@@ -544,6 +569,7 @@ validateArchived()
 checkTestPlan()
 checkDocSequence()
 checkMechanismLayer()
+checkSchemaTemplates()
 
 console.log('openspec-check: 检查完成')
 for (const w of WARNINGS) console.log(`  ⚠ ${w}`)

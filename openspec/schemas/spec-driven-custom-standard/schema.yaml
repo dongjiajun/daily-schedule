@@ -1,0 +1,165 @@
+name: spec-driven-custom-standard
+version: 1
+description: 中等变更工作流 — 契约驱动 + DDD 四层（含 design，无 test-plan 活账本）
+artifacts:
+  - id: proposal
+    generates: proposal.md
+    description: 提案文档，阐明变更动机与影响范围
+    template: proposal.md
+    instruction: |
+      创建 proposal，阐明此变更的动机与范围。
+      **格式纪律（MUST）**：撰写前先读取模板 `templates/proposal.md`，严格按其章节结构与格式撰写（含 Capabilities 的子标题格式），不得自创章节结构。
+
+      本项目是日程管理系统，采用 DDD 四层架构（API→应用→领域←基础设施）+ React 19 前端。
+      API 契约驱动：specs/openapi.yaml 是唯一真相源。
+
+      必填章节：
+      - **Why**: 问题/机会（1-2 句）
+      - **What Changes**: 变更清单，标记 **BREAKING**
+      - **Capabilities**:
+        - New: kebab-case 名称 + 简述（每个将生成 specs/<name>/spec.md）
+        - Modified: 仅在需求级变更时列出现有 capability 名称
+      - **API Contract Impact**: 是否需要改 specs/openapi.yaml？新增/修改哪些端点？
+      - **DDD Layer Impact**: 标注受影响的层（API / 应用 / 领域 / 基础设施）
+      - **Database Impact**: 是否需要新 Flyway 迁移？涉及哪些表/列？
+      - **Impact**: 受影响的代码、前端组件、依赖
+
+      保持 1-2 页，聚焦 "why" 而非 "how"。
+
+      skip_specs（无行为变化时）：纯重构/工具链/文档/热修等无 spec 级行为变化的变更，必须在 .openspec.yaml 设 `skip_specs: true`，不得绕过 OpenSpec 流程；`openspec validate` 放行零 delta + skip_specs 的变更。行为变化的变更必须提供 delta specs，不得用 skip_specs 逃避。
+    requires: []
+
+  - id: specs
+    generates: "specs/**/*.md"
+    description: 详细规格，定义系统行为
+    template: spec.md
+    instruction: |
+      为 proposal 中每个 capability 创建一份 spec 文件。
+      **格式纪律（MUST）**：撰写前先读取模板 `templates/spec.md`，delta 操作块（ADDED/MODIFIED/REMOVED Requirements）的格式严格按模板与指令规定执行。
+
+      本项目规格要点：
+      - API 端点变更必须引用 OpenAPI schema（字段名、类型、必填/可选）
+      - 数据库变更必须列明表名、列名、类型、约束、默认值、索引
+      - 前端行为规格应涵盖状态管理（Zustand store / React Query cache）、UI 交互、错误处理
+
+      Delta 操作（## 标题）：
+      - **ADDED Requirements**: 新增能力
+      - **MODIFIED Requirements**: 变更行为 — 必须包含完整内容（非片段）
+      - **REMOVED Requirements**: 废弃 — 必须含 **Reason** + **Migration**
+      - **RENAMED Requirements**: 仅改名 — 用 FROM:/TO: 格式
+
+      Purpose（官方 1.15.0 规范）：
+      - **新能力**：delta 必须以 `## Purpose` 段开头，1-2 句描述用途，内容 ≥50 字符（`openspec validate --strict` 对过短报 WARNING）；归档/同步时由此种子新主 spec 的 Purpose
+      - **已存在能力**：delta 不得携带 `## Purpose` 段（主 spec 已有，delta 的会被忽略）；修改已有 Purpose 直接编辑 openspec/specs/<cap>/spec.md
+      - REMOVED 删掉某能力最后一个 requirement 时，归档需在 .openspec.yaml 声明 `retire_capabilities: true`（否则归档中止）
+
+      格式规范：
+      - 每条需求: `### Requirement: <名称>` + 描述（用 SHALL/MUST）
+      - 每个场景: `#### Scenario: <名称>` + WHEN/THEN（严格 4 个 #）
+      - 每条需求至少 1 个正常路径（happy-path）场景 + 1 个失败/边界（failure/edge）场景；确无边界场景时须在场景正文说明理由
+      - 每条需求正文 ≤500 字符（官方 1.14.1+ strict 规则：超长报 WARNING → `validate --strict` 失败）；细节/示例/枚举移入 scenarios，或拆分为多条需求
+      - delta specs 不得携带 Test Coverage 段（官方 1.14.2 起 strict 对 delta 中额外的 `##` 段报错；该表仅用于回填主 spec 的历史审计）
+    requires:
+      - proposal
+
+  - id: design
+    generates: design.md
+    description: 技术设计文档，阐明实现方案
+    template: design.md
+    instruction: |
+      创建设计文档，阐明如何实现变更。仅在以下情况需要：
+      - 跨模块变更 / 新架构模式 / 外部依赖 / 安全/性能/迁移复杂度
+      **格式纪律（MUST）**：撰写前先读取模板 `templates/design.md`，Decision 采用 `### Decision N: <名称>` 编号 + 三段式（**选择**/**理由**/**备选方案**），章节结构按模板。
+
+      本项目设计要点：
+      - **DDD 分层方案**: 明确变动涉及的后端包路径
+        (api/controller, application, domain, infrastructure)
+      - **API 设计**: 引用 OpenAPI schema 路径与字段，注明限流/分页/错误码
+      - **数据库设计**: 表名/列名/类型/约束/索引/迁移脚本名
+      - **前端设计**: 组件树 (components/*)、状态管理 (Zustand store / React Query)、路由
+      - **安全考量**: 认证 (JWT/Cookie)、授权、数据隔离 (user_id)
+
+      章节：
+      - **Context**: 背景、当前状态、约束
+      - **Goals / Non-Goals**
+      - **Decisions**: 每个技术决策含选型理由 + 被否决的备选方案
+      - **DDD Layer Design**: 按四层逐一说明变更方案（领域层/基础设施层/应用层/API 层）
+      - **API Design**: 引用 OpenAPI schema 路径与字段，注明请求/响应/错误码
+      - **Database Design**: 表名/列名/类型/约束/索引/迁移脚本名
+      - **Risks / Trade-offs**: [风险] → 缓解措施
+      - **Migration Plan**: 部署步骤、回滚策略
+      - **Open Questions**
+
+      模板含 `## Review Checklist`（失败路径/回滚/契约影响三问），写完须逐项回答。
+
+      重点在架构与方案，非逐行实现。
+    requires:
+      - proposal
+
+  - id: tasks
+    generates: tasks.md
+    description: 实现任务清单，可追踪的 checkbox 格式
+    template: tasks.md
+    instruction: |
+      拆分实现任务（STANDARD 中等变更编排，1/2/3 三组）：
+      **格式纪律（MUST）**：撰写前先读取模板 `templates/tasks.md`，保持 1/2/3 固定分组编号（实施 → 文档同步 → 全量验证），无变更的分组标记 N/A 打勾，不得自创分组编号。
+
+      编排要点：
+      - **1. 实施**：按 design.md 的 Decision 顺序排列，分 DDD 层落地（数据库迁移 → 领域层 → 基础设施层 → 应用层 → API 层 → 契约同步 → 前端）；每层条目自带对应测试任务（领域层含单元测试），不把测试堆到最后组
+      - **2. 文档同步**：逐项评估每类文档（component-catalog / schema+uml / api overview / architecture+AGENTS.md / README）——涉则更新，未触及须写明"现有描述已核对仍准确"，不得仅以"无新增"标记 N/A；阶段末必须含 docs-check 验证条目
+      - **3. 全量验证**：集成/全量门禁（后端 `mvn test`、前端 `pnpm run verify`、E2E 评估、`pnpm run openspec:check`），不重复各层自有测试
+
+      **归档前验证门禁**：真实代码变更（触碰 backend/、frontend/src/、apps/miniprogram/、packages/ 源码）须执行 `/opsx:verify` 且报告无 CRITICAL；纯工具链/文档/元数据变更在第 3 组（全量验证）注明等效依据（全量验证组套件 + validate --archived 全绿）。
+
+      格式：
+      - 每个任务: `- [ ] X.Y 任务描述`
+      - 分组在 `## N. 分组名` 下
+      - 任务粒度：一次会话内可完成
+      - 按依赖排序
+      - 第 3 组之后为 `## Workflow follow-up` 纯 bullet（非 checkbox，不参与 apply 进度统计）
+
+      示例分组：
+      ```
+      ## 1. 实施
+      - [ ] 1.1 数据库迁移（如涉及）：编写 V<!-- 版本号 -->__<!-- 描述 -->.sql + 更新 H2 测试 schema + local MySQL 验证
+      - [ ] 1.2 领域层 (domain/)：<!-- Entity / Enum / ValueObject / Repository 接口 / DomainService --> + 编写领域层单元测试
+      - [ ] 1.3 基础设施层 (infrastructure/)：<!-- persistence: PO + Mapper + RepositoryImpl；security/notification/scheduled/config（按需） --> + 编写 infrastructure 层单元测试
+      - [ ] 1.4 应用层 (application/)：<!-- ApplicationService 用例编排 --> + 编写应用层单元测试
+      - [ ] 1.5 API 层 (api/)：<!-- Controller 实现 generated 接口 + Assembler DTO↔Domain 转换 --> + 编写 API 层单元测试
+      - [ ] 1.6 契约同步（如涉及）：更新 `specs/openapi.yaml` + `specs/CHANGELOG.md` + 同步版本号 + 重新生成后端接口/SDK
+      - [ ] 1.7 前端 (frontend/src/)：<!-- store / 组件 / 页面 / 样式 --> + vitest 单元测试 + Playwright E2E
+
+      ## 2. 文档同步
+      <!-- 逐项评估：未触及的文档类别也必须写明"现有描述已核对仍准确"，不得仅以"无新增"标记 N/A -->
+      - [ ] 2.1 `docs/frontend/component-catalog.md` — 涉及组件/目录（新增**或修改**）？→ 更新；未触及 → 核对结论
+      - [ ] 2.2 `docs/database/schema.md` + `docs/uml/README.md` — 涉及表/字段/领域模型（新增**或修改**）？→ 更新；未触及 → 核对结论
+      - [ ] 2.3 `docs/api/overview.md` — 涉及端点/契约（新增**或修改**）？→ 更新；未触及 → 核对结论
+      - [ ] 2.4 `docs/architecture.md` + `AGENTS.md` — 涉及架构/模块/版本/测试规模？→ 更新；未触及 → 核对结论
+      - [ ] 2.5 `README.md` — 涉及版本/功能清单？→ 更新；未触及 → 核对结论
+      - [ ] 2.6 运行 `node scripts/docs-check.mjs` — 文档一致性检查通过
+
+      ## 3. 全量验证
+      - [ ] 3.1 `cd backend && mvn test` — 后端单元测试全部通过
+      - [ ] 3.2 `cd frontend && pnpm run verify` — 前端 lint + tsc + build + vitest 全部通过
+      - [ ] 3.3 `cd frontend && npm run test:e2e` — 涉及 Web 用户流程时执行；无 UI 变更写明跳过结论
+      - [ ] 3.4 Smoke test — 启动前后端，浏览器手工验证 mock 无法覆盖的场景；无 UI 影响删除示例行后勾选
+        - [ ] 登录 → 创建日程 → 日历视图显示
+        - [ ] 切换日/周/月视图 → 日程正确显示
+      - [ ] 3.5 `pnpm run openspec:check` — OpenSpec 一致性 + 归档完整性通过
+
+      ## Workflow follow-up
+      <!-- 纯 bullet，不是 checkbox 任务：不参与 apply 进度统计，归档前按序执行并留痕 -->
+      - `/opsx:verify` — 代码变更必备（真实代码变更须报告无 CRITICAL；纯工具链/文档变更按第 3 组等效依据说明）
+      - `/opsx:archive` — 归档已完成的变更
+      - 归档后复跑门禁：`pnpm run openspec:check` + `openspec validate --archived`
+      ```
+    requires:
+      - specs
+      - design
+
+apply:
+  requires: [tasks]
+  tracks: tasks.md
+  instruction: |
+    按 tasks.md 顺序实现，完成一项标记一项。遇到阻塞或需澄清时暂停。
+    实现过程中务必遵循 AGENTS.md 中的技术约定（DDD 分层、契约驱动、前后端分离）。

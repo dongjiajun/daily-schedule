@@ -1,8 +1,9 @@
 # Tasks: <!-- 变更名称 -->
 
 <!--
-  LITE 工作流（spec-driven-custom-lite）：1-4 固定分组，无 DDD 1-9 固定组。
-  小规模/单模块变更用；若需架构级决策记录请改用 spec-driven-custom。
+  LITE 工作流（spec-driven-custom-lite）：1/2/3 固定分组（实施 → 文档同步 → 全量验证），
+  文档同步保持在验证之前；第 3 组后的 Workflow follow-up 为纯 bullet，不是 checkbox 任务。
+  小规模/单模块变更用；若需架构级决策记录请改用 spec-driven-custom-standard 或 spec-driven-custom。
 -->
 
 ## 1. 实施
@@ -25,7 +26,10 @@
 - [ ] 3.2 <!-- 适用的验证命令（如 cd backend && mvn test） -->
 - [ ] 3.3 E2E — 涉及 Web 用户流程时评估执行；无 UI 变更写明跳过结论
 
-## 4. 归档
-- [ ] 4.1 归档留痕（sync 结论 + 归档后复跑 validate/docs-check/openspec-check 结论）
+## Workflow follow-up
+<!-- 纯 bullet，不是 checkbox 任务：不参与 apply 进度统计，归档前按序执行并留痕 -->
+- `/opsx:verify` — 代码变更必备（真实代码变更须报告无 CRITICAL；纯工具链/文档变更按第 3 组等效依据说明）
+- `/opsx:archive` — 归档已完成的变更
+- 归档后复跑门禁：`pnpm run openspec:check` + `openspec validate --archived`
 
 <!-- 删除本模板注释示例行，逐项替换为实际内容 -->

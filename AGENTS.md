@@ -7,7 +7,7 @@ This file provides guidance to AI coding agents (DeepSeek Harness, Codex, and ot
 
 ## 开发工作流（OpenSpec）
 
-本项目使用 **OpenSpec** 进行 artifact-driven 开发，schema 为 `spec-driven-custom`（OpenSpec CLI 1.15.0，**版本单源 = 根 `package.json` devDependencies 精确锁定**；机制层 `.agents/skills/` 由 `pnpm exec openspec init --tools agents` 生成并**入库**——新环境 `pnpm install` 即可加载，无需再生成；`.dsh/` 仅存本机个人技能、不入库；技能为 skills-only，无 `.claude/`、无 command adapter）。
+本项目使用 **OpenSpec** 进行 artifact-driven 开发（OpenSpec CLI 1.15.0，**版本单源 = 根 `package.json` devDependencies 精确锁定**；机制层 `.agents/skills/` 由 `pnpm exec openspec init --tools agents` 生成并**入库**——新环境 `pnpm install` 即可加载，无需再生成；`.dsh/` 仅存本机个人技能、不入库；技能为 skills-only，无 `.claude/`、无 command adapter）。schema 三档按风险选择：**默认 `spec-driven-custom-standard`**（proposal→specs→design→tasks），小变更 `-lite`，复杂/高风险 `spec-driven-custom`（含 test-plan），详见下方「schema 选择」。
 **所有变更都走这个流程**，不直接在代码库中"裸写"代码。
 
 ### Artifact 序列
@@ -15,6 +15,8 @@ This file provides guidance to AI coding agents (DeepSeek Harness, Codex, and ot
 ```
 /opsx:new <name> → proposal → specs → design → test-plan → tasks → /opsx:apply → /opsx:verify → /opsx:archive
 ```
+
+（上行为复杂档 `spec-driven-custom` 序列；默认档 `spec-driven-custom-standard` 为 proposal → specs → design → tasks，小变更 `-lite` 为 proposal → specs → tasks。`openspec-check` 第 7 检按 custom 链校验上列声明。）
 
 | 命令 | 用途 |
 |------|------|
@@ -36,10 +38,10 @@ This file provides guidance to AI coding agents (DeepSeek Harness, Codex, and ot
 - **主 specs**: `openspec/specs/<capability>/spec.md`
 - **skip_specs**: 无行为变化变更（纯重构/工具链/文档/热修）在 `.openspec.yaml` 设 `skip_specs: true`，保留流程留痕，不"裸写"绕开
 - **新能力 delta 规范**: 必须以 `## Purpose` 段开头（≥50 字符）；已存在能力的 delta 不得携带；改已有 Purpose 直接编辑主 spec
-- **CI 门禁**: `openspec-validation` job 以 `pnpm install --frozen-lockfile` 安装仓库内 CLI 后运行 `pnpm run openspec:check`（`scripts/openspec-check.mjs`：validate --all --strict + doctor + 主 spec 无 delta 头 + CLI 版本单源校验（安装版本 = 根 `package.json` 锁定版本 = 本节声明）+ validate --archived 归档完整性 + test-plan 内容门禁（活动变更场景↔test-plan 行映射一致；归档含 test-plan.md 时无残留 🔴）+ AGENTS.md 序列一致性守卫（工件序列声明 ↔ schema 链）+ 机制层完整性（`.agents/skills` 的 `generatedBy` = 仓库锁定版本、`openspec update --dry-run` 无变更、`.dsh` 不被跟踪）+ 1.14.1 起需求正文 >500 字符为 WARNING（strict 失败））——OpenSpec 一致性不合规会阻断 CI。**升级 SOP**：改根 `package.json` 版本 → `pnpm install` → `pnpm exec openspec update` 刷新机制层 → `pnpm run openspec:check` 全绿 → 提交（版本单源，无需再改 `ci.yml`）
+- **CI 门禁**: `openspec-validation` job 以 `pnpm install --frozen-lockfile` 安装仓库内 CLI 后运行 `pnpm run openspec:check`（`scripts/openspec-check.mjs`：validate --all --strict + doctor + 主 spec 无 delta 头 + CLI 版本单源校验（安装版本 = 根 `package.json` 锁定版本 = 本节声明）+ validate --archived 归档完整性 + test-plan 内容门禁（活动变更场景↔test-plan 行映射一致；归档含 test-plan.md 时无残留 🔴）+ AGENTS.md 序列一致性守卫（工件序列声明 ↔ schema 链）+ 机制层完整性（`.agents/skills` 的 `generatedBy` = 仓库锁定版本、`openspec update --dry-run` 无变更、`.dsh` 不被跟踪）+ 模板单源同步（`node scripts/sync-schema-templates.mjs --check`，第 9 检）+ 1.14.1 起需求正文 >500 字符为 WARNING（strict 失败））——OpenSpec 一致性不合规会阻断 CI。**升级 SOP**：改根 `package.json` 版本 → `pnpm install` → `pnpm exec openspec update` 刷新机制层 → `pnpm run openspec:check` 全绿 → 提交（版本单源，无需再改 `ci.yml`）
 - **归档前验证门禁**: 真实代码变更（`backend/`、`frontend/src/`、`apps/miniprogram/`、`packages/` 源码）归档前必须运行 `/opsx:verify` 且报告无 CRITICAL；纯工具链/文档/元数据变更可由 tasks 全量验证组套件（custom 第 9 组 / lite 第 3 组）+ `validate --archived` 等效替代，归档条目注明等效依据
-- **lite 工作流**: 小规模/单模块/无架构决策变更可用 `openspec new change <name> --schema spec-driven-custom-lite`（proposal → specs → tasks，无 design 工件）；复杂变更（跨模块/新架构/外部依赖/安全/性能/迁移）必须用默认 `spec-driven-custom`；默认 schema 不变，两 schema 模板单源同步（custom 为先）
-- **test-plan 工件**（custom 独有）: 复杂变更 apply 前须创建 `test-plan.md`——delta 场景 → 命名测试映射活账本；格式与红绿/漂移纪律以 `openspec instructions test-plan --change <name>` 为权威（schema.yaml instruction，此处不重复）；归档前须无残留 🔴（openspec-check 第 6 检）；lite 变更无此工件
+- **schema 选择（三档）**: 默认（不带 `--schema`）为 `spec-driven-custom-standard`（proposal → specs → design → tasks，无 test-plan）；小规模/单模块/无架构决策变更用 `--schema spec-driven-custom-lite`（proposal → specs → tasks）；复杂/高风险变更（跨模块、新架构、外部依赖、安全/性能/迁移、需红绿测试账本）必须用 `--schema spec-driven-custom`（五工件，含 test-plan）。选择理由写入 proposal。三档共享模板（proposal/spec → 三档，design → standard）由 `node scripts/sync-schema-templates.mjs --write` 机械同步，`--check` 由 `openspec-check` 第 9 检在 CI 阻断漂移；tasks 模板末尾 `## Workflow follow-up` 为纯 bullet（verify/archive/归档后门禁复跑，不勾选）
+- **test-plan 工件**（custom 独有，双模式）: 复杂变更 apply 前须创建 `test-plan.md`，逐场景映射到验证项——**模式 A**（有测试面）场景 ↔ 命名测试、红绿翻转；**模式 B**（无测试面：工具链/文档/配置/CI 脚本）场景 ↔ 等价机械验证项（验证命令/CI 检查名），Coverage Notes 注明理由、禁止虚标测试文件。格式与纪律以 `openspec instructions test-plan --change <name>` 为权威；归档前须无残留 🔴（openspec-check 第 6 检，模式 A/B 均要求逐场景映射）；standard/lite 变更无此工件
 
 ## 常用命令
 
@@ -93,7 +95,7 @@ pnpm run generate:api # 从 ../specs/openapi.yaml 生成 SDK
 turbo run verify && cd backend && mvn test && cd frontend && npm run test:e2e
 ```
 
-**CI 门禁**: openspec-validation（OpenSpec 一致性：validate --all --strict + doctor + 主 spec 无 delta 头 + CLI 版本单源校验 + 归档完整性 validate --archived + test-plan 内容门禁 + AGENTS.md 序列一致性守卫 + 机制层完整性）+ version-check（版本同步 + 文档一致性）+ 后端 `mvn test` + 前端 `pnpm run lint` + `pnpm run test` + `pnpm run build`（含 SDK freshness check）为阻断门禁；`npm run test:e2e`（continue-on-error 软性）
+**CI 门禁**: openspec-validation（OpenSpec 一致性：validate --all --strict + doctor + 主 spec 无 delta 头 + CLI 版本单源校验 + 归档完整性 validate --archived + test-plan 内容门禁 + AGENTS.md 序列一致性守卫 + 机制层完整性 + 模板单源同步）+ version-check（版本同步 + 文档一致性）+ 后端 `mvn test` + 前端 `pnpm run lint` + `pnpm run test` + `pnpm run build`（含 SDK freshness check）为阻断门禁；`npm run test:e2e`（continue-on-error 软性）
 **常见失败**: `@typescript-eslint/no-explicit-any` / `tsc -b` 类型错误 / 后端单测失败
 
 **文档检查**（每次变更后逐项确认——未触及的类别须写明"现有描述已核对仍准确"，不得仅以"无新增"跳过；不走 OpenSpec 流程的小改动（热修/文档勘误）同样适用，提交前逐项核对）：

@@ -56,9 +56,9 @@ artifacts:
       格式规范：
       - 每条需求: `### Requirement: <名称>` + 描述（用 SHALL/MUST）
       - 每个场景: `#### Scenario: <名称>` + WHEN/THEN（严格 4 个 #）
-      - 每条需求至少一个场景
+      - 每条需求至少 1 个正常路径（happy-path）场景 + 1 个失败/边界（failure/edge）场景；确无边界场景时须在场景正文说明理由
       - 每条需求正文 ≤500 字符（官方 1.14.1+ strict 规则：超长报 WARNING → `validate --strict` 失败）；细节/示例/枚举移入 scenarios，或拆分为多条需求
-      - 可选末尾 `## Test Coverage` 表格：回填历史 spec 时审计场景-测试映射，标记 ✅/⚠️/➕
+      - delta specs 不得携带 Test Coverage 段（官方 1.14.2 起 strict 对 delta 中额外的 `##` 段报错；该表仅用于回填主 spec 的历史审计）
 
       **lite 提示**：本 schema 无 design 工件——技术决策（如适用）请并入 proposal 的 What Changes/Impact 或 tasks 的实施条目；若变更需要架构级决策记录，请改用 `spec-driven-custom`。
     requires:
@@ -69,16 +69,16 @@ artifacts:
     description: 实现任务清单，可追踪的 checkbox 格式
     template: tasks.md
     instruction: |
-      拆分实现任务（LITE 轻量编排，无 DDD 固定分组）：
-      **格式纪律（MUST）**：撰写前先读取模板 `templates/tasks.md`，保持 1-4 固定分组编号（实施 → 文档同步 → 全量验证 → 归档），无变更的分组按模板注释处置，不得自创分组编号。
+      拆分实现任务（LITE 轻量编排，1/2/3 三组）：
+      **格式纪律（MUST）**：撰写前先读取模板 `templates/tasks.md`，保持 1/2/3 固定分组编号（实施 → 文档同步 → 全量验证），无变更的分组按模板注释处置，不得自创分组编号。
 
       编排要点：
       - **1. 实施**：按文件/模块列出本次改动（含对应测试），粒度一次会话可完成，按依赖排序
-      - **2. 文档同步**：逐项评估每类文档（component-catalog / schema+uml / api overview / architecture+AGENTS.md / README）——涉则更新，未触及须写明"现有描述已核对仍准确"，不得仅以"无新增"标记 N/A；阶段末必须含 docs-check（+sync-version）验证条目；CI/工具链类变更同时包含 `pnpm run openspec:check`
+      - **2. 文档同步**：逐项评估每类文档（component-catalog / schema+uml / api overview / architecture+AGENTS.md / README）——涉则更新，未触及须写明"现有描述已核对仍准确"，不得仅以"无新增"标记 N/A；阶段末必须含 docs-check（+sync-version）验证条目；CI/工具链类变更同时包含 `pnpm run openspec:check`。文档同步保持在验证之前
       - **3. 全量验证**：按变更面取用（前端 `pnpm run verify` / 后端 `mvn test` / `openspec validate --specs --strict` / E2E 评估），不逐层铺开
-      - **4. 归档**：状态留痕（含 sync/validate 复跑结论）
+      - 第 3 组后为 `## Workflow follow-up` 纯 bullet（`/opsx:verify`（代码变更必备）、`/opsx:archive`、归档后复跑门禁），不是 checkbox 任务，不参与 apply 进度统计
 
-      **归档前验证门禁**：真实代码变更（触碰 backend/、frontend/src/、apps/miniprogram/、packages/ 源码）须在实施组包含 `/opsx:verify` 任务；纯工具链/文档/元数据变更在 3. 全量验证组注明等效依据（全量验证组套件 + validate --archived 全绿）。
+      **归档前验证门禁**：真实代码变更（触碰 backend/、frontend/src/、apps/miniprogram/、packages/ 源码）须执行 `/opsx:verify`（见 Workflow follow-up）且报告无 CRITICAL；纯工具链/文档/元数据变更在 3. 全量验证组注明等效依据（全量验证组套件 + validate --archived 全绿）。
 
       格式：每个任务 `- [ ] X.Y 描述`；分组在 `## N. 分组名` 下。
     requires:

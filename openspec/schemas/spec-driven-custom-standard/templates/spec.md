@@ -1,0 +1,35 @@
+# <!-- Capability Name -->
+
+<!-- 参考: specs/openapi.yaml + docs/api/overview.md + docs/database/schema.md -->
+
+## Purpose
+<!-- 仅新能力：1-2 句描述该能力用途（≥50 字符，openspec validate --strict 会校验过短）。
+     已存在能力的 delta 不得携带本节（主 spec 已有 Purpose，delta 的会被忽略）；
+     修改已有 Purpose 直接编辑 openspec/specs/<capability>/spec.md。 -->
+
+## ADDED Requirements
+
+### Requirement: <!-- 需求名称 -->
+<!-- 用 SHALL/MUST 描述系统行为 -->
+<!-- API 相关: 引用 OpenAPI schema 字段名、类型、必填/可选 -->
+<!-- 数据库相关: 列出表名、列名、类型、约束、默认值、索引 -->
+
+#### Scenario: <!-- 场景名称 -->
+- **WHEN** <!-- 触发条件 -->
+- **THEN** <!-- 预期结果 -->
+
+## MODIFIED Requirements
+<!-- 仅需求级变更时使用，必须粘贴完整原文再改 -->
+
+## REMOVED Requirements
+<!-- 废弃需求：必须含 **Reason** + **Migration** -->
+
+## RENAMED Requirements
+<!-- 仅改名：FROM: 旧名 TO: 新名 -->
+
+<!-- delta specs 不得携带 Test Coverage 段：官方 1.14.2 起 strict 会对 delta 中额外的 ## 段报错。
+     该表仅用于回填主 spec（openspec/specs/<capability>/spec.md）的历史审计，不进入 delta。 -->
+
+<!-- 场景质量：每条需求至少 1 个正常路径（happy-path）场景 + 1 个失败/边界（failure/edge）场景；
+     确无边界场景时须在场景正文说明理由。 -->
+

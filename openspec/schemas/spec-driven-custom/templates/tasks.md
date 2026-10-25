@@ -2,6 +2,8 @@
 
 <!--
   按 DDD 分层编排，每个任务 - [ ] X.Y 格式，apply 阶段据此追踪进度。
+  各层组内自带对应测试（领域层含单元测试），不把测试堆到最后组；第 9 组只做集成/全量验证。
+  第 9 组后的 Workflow follow-up 为纯 bullet，不是 checkbox 任务。
 
   ⚠️ 测试边界提醒：
   涉及以下技术时，单元测试 mock 无法覆盖真实浏览器行为，
@@ -20,6 +22,7 @@
 
 ## 2. 领域层 (domain/)
 - [ ] 2.1 <!-- Entity / Enum / ValueObject / Repository 接口 / DomainService -->
+- [ ] 2.2 编写领域层单元测试
 
 ## 3. 基础设施层 (infrastructure/)
 - [ ] 3.1 <!-- persistence: PO + Mapper + RepositoryImpl -->
@@ -71,3 +74,9 @@
   - [ ] 点击宠物 → 互动菜单弹出 → 喂食成功
   - [ ] 切换日/周/月视图 → 日程正确显示
   - [ ] 如有 mock 边界风险（Canvas/WASM/SDK），必须在此验证
+
+## Workflow follow-up
+<!-- 纯 bullet，不是 checkbox 任务：不参与 apply 进度统计，归档前按序执行并留痕 -->
+- `/opsx:verify` — 代码变更必备（真实代码变更须报告无 CRITICAL；纯工具链/文档变更按第 9 组等效依据说明）
+- `/opsx:archive` — 归档（确认 delta specs 已同步、无残留 🔴）
+- 归档后复跑门禁：`pnpm run openspec:check` + `openspec validate --archived`
