@@ -60,7 +60,7 @@ artifacts:
       - 每条需求正文 ≤500 字符（官方 1.14.1+ strict 规则：超长报 WARNING → `validate --strict` 失败）；细节/示例/枚举移入 scenarios，或拆分为多条需求
       - delta specs 不得携带 Test Coverage 段（官方 1.14.2 起 strict 对 delta 中额外的 `##` 段报错；该表仅用于回填主 spec 的历史审计）
 
-      **lite 提示**：本 schema 无 design 工件——技术决策（如适用）请并入 proposal 的 What Changes/Impact 或 tasks 的实施条目；若变更需要架构级决策记录，请改用 `spec-driven-custom`。
+      **lite 提示**：本 schema 无 design 工件——技术决策（如适用）请并入 proposal 的 What Changes/Impact 或 tasks 的实施条目；若变更需要架构级决策记录，请改用 `spec-driven-custom-standard`（需要红绿测试账本则用 `spec-driven-custom`）。
     requires:
       - proposal
 
@@ -89,5 +89,5 @@ apply:
   requires: [tasks]
   tracks: tasks.md
   instruction: |
-    按 tasks.md 顺序实现，完成一项标记一项。遇到阻塞或需澄清时暂停。
-    实现过程中务必遵循 AGENTS.md 中的技术约定（DDD 分层、契约驱动、前后端分离）。
+    执行 tasks.md 全部 checkbox。apply 纪律（顺序勾选 / 阻塞暂停 / 遵循 AGENTS.md 技术约定 / 归档前 verify）
+    的唯一来源是 `openspec/config.yaml` 的 `operations.apply.guidance`（`openspec instructions apply` 以 Operation Guidance 透传）。

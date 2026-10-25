@@ -3,7 +3,7 @@
  * OpenSpec 一致性检查 — CI 门禁（openspec-validation job）+ 本地复跑。
  * 用法: node scripts/openspec-check.mjs [--self-test]
  *
- * 九类检查（依次执行，任一失败 → 非零退出）:
+ * 十类检查（依次执行，任一失败 → 非零退出）:
  *   1. validateAll      — openspec validate --all --strict --no-interactive（主 specs + 活动变更）
  *   2. doctor           — openspec doctor（OpenSpec 根与引用关系健康）
  *   3. guardDelta       — 主 spec 不得含 delta 标记行（openspec/specs/ 下所有 spec.md）
@@ -13,6 +13,7 @@
  *   7. checkDocSequence — AGENTS.md 工件序列声明 ↔ schema.yaml artifacts 链（指令层收敛守卫）
  *   8. checkMechanismLayer — 机制层完整性（.agents/skills generatedBy = 锁定版本；update --dry-run 无变更；.dsh 不被跟踪）
  *   9. checkSchemaTemplates — 模板单源同步（node scripts/sync-schema-templates.mjs --check；custom 为源）
+ *   10. checkInstructionBudget — 指令配置预算（context ≤20 行/≤1200 字符；rules ≤8；operations guidance 非空）
  *
  * 本地: pnpm run openspec:check（优先使用仓库 node_modules 内锁定 CLI，缺失时回退全局安装；
  *       依赖未安装时给出 `pnpm install` 指引）。
@@ -446,6 +447,71 @@ function checkSchemaTemplates() {
   }
 }
 
+// ── 10. 指令配置预算守卫 ─────────────────────────────────────────────────
+
+/**
+ * 从 config.yaml 文本提取配置预算（纯函数，供 --self-test）。
+ * 只解析受控的块状结构：context 块内容行、rules 列表项、operations 两段的 guidance 列表项。
+ */
+function parseConfigBudget(text) {
+  let mode = null
+  let operation = null
+  const budget = { contextLines: 0, contextChars: 0, rulesCount: 0, operations: { apply: 0, archive: 0 } }
+  for (const rawLine of text.split(/\r?\n/)) {
+    const line = rawLine.replace(/\s+$/, '')
+    if (/^context:\s*\|/.test(line)) { mode = 'context'; continue }
+    if (/^rules:\s*$/.test(line)) { mode = 'rules'; continue }
+    if (/^operations:\s*$/.test(line)) { mode = 'operations'; operation = null; continue }
+    if (/^[A-Za-z_][\w-]*:\s*/.test(line)) { mode = null; operation = null; continue }
+    if (mode === 'context') {
+      if (line.trim() !== '') {
+        budget.contextLines += 1
+        budget.contextChars += line.trim().length
+      }
+    } else if (mode === 'rules') {
+      if (/^\s{2,}-\s+\S/.test(line)) budget.rulesCount += 1
+    } else if (mode === 'operations') {
+      const section = line.match(/^\s{2}(apply|archive):\s*$/)
+      if (section) { operation = section[1]; continue }
+      if (operation && /^\s{4,}-\s+\S/.test(line)) budget.operations[operation] += 1
+    }
+  }
+  return budget
+}
+
+const CONTEXT_MAX_LINES = 20
+const CONTEXT_MAX_CHARS = 1200
+const RULES_MAX = 8
+
+function checkInstructionBudget() {
+  if (!exists('openspec/config.yaml')) {
+    FAILURES.push('[CONFIG-BUDGET] 缺少 openspec/config.yaml — 无法校验指令配置预算')
+    return
+  }
+  const before = FAILURES.length
+  const budget = parseConfigBudget(read('openspec/config.yaml'))
+  if (budget.contextLines > CONTEXT_MAX_LINES || budget.contextChars > CONTEXT_MAX_CHARS) {
+    FAILURES.push(
+      `[CONFIG-BUDGET] context 超预算（${budget.contextLines} 行 / ${budget.contextChars} 字符；上限 ${CONTEXT_MAX_LINES} 行 / ${CONTEXT_MAX_CHARS} 字符）— 细节移入 AGENTS.md / docs/，只保留项目级事实与指针`
+    )
+  }
+  if (budget.rulesCount > RULES_MAX) {
+    FAILURES.push(
+      `[CONFIG-BUDGET] config rules 超预算（${budget.rulesCount} 条；上限 ${RULES_MAX}）— 格式/编排规则归 schema instruction 与模板，rules 只留未覆盖约束`
+    )
+  }
+  if (budget.operations.apply === 0 || budget.operations.archive === 0) {
+    FAILURES.push(
+      `[CONFIG-BUDGET] operations guidance 缺失（apply=${budget.operations.apply} 条，archive=${budget.operations.archive} 条）— apply/archive 纪律写入 config.yaml operations 段`
+    )
+  }
+  if (FAILURES.length === before) {
+    console.log(
+      `✓ 指令配置预算守卫（context ${budget.contextLines} 行/${budget.contextChars} 字符，rules ${budget.rulesCount} 条，apply/archive guidance ${budget.operations.apply}/${budget.operations.archive} 条）`
+    )
+  }
+}
+
 // ── 自检 ─────────────────────────────────────────────────────────────────
 
 function selfTest() {
@@ -547,6 +613,21 @@ function selfTest() {
     issues.push('parseGeneratedBy 对缺失 generatedBy 文本误报')
   }
 
+  // 指令配置预算解析器：正/负例
+  const budget = parseConfigBudget(
+    'context: |\n  第一行\n  第二行\n\nrules:\n  proposal:\n    - 规则一\n    - 规则二\noperations:\n  apply:\n    guidance:\n      - 纪律一\n  archive:\n    guidance:\n      - 纪律二\n'
+  )
+  if (budget.contextLines !== 2 || budget.contextChars !== 6 || budget.rulesCount !== 2) {
+    issues.push('parseConfigBudget 未正确统计 context/rules')
+  }
+  if (budget.operations.apply !== 1 || budget.operations.archive !== 1) {
+    issues.push('parseConfigBudget 未正确统计 operations guidance')
+  }
+  const emptyBudget = parseConfigBudget('schema: spec-driven-custom\n')
+  if (emptyBudget.contextLines !== 0 || emptyBudget.rulesCount !== 0 || emptyBudget.operations.apply !== 0) {
+    issues.push('parseConfigBudget 对空配置误报')
+  }
+
   if (issues.length) {
     console.error('✗ self-test failed（检测器自身不可用）：')
     for (const issue of issues) console.error(`  ✗ ${issue}`)
@@ -570,6 +651,7 @@ checkTestPlan()
 checkDocSequence()
 checkMechanismLayer()
 checkSchemaTemplates()
+checkInstructionBudget()
 
 console.log('openspec-check: 检查完成')
 for (const w of WARNINGS) console.log(`  ⚠ ${w}`)

@@ -33,7 +33,7 @@
 - **THEN** 必须提供 delta specs，不得以 `skip_specs` 逃避（官方 validate 对零 delta 且未声明 skip_specs 的变更报 ERROR）
 
 ### Requirement: 项目 context 反映当前事实
-`openspec/config.yaml` 的 `context` SHALL 反映项目当前事实（版本号、技术栈、架构、模块、测试规模等），并在项目架构/版本发生显著变化时同步更新——因为 `context` 被注入到每个 artifact 的生成指令，过时 content 会误导 artifact 产出。
+`openspec/config.yaml` 的 `context` SHALL 仅承载项目级事实与工件撰写必需的硬约束（技术栈要点、架构约束、唯一真相源、用户数据隔离等），篇幅 SHALL ≤20 行且 ≤1200 字符；细节 SHALL 以指针指向 `AGENTS.md` 与 `docs/`，不得复制通用项目文档。项目架构/版本发生显著变化时 SHALL 同步更新，避免过时 content 误导 artifact 产出。
 
 #### Scenario: 架构/版本变化后
 - **WHEN** 项目版本或架构发生显著变化（如模块新增、多端演进）
@@ -43,8 +43,12 @@
 - **WHEN** 代理通过 `openspec instructions <artifact>` 获取指令
 - **THEN** 指令中的 project context 与 AGENTS.md/docs 描述的当前状态一致
 
+#### Scenario: context 超预算被第 10 检拦截
+- **WHEN** `context` 超过 20 行或 1200 字符（如把项目文档整段复制进配置）
+- **THEN** `openspec-check` 第 10 检失败并提示"移入 AGENTS.md/docs，仅保留指针"，CI 红
+
 ### Requirement: 规范单源化
-项目 OpenSpec 规范 SHALL 以 `openspec/schemas/spec-driven-custom/schema.yaml` 的 instruction 与 `templates/*.md` 为权威来源；`openspec/config.yaml` 的 `rules` SHALL 仅保留与 schema/模板不重复的约束，不得在同一规则上多处编码导致漂移。
+项目 OpenSpec 规范 SHALL 按三层配置职责单源化：格式/结构/编排以 schema instruction 与 `templates/*.md` 为权威；`openspec/config.yaml` 的 `rules` SHALL 仅保留 schema/模板未覆盖的约束（≤8 条），不得重复编码同一规则；apply/archive 操作纪律 SHALL 写入 `operations.apply.guidance` / `archive.guidance`（advisory），SHALL NOT 在 schema `apply.instruction` 或文档层重复撰写。
 
 #### Scenario: 修改格式规范
 - **WHEN** 需要调整某 artifact 的格式/结构规范
@@ -53,6 +57,10 @@
 #### Scenario: 校验一致性
 - **WHEN** 运行 `openspec instructions <artifact>` 生成指令
 - **THEN** 指令不包含互相矛盾的规则（config rules 与 schema instruction 对同一规范态度一致）
+
+#### Scenario: 配置预算被第 10 检守护
+- **WHEN** `rules` 超过 8 条、或 `operations.apply/archive.guidance` 为空/缺失
+- **THEN** `openspec-check` 第 10 检失败并提示"规则应归 schema/模板，操作纪律应入 operations guidance"，CI 红
 
 ### Requirement: 归档前验证门禁
 项目 OpenSpec 工作流 SHALL 在归档前执行验证门禁：真实代码变更 SHALL 经 `/opsx:verify` 确认无 CRITICAL 后方可归档；纯工具链/文档/元数据变更 SHALL NOT 跳过验证，但可以全量验证组套件加 `validate --archived` 等效替代并在归档条目注明等效依据。
@@ -131,7 +139,7 @@
 - **THEN** proposal 的 Impact 或 Why 中可读到所选 schema 与理由；.openspec.yaml 的 schema 字段与实际工件链一致
 
 ### Requirement: CI 门禁执行 OpenSpec 一致性、机制层与模板单源校验
-项目 OpenSpec 一致性 SHALL 由 CI 自动把关：`@fission-ai/openspec` 精确版本 SHALL 锁定于仓库根 `package.json` 的 `devDependencies`（唯一版本源），CI SHALL 以 `pnpm install --frozen-lockfile` 安装后运行 `pnpm run openspec:check`，SHALL NOT 全局安装；脚本 SHALL 依次执行九项检查（清单见场景「openspec-check 检查口径」），任一失败 SHALL 非零退出码阻断 CI。版本守卫 SHALL 校验"安装版本 = `package.json` 锁定版本 = AGENTS.md 声明版本"；本地运行 SHALL 优先使用仓库内 CLI。
+项目 OpenSpec 一致性 SHALL 由 CI 自动把关：`@fission-ai/openspec` 精确版本 SHALL 锁定于仓库根 `package.json` 的 `devDependencies`（唯一版本源），CI SHALL 以 `pnpm install --frozen-lockfile` 安装后运行 `pnpm run openspec:check`，SHALL NOT 全局安装；脚本 SHALL 依次执行十项检查（清单见场景「openspec-check 检查口径」），任一失败 SHALL 非零退出码阻断 CI。版本守卫 SHALL 校验"安装版本 = `package.json` 锁定版本 = AGENTS.md 声明版本"；本地运行 SHALL 优先使用仓库内 CLI。
 
 `version-check` job 的 docs-check 门禁与 OpenSpec 门禁相互独立：任一门的检查失败 SHALL 各自以非零退出码阻断 CI。
 
@@ -147,6 +155,7 @@
 - **THEN** 第 7 项：AGENTS.md 序列一致性守卫——AGENTS.md 声明的工件序列 SHALL 与 schema 实际工件链一致（漂移即失败）
 - **THEN** 第 8 项：机制层完整性守卫——`.agents/skills/.openspec-target` SHALL 为 `agents`；12 个 `openspec-*/SKILL.md` 的 `generatedBy` SHALL 等于 `package.json` 锁定版本；`openspec update --dry-run --json` 的 `changes` SHALL 为空；`.dsh/` SHALL NOT 出现在 git 索引
 - **THEN** 第 9 项：模板单源同步守卫——`node scripts/sync-schema-templates.mjs --check` SHALL 通过：proposal/spec 模板在 custom、standard、lite 三档逐字节一致，design 模板在 custom 与 standard 逐字节一致
+- **THEN** 第 10 项：指令配置预算守卫——`openspec/config.yaml` 的 `context` SHALL ≤20 行且 ≤1200 字符，`rules` SHALL ≤8 条，`operations.apply.guidance` 与 `operations.archive.guidance` SHALL 非空
 
 #### Scenario: 主 spec strict 漂移被拦截
 - **WHEN** 主 spec 违反 strict 规则（如新能力主 spec 的 Purpose 过短、格式错误）
@@ -169,8 +178,8 @@
 - **THEN** `openspec validate --archived` 报告该变更 "N incomplete tasks" 并失败，CI 红（须补正勾选后通过）
 
 #### Scenario: 钉版本安装与声明一致时 CI 绿
-- **WHEN** 根 `package.json` 与 `pnpm-lock.yaml` 锁定 `@fission-ai/openspec@1.15.0`，AGENTS.md 声明同为 1.15.0，且主 specs/活动变更/归档变更/关系健康/主 spec 无 delta 头/机制层/模板单源均通过
-- **THEN** `openspec-check.mjs` 通过全部九项检查，openspec-validation job 绿色
+- **WHEN** 根 `package.json` 与 `pnpm-lock.yaml` 锁定 `@fission-ai/openspec@1.15.0`，AGENTS.md 声明同为 1.15.0，且主 specs/活动变更/归档变更/关系健康/主 spec 无 delta 头/机制层/模板单源/配置预算均通过
+- **THEN** `openspec-check.mjs` 通过全部十项检查，openspec-validation job 绿色
 
 #### Scenario: test-plan 门禁拦截风险
 - **WHEN** 活动变更的 delta 场景与 test-plan 行不一致（缺行/引用错，模式 A/B 均适用），或归档变更的 test-plan.md 残留 `🔴`
@@ -190,4 +199,19 @@
 
 #### Scenario: 本地优先使用仓库内 CLI
 - **WHEN** 开发者执行 `pnpm install` 后运行 `pnpm run openspec:check`（本机未全局安装 openspec）
-- **THEN** 脚本解析 `node_modules` 内 `@fission-ai/openspec` 的 bin 启动 CLI，九项检查照常执行并通过；若依赖未安装，失败消息指引先运行 `pnpm install`
+- **THEN** 脚本解析 `node_modules` 内 `@fission-ai/openspec` 的 bin 启动 CLI，十项检查照常执行并通过；若依赖未安装，失败消息指引先运行 `pnpm install`
+
+### Requirement: 多人协作归档时机与分支策略
+项目 SHALL 按协作模式执行归档时机：多人/PR 流下，变更 artifacts SHALL 与代码在同一 PR 提交，PR 合并后 SHALL 在 `main` 执行 `/opsx:archive`（SHALL NOT 在未合并分支归档）；单人 `main` 流可在完成验证后同提交归档。归档 SHALL 以独立 commit 落地（`chore(openspec): archive <name>`），并在归档后复跑门禁留痕。
+
+#### Scenario: PR 流归档落在合并后
+- **WHEN** 多人协作以 PR 方式开发变更
+- **THEN** 变更 artifacts 随代码同 PR 提交并通过评审，PR 合并后在 `main` 上执行 `/opsx:archive`，delta specs 同步到主 spec 的提交在主分支
+
+#### Scenario: 单人 main 流归档
+- **WHEN** 单人直接在 `main` 开发且 tasks 全部勾选、门禁全绿
+- **THEN** 允许在同一次提交或紧邻提交中归档，归档条目注明验证依据
+
+#### Scenario: 归档后门禁复跑
+- **WHEN** 完成 `/opsx:archive`
+- **THEN** 复跑 `pnpm run openspec:check`、`openspec validate --archived` 与 `node scripts/docs-check.mjs` 并记录结论，归档 commit 包含同步后的主 spec

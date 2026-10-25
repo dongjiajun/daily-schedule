@@ -147,6 +147,7 @@ artifacts:
       示例分组：
       ```
       ## 1. 数据库迁移
+      <!-- 如有新 Flyway 脚本 -->
       - [ ] 1.1 编写 V<!-- 版本号 -->__<!-- 描述 -->.sql
       - [ ] 1.2 更新 H2 测试 schema（如新增表）
       - [ ] 1.3 启动 local MySQL 验证 Flyway 迁移成功
@@ -182,24 +183,25 @@ artifacts:
       - [ ] 7.3 <!-- 页面集成 (pages/) -->
       - [ ] 7.4 <!-- 样式与动画 -->
       - [ ] 7.5 编写/更新 vitest 单元测试（store 单测 + hooks 单测 + 组件渲染测试）
-      - [ ] 7.6 编写/更新 Playwright E2E 测试（e2e/*.spec.ts，覆盖关键用户流程）
-      - [ ] 7.7 运行 npm run test:e2e 确认 E2E 全部通过
+      - [ ] 7.6 编写/更新 Playwright E2E 测试（`e2e/*.spec.ts`，覆盖关键用户流程）
+      - [ ] 7.7 运行 `npm run test:e2e` 确认 E2E 全部通过
 
       ## 8. 文档同步
       <!-- 逐项评估：未触及的文档类别也必须写明"现有描述已核对仍准确"，不得仅以"无新增"标记 N/A -->
-      - [ ] 8.1 docs/frontend/component-catalog.md — 涉及组件/目录（新增**或修改**）？→ 更新；未触及 → 核对结论
-      - [ ] 8.2 docs/database/schema.md + docs/uml/README.md — 涉及表/字段/领域模型（新增**或修改**）？→ 更新；未触及 → 核对结论
-      - [ ] 8.3 docs/api/overview.md — 涉及端点/契约（新增**或修改**）？→ 更新；未触及 → 核对结论
-      - [ ] 8.4 docs/architecture.md + AGENTS.md — 涉及架构/模块/版本/测试规模？→ 更新；未触及 → 核对结论
-      - [ ] 8.5 README.md — 涉及版本/功能清单？→ 更新；未触及 → 核对结论
-      - [ ] 8.6 运行 node scripts/docs-check.mjs — 文档一致性检查通过
+      - [ ] 8.1 `docs/frontend/component-catalog.md` — 涉及组件/目录（新增**或修改**）？→ 更新；未触及 → 核对结论
+      - [ ] 8.2 `docs/database/schema.md` + `docs/uml/README.md` — 涉及表/字段/领域模型（新增**或修改**）？→ 更新；未触及 → 核对结论
+      - [ ] 8.3 `docs/api/overview.md` — 涉及端点/契约（新增**或修改**）？→ 更新；未触及 → 核对结论
+      - [ ] 8.4 `docs/architecture.md` + `AGENTS.md` — 涉及架构/模块/版本/测试规模？→ 更新；未触及 → 核对结论
+      - [ ] 8.5 `README.md` — 涉及版本/功能清单？→ 更新；未触及 → 核对结论
+      - [ ] 8.6 运行 `node scripts/docs-check.mjs` — 文档一致性检查通过
 
       ## 9. 全量验证
-      - [ ] 9.1 cd backend && mvn test
-      - [ ] 9.2 cd frontend && pnpm run verify
-      - [ ] 9.3 cd frontend && npm run test:e2e — Playwright E2E 全部通过
-      - [ ] 9.4 Smoke test — 浏览器手工验证 mock 无法覆盖的场景
-        <!-- 删除下方示例行，逐项替换为本次变更实际影响的用户流程；无 UI 影响的变更（纯后端/纯文档）删除全部示例行后直接勾选 9.4 -->
+      - [ ] 9.1 `cd backend && mvn test` — 后端单元测试全部通过
+      - [ ] 9.2 `cd frontend && pnpm run verify` — 前端 lint + tsc + build + vitest 全部通过
+      - [ ] 9.3 `cd frontend && npm run test:e2e` — Playwright E2E 全部通过
+      - [ ] 9.4 Smoke test — 启动前后端，浏览器手工验证 mock 无法覆盖的场景
+        <!-- 删除下方示例行，逐项替换为本次变更实际影响的用户流程；
+             无 UI 影响的变更（纯后端/纯文档）删除全部示例行后直接勾选 9.4 -->
         - [ ] 登录 → 创建日程 → 日历视图显示
         - [ ] 点击宠物 → 互动菜单弹出 → 喂食成功
         - [ ] 切换日/周/月视图 → 日程正确显示
@@ -220,5 +222,5 @@ apply:
   requires: [tasks]
   tracks: tasks.md
   instruction: |
-    按 tasks.md 顺序实现，完成一项标记一项。遇到阻塞或需澄清时暂停。
-    实现过程中务必遵循 AGENTS.md 中的技术约定（DDD 分层、契约驱动、前后端分离）。
+    执行 tasks.md 全部 checkbox。apply 纪律（顺序勾选 / 阻塞暂停 / 遵循 AGENTS.md 技术约定 / 归档前 verify）
+    的唯一来源是 `openspec/config.yaml` 的 `operations.apply.guidance`（`openspec instructions apply` 以 Operation Guidance 透传）。

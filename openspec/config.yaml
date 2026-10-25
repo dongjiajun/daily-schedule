@@ -1,78 +1,31 @@
 schema: spec-driven-custom-standard
 
+# 仅保留项目级事实与代理无法从代码推断的硬约束；细节见 AGENTS.md 与 docs/。
+# 预算由 openspec-check 第 10 检守护（context ≤20 行且 ≤1200 字符；rules ≤8 条）。
 context: |
-  ## 项目概要
-  日程管理系统（Spring Boot 3.4 + React 19 + MySQL 8.0），v3.5.1（2026-08-17）。
-
-  ## 技术栈
-  - 后端: Java 21, Spring Boot 3.4, MyBatis-Plus 3.5, Flyway, Spring Security + JWT, Caffeine Cache, Maven
-  - 前端: React 19, TypeScript, Tailwind CSS 4, Vite, react-big-calendar + dayjs,
-    Zustand (UI 状态), TanStack React Query (服务端数据), Framer Motion, sonner Toast
-  - 小程序: Taro 4.2 + React 18 + NutUI 4.0.0-beta.5（apps/miniprogram，微信小程序）
-  - 共享包: @daily-schedule/shared/holiday（HolidayEngine）+ @daily-schedule/shared/pet（roam engine）独立导出
-  - 数据库: MySQL 8.0 生产 / H2 测试
-  - API 契约: specs/openapi.yaml 是唯一真相源, Maven 插件生成 Java 接口+DTO,
-    @hey-api/openapi-ts 生成前端 SDK (src/api/，生成器清空重写，自定义逻辑只能放 src/lib/)
-
-  ## 后端架构: DDD 四层
-  API 层 (api/controller|assembler|exception) → 应用层 (application/*/ApplicationService)
-  → 领域层 (domain/*/Entity + DomainService + Repository 接口)
-  ← 基础设施层 (infrastructure/persistence|security|config|scheduled|notification|wechat)
-
-  关键约定:
-  - Controller 必须实现 generated/api/ 下的接口, 编译期契约同步
-  - domain 定义 Repository 接口, infrastructure 用 MyBatis-Plus (PO + Mapper) 实现
-  - 所有业务表含 user_id, 通过 CurrentUserService 强制多用户数据隔离
-  - Flyway 迁移: src/main/resources/db/migration/V*__*.sql, 启动自动执行
-
-  ## 前端模块化架构
-  - src/core（稳定基础设施: eventBus/moduleRegistry/unwrap/authInterceptor; store: auth/settings; components/ui; hooks; styles）
-  - src/modules/{calendar,pet,todo}（可插拔模块，各含 index.ts + routes.tsx + components/hooks/store/lib）
-  - components/layout + pages（LoginPage）+ lib（兼容层）+ api（自动生成 SDK）
-  - 状态管理两层: Zustand (UI) + React Query (服务端数据)；模块间通信唯一通道 core/lib/eventBus.ts；模块注册 core/lib/moduleRegistry.ts
-
-  ## 小程序（apps/miniprogram）
-  - 微信登录: wx.login code → openid → JWT 静默注册（POST /auth/wechat-login）
-  - 页面: 日历月视图（只读复用 GET /events）、任务列表（复用 /tasks 四端点）、宠物互动（复用 /pets/me 三端点 + shared/pet roam engine）
-  - lib/api.ts 统一 Bearer 注入 + 401 清态静默重登
-
-  ## 认证
-  JWT 无状态 (access 15min + refresh 7d), BCrypt 加密, SSE Cookie 鉴权 (dsa_sse_session)
-  前端 authInterceptor: 请求注入 Bearer + 过期预刷新 + 401 强制登出
-
-  ## 测试
-  - 后端: JUnit 5 + H2 内存数据库 (test profile)，45 类 342 用例
-  - 前端: vitest 单元测试（51 文件 267 用例）+ Playwright E2E（13 文件 57 用例）+ ESLint
-  - 小程序: vitest（7 文件 83 用例）
-
-  ## 文档一致性自动化
-  - scripts/sync-version.sh --check：openapi.yaml / pom.xml / package.json 三处版本一致
-  - scripts/docs-check.mjs：版本声明/端点覆盖/结构计数（DOCS-CHECK markers）一致性，CI version-check job 已接入
-
-  ## 版本号位置
-  specs/openapi.yaml (version), backend/pom.xml (version), frontend/package.json (version)
+  日程管理系统 v3.5.1：Java 21 + Spring Boot 3.4（DDD 四层；MyBatis-Plus / Flyway / JWT）、
+  React 19 + Vite 前端、Taro 4.2 微信小程序、@daily-schedule/shared 跨端共享包；MySQL 8.0（测试用 H2）。
+  API 唯一真相源 specs/openapi.yaml（Maven 生成后端接口、openapi-ts 生成前端 SDK）。
+  所有业务表含 user_id，查询必须经 CurrentUserService 按当前用户隔离。
+  工作流约定（三档 schema 选择 / CI 门禁 / 文档同步 / 归档时机）见 AGENTS.md。
 
 rules:
   proposal:
-    - 必须评估 API 契约影响——是否需要修改 specs/openapi.yaml
-    - 必须标注对 DDD 各层的影响 (API/应用/领域/基础设施)
-    - 涉及数据库变更时必须标注 Flyway 迁移版本号 (V5, V6...)
-    - 标记是否为 BREAKING 变更 (影响契约兼容性)
-    - "无行为变化（纯重构/工具链/文档/热修）时必须在 .openspec.yaml 设 skip_specs: true，不得绕过 OpenSpec 流程"
-  specs:
-    - 新增 API 端点时必须引用 OpenAPI schema 中的字段名和类型
-    - 数据库变更必须列出表名、列名、类型、约束
+    - "必须评估 API 契约影响（specs/openapi.yaml 是否变更、是否 BREAKING）"
+    - "涉及数据库变更时必须标注 Flyway 迁移版本号"
+    - "必须说明所选 workflow schema 档位（lite/standard/custom）及理由"
   design:
-    - 必须明确改动涉及的后端包路径 (api/controller, application, domain, infrastructure)
-    - 涉及新依赖时必须说明选型理由
-    - 涉及认证/权限时必须说明安全影响
-  tasks:
-    - "按 DDD 分层编排任务顺序: 数据库迁移 → 领域层 → 基础设施层 → 应用层 → API 层 → 前端"
-    - API 契约变更后必须包含 "重新生成 SDK" 任务
-    - 每个后端任务完成后应包含对应的测试任务
-    - 前端任务必须包含 vitest 单元测试更新 + Playwright E2E 测试更新 (`e2e/*.spec.ts`)
-    - 涉及新前端组件或修改现有组件行为时必须在 tasks 中包含 component-catalog.md 更新
-    - 涉及新实体/数据库表/字段或修改表结构/领域模型时必须在 tasks 中包含 schema.md + uml/README.md 更新
-    - 涉及新 API 端点或修改现有端点时必须在 tasks 中包含 api/overview.md 更新
-    - 涉及架构/模块结构/测试规模/版本号变更时必须包含 architecture.md + AGENTS.md + README.md 更新
-    - 文档同步阶段必须包含运行 `node scripts/docs-check.mjs` 且通过的验证条目
+    - "涉及认证/权限/用户数据隔离时必须说明安全影响"
+
+# apply / archive 的操作纪律（advisory）：openspec instructions apply/archive 以 Operation Guidance 透传；
+# schema 的 apply.instruction 仅保留指针，不重复本节内容。
+operations:
+  apply:
+    guidance:
+      - "按 tasks.md 顺序逐项实现并勾选；遇阻塞或需澄清时暂停，不得跳过未完成项"
+      - "代码实现遵循 AGENTS.md 技术约定；代码变更在归档前必须运行 /opsx:verify 且报告无 CRITICAL"
+  archive:
+    guidance:
+      - "归档前确认 tasks 全部勾选；custom 变更 test-plan 无残留 🔴；代码变更需 /opsx:verify 无 CRITICAL，纯工具链/文档变更可用全量验证组套件 + openspec validate --archived 等效并留痕"
+      - "多人/PR 流：变更 artifacts 随代码同 PR 提交，PR 合并后在 main 执行 /opsx:archive；单人 main 流可同提交归档"
+      - "归档后复跑 pnpm run openspec:check、openspec validate --archived 与 node scripts/docs-check.mjs，并在归档条目记录结论"
