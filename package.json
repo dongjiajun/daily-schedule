@@ -14,6 +14,7 @@
     "openspec:check": "node scripts/openspec-check.mjs"
   },
   "devDependencies": {
+    "@fission-ai/openspec": "1.15.0",
     "@playwright/test": "^1.62.0",
     "turbo": "^2.6.3"
   }

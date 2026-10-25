@@ -7,17 +7,18 @@
  *   1. validateAll      — openspec validate --all --strict --no-interactive（主 specs + 活动变更）
  *   2. doctor           — openspec doctor（OpenSpec 根与引用关系健康）
  *   3. guardDelta       — 主 spec 不得含 delta 标记行（openspec/specs/ 下所有 spec.md）
- *   4. checkVersion     — openspec --version ↔ CLAUDE.md "OpenSpec CLI <version>" 声明
+ *   4. checkVersion     — 版本单源：安装版本 = 根 package.json 锁定版本 = CLAUDE.md 声明
  *   5. validateArchived — openspec validate --archived --no-interactive（归档变更 tasks 完整性）
  *   6. checkTestPlan    — test-plan 内容门禁（活动变更场景↔test-plan 行映射一致；归档含 test-plan.md 时无残留 🔴）
  *   7. checkClaudeSequence — CLAUDE.md 工件序列声明 ↔ schema.yaml artifacts 链（指令层收敛守卫）
  *
- * 本地: pnpm run openspec:check（需全局 openspec CLI；未安装时给出安装指引）。
- * CI:   .github/workflows/ci.yml 的 openspec-validation job 内执行。
+ * 本地: pnpm run openspec:check（优先使用仓库 node_modules 内锁定 CLI，缺失时回退全局安装；
+ *       依赖未安装时给出 `pnpm install` 指引）。
+ * CI:   .github/workflows/ci.yml 的 openspec-validation job 内执行（pnpm install 后调用）。
  */
 import fs from 'node:fs'
 import path from 'node:path'
-import { execSync } from 'node:child_process'
+import { execFileSync, execSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
@@ -55,15 +56,38 @@ function walk(rel, predicate) {
   return out
 }
 
-/** 运行 openspec CLI；ENOENT（未安装）时上报一次并跳过后续 CLI 检查 */
+/** 仓库内 CLI 入口（根 package.json 锁定的 @fission-ai/openspec）；未安装时返回 null */
+function resolveLocalCli() {
+  const pkgPath = path.join(ROOT, 'node_modules', '@fission-ai', 'openspec', 'package.json')
+  if (!fs.existsSync(pkgPath)) return null
+  try {
+    const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'))
+    const bin = typeof pkg.bin === 'string' ? pkg.bin : pkg.bin?.openspec
+    if (!bin) return null
+    const abs = path.join(path.dirname(pkgPath), bin)
+    return fs.existsSync(abs) ? abs : null
+  } catch {
+    return null
+  }
+}
+
+const LOCAL_CLI = resolveLocalCli()
+
+/** 运行 openspec CLI（优先仓库内锁定版本，缺失回退全局）；ENOENT 时上报一次并跳过后续 CLI 检查 */
 function runOpenSpec(args, label) {
   if (cliMissing) return null
   try {
-    const out = execSync(['openspec', ...args].join(' '), {
-      cwd: ROOT,
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'pipe'],
-    })
+    const out = LOCAL_CLI
+      ? execFileSync(process.execPath, [LOCAL_CLI, ...args], {
+          cwd: ROOT,
+          encoding: 'utf8',
+          stdio: ['ignore', 'pipe', 'pipe'],
+        })
+      : execSync(['openspec', ...args].join(' '), {
+          cwd: ROOT,
+          encoding: 'utf8',
+          stdio: ['ignore', 'pipe', 'pipe'],
+        })
     console.log(`✓ ${label}`)
     return out
   } catch (err) {
@@ -72,7 +96,7 @@ function runOpenSpec(args, label) {
       if (!cliMissingReported) {
         cliMissingReported = true
         FAILURES.push(
-          '[CLI] 未找到 openspec 命令 — 请先安装: npm install -g @fission-ai/openspec@<version>（见 CLAUDE.md 声明的版本）'
+          '[CLI] 未找到 openspec CLI — 请在仓库根执行 `pnpm install` 安装 package.json 锁定的 @fission-ai/openspec（不再依赖全局安装）'
         )
       }
       return null
@@ -143,20 +167,41 @@ function parseDeclaredVersion(text) {
   return m ? m[1] : null
 }
 
+/** 从根 package.json 文本提取锁定的 @fission-ai/openspec 版本（纯函数，供 --self-test） */
+function parsePinnedVersion(text) {
+  try {
+    const pkg = JSON.parse(text)
+    const v = pkg.devDependencies?.['@fission-ai/openspec']
+    return typeof v === 'string' ? v : null
+  } catch {
+    return null
+  }
+}
+
 function checkCliVersion() {
   if (cliMissing) return
   const out = runOpenSpec(['--version'], 'openspec --version')
   if (out === null) return
   const installed = out.trim()
+  const pinned = exists('package.json') ? parsePinnedVersion(read('package.json')) : null
   const declared = parseDeclaredVersion(exists('CLAUDE.md') ? read('CLAUDE.md') : '')
-  if (!declared) {
-    FAILURES.push('[VERSION] CLAUDE.md 未声明 "OpenSpec CLI <version>" — 请补声明（升级时同步 ci.yml 钉版安装行）')
+  if (!pinned) {
+    FAILURES.push(
+      '[VERSION] 根 package.json 未锁定 devDependencies["@fission-ai/openspec"] — 请执行 pnpm add -D -w @fission-ai/openspec@<version> --save-exact'
+    )
     return
   }
-  if (installed !== declared) {
-    FAILURES.push(`[VERSION] 已安装 openspec ${installed}，CLAUDE.md 声明 ${declared} — 请同步：npm install -g @fission-ai/openspec@${declared} 或更新声明`)
+  if (!declared) {
+    FAILURES.push('[VERSION] CLAUDE.md 未声明 "OpenSpec CLI <version>" — 请补声明（须等于根 package.json 锁定版本）')
+    return
+  }
+  const drift = []
+  if (installed !== pinned) drift.push(`实际安装 ${installed} ≠ package.json 锁定 ${pinned}（请 pnpm install）`)
+  if (declared !== pinned) drift.push(`CLAUDE.md 声明 ${declared} ≠ package.json 锁定 ${pinned}（请同步声明）`)
+  if (drift.length) {
+    FAILURES.push(`[VERSION] OpenSpec CLI 版本不一致：${drift.join('；')} — 升级 SOP：改根 package.json 版本 + pnpm install + 同步 CLAUDE.md 声明`)
   } else {
-    console.log(`✓ CLI 版本守卫（installed=${installed} = declared=${declared}）`)
+    console.log(`✓ CLI 版本守卫（安装=${installed} = package.json=${pinned} = CLAUDE.md=${declared}）`)
   }
 }
 
@@ -341,6 +386,15 @@ function selfTest() {
   }
 
   // 版本解析器：正/负例
+  if (parsePinnedVersion('{"devDependencies":{"@fission-ai/openspec":"1.15.0"}}') !== '1.15.0') {
+    issues.push('parsePinnedVersion 未提取 package.json 锁定版本')
+  }
+  if (parsePinnedVersion('{"dependencies":{}}') !== null) {
+    issues.push('parsePinnedVersion 对无锁定依赖文本误报')
+  }
+  if (parsePinnedVersion('not-json') !== null) {
+    issues.push('parsePinnedVersion 对非法 JSON 误报')
+  }
   if (parseDeclaredVersion('OpenSpec CLI 1.15.0，skills/commands 同步于 .dsh/') !== '1.15.0') {
     issues.push('版本解析器未提取 "OpenSpec CLI 1.15.0"')
   }
@@ -407,6 +461,7 @@ function selfTest() {
 const isSelfTest = process.argv.includes('--self-test')
 if (isSelfTest) selfTest()
 
+console.log(`✓ CLI 来源（${LOCAL_CLI ? '仓库 node_modules 锁定版本' : '全局安装（回退）'}）`)
 validateAll()
 doctorCheck()
 guardDelta()

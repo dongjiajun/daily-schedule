@@ -37,20 +37,22 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+
       - name: Set up Node 22
         uses: actions/setup-node@v5
         with:
           node-version: 22
-          # 本 job 仅跑 openspec CLI（npm 全局安装），无 pnpm 步骤；
-          # 禁用包缓存避免 setup-node 缓存检测失败
-          package-manager-cache: false
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
 
-      - name: Install OpenSpec CLI (pinned)
-        # ⚠️ 升级 OpenSpec 时须同步：本安装行版本 + CLAUDE.md 的 "OpenSpec CLI <version>" 声明
-        run: npm install -g @fission-ai/openspec@1.15.0
+      - name: Install dependencies
+        # OpenSpec CLI 版本单源：根 package.json devDependencies（精确锁定）+ pnpm-lock.yaml
+        run: pnpm install --frozen-lockfile
 
       - name: Validate OpenSpec consistency
-        run: node scripts/openspec-check.mjs
+        run: pnpm run openspec:check
 
   backend:
     name: Backend (Maven compile)

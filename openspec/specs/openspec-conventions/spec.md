@@ -89,17 +89,17 @@
 - **THEN** 依据 `openspec instructions <artifact>` 的动态输出（模板 + instruction + rules），CLAUDE.md 中无对应工件格式的重复副本
 
 ### Requirement: CI 门禁执行 OpenSpec 一致性验证
-项目 OpenSpec 一致性 SHALL 由 CI 自动把关：`.github/workflows/ci.yml` 的 `openspec-validation` job SHALL 安装与 `CLAUDE.md` 声明版本一致的钉版本 `@fission-ai/openspec` CLI（npm 全局），并运行 `scripts/openspec-check.mjs`（可经 `pnpm run openspec:check` 调用）；该脚本 SHALL 依次执行七项检查（主 specs 与活动变更 strict 校验、doctor、主 spec delta 头守卫、CLI 版本守卫、归档 tasks 勾选校验、test-plan 内容门禁、CLAUDE.md 序列一致性守卫），任一失败 SHALL 以非零退出码阻断 CI。
+项目 OpenSpec 一致性 SHALL 由 CI 自动把关：`@fission-ai/openspec` 精确版本 SHALL 锁定于仓库根 `package.json` 的 `devDependencies`（唯一版本源），CI SHALL 以 `pnpm install --frozen-lockfile` 安装后运行 `pnpm run openspec:check`，SHALL NOT 全局安装；脚本 SHALL 依次执行七项检查（清单见场景「openspec-check 七项检查口径」），任一失败 SHALL 非零退出码阻断 CI。版本守卫 SHALL 校验"安装版本 = `package.json` 锁定版本 = CLAUDE.md 声明版本"；本地运行 SHALL 优先使用仓库内 CLI。
 
 `version-check` job 的 docs-check 门禁与 OpenSpec 门禁相互独立：任一门的检查失败 SHALL 各自以非零退出码阻断 CI。
 
 #### Scenario: openspec-check 七项检查口径
 
-- **WHEN** CI 的 `openspec-validation` job 运行 `node scripts/openspec-check.mjs`
+- **WHEN** CI 的 `openspec-validation` job 运行 `pnpm run openspec:check`（CLI 由 `pnpm install --frozen-lockfile` 按 `package.json` 锁定版本安装）
 - **THEN** 第 1 项：`openspec validate --all --strict --no-interactive`——主 specs 与活动变更全部按 strict 校验，活动变更的 proposal/specs/design/tasks 未生成完整即失败
 - **THEN** 第 2 项：`openspec doctor`——根与引用关系健康
 - **THEN** 第 3 项：主 spec delta 头守卫——`openspec/specs/` 下所有 spec.md SHALL NOT 包含 `## ADDED Requirements`、`## MODIFIED Requirements`、`## REMOVED Requirements`、`## RENAMED Requirements` 或 `### (Modified|Removed|Renamed) Requirement` 行（delta 专用标记仅允许存在于 `openspec/changes/` 的变更内）
-- **THEN** 第 4 项：CLI 版本守卫——`openspec --version` SHALL 与 CLAUDE.md 声明的 OpenSpec 版本一致
+- **THEN** 第 4 项：CLI 版本守卫——实际安装的 `openspec --version` SHALL 等于 `package.json` 锁定的精确版本，且与 CLAUDE.md 声明的版本一致
 - **THEN** 第 5 项：`openspec validate --archived --no-interactive`——归档变更的 tasks SHALL 全部勾选完成（`- [x]`），任一归档变更残留 `- [ ]` 即失败（`backfill-archive-task-completion` 补正后的历史归档须保持全绿）
 - **THEN** 第 6 项：test-plan 内容门禁——活动变更：存在 test-plan.md 时，其行 SHALL 对 delta specs 中的每个 `#### Scenario:` 逐条对应（Requirement/Scenario 引用一致，无遗漏）；归档变更：含 test-plan.md 时其 `Initial State` SHALL 无残留 `🔴`（全部翻绿）
 - **THEN** 第 7 项：CLAUDE.md 序列一致性守卫——CLAUDE.md 声明的工件序列 SHALL 与 schema 实际工件链一致（按当前 schema 工件链核对，漂移即失败，如漏写 test-plan）
@@ -117,15 +117,15 @@
 - **THEN** delta 头守卫输出文件路径与行号并失败，引导将 delta 放回 `openspec/changes/<change>/specs/`
 
 #### Scenario: CLI 版本声明漂移被拦截
-- **WHEN** CI 安装的 `@fission-ai/openspec` 版本与 CLAUDE.md 声明的版本不一致（升级 CLI 未同步声明，或声明先行未升级）
-- **THEN** 版本守卫失败，消息指示钉版本安装命令与 CLAUDE.md 声明需同步修正
+- **WHEN** 实际安装的 CLI 版本、`package.json` 锁定版本、CLAUDE.md 声明版本三者任一不一致（如升级只改了 `package.json` 未 `pnpm install`，或升级后漏改声明）
+- **THEN** 版本守卫失败，消息指示"改根 `package.json` 版本 + `pnpm install` + 同步 CLAUDE.md 声明"三步
 
 #### Scenario: 归档变更 tasks 未全勾被拦截
 - **WHEN** 存在归档变更且其 tasks.md 含未勾选项（如勾选纪律建立前的历史归档）
 - **THEN** `openspec validate --archived` 报告该变更 "N incomplete tasks" 并失败，CI 红（须补正勾选后通过）
 
 #### Scenario: 钉版本安装与声明一致时 CI 绿
-- **WHEN** `npm install -g @fission-ai/openspec@<version>` 安装的版本等于 CLAUDE.md 声明版本，且主 specs/活动变更/归档变更/关系健康/主 spec 无 delta 头
+- **WHEN** 根 `package.json` 与 `pnpm-lock.yaml` 锁定 `@fission-ai/openspec@1.15.0`，CLAUDE.md 声明同为 1.15.0，且主 specs/活动变更/归档变更/关系健康/主 spec 无 delta 头
 - **THEN** `openspec-check.mjs` 通过全部检查，openspec-validation job 绿色
 
 #### Scenario: test-plan 门禁拦截风险
@@ -135,6 +135,10 @@
 #### Scenario: CLAUDE.md 序列漂移被第 7 检拦截
 - **WHEN** CLAUDE.md 声明的工件序列与 schema 实际工件链不一致（如漏写 test-plan）
 - **THEN** 第 7 检输出 CLAUDE.md 声明与 schema 链的差异并失败，CI 红（修正 CLAUDE.md 对齐后通过）
+
+#### Scenario: 本地优先使用仓库内 CLI
+- **WHEN** 开发者执行 `pnpm install` 后运行 `pnpm run openspec:check`（本机未全局安装 openspec）
+- **THEN** 脚本解析 `node_modules` 内 `@fission-ai/openspec` 的 bin 启动 CLI，七项检查照常执行并通过；若依赖未安装，失败消息指引先运行 `pnpm install`
 
 ### Requirement: 归档前验证门禁
 项目 OpenSpec 工作流 SHALL 在归档前执行验证门禁：真实代码变更 SHALL 经 `/opsx:verify` 确认无 CRITICAL 后方可归档；纯工具链/文档/元数据变更 SHALL NOT 跳过验证，但可以全量验证组套件加 `validate --archived` 等效替代并在归档条目注明等效依据。
