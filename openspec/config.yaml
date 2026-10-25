@@ -74,5 +74,5 @@ rules:
     - 涉及新前端组件或修改现有组件行为时必须在 tasks 中包含 component-catalog.md 更新
     - 涉及新实体/数据库表/字段或修改表结构/领域模型时必须在 tasks 中包含 schema.md + uml/README.md 更新
     - 涉及新 API 端点或修改现有端点时必须在 tasks 中包含 api/overview.md 更新
-    - 涉及架构/模块结构/测试规模/版本号变更时必须包含 architecture.md + CLAUDE.md + README.md 更新
+    - 涉及架构/模块结构/测试规模/版本号变更时必须包含 architecture.md + AGENTS.md + README.md 更新
     - 文档同步阶段必须包含运行 `node scripts/docs-check.mjs` 且通过的验证条目

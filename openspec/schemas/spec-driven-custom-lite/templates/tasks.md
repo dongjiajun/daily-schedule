@@ -14,7 +14,7 @@
 - [ ] 2.1 `docs/frontend/component-catalog.md` — 涉及组件/目录（新增**或修改**）？→ 更新；未触及 → 核对结论
 - [ ] 2.2 `docs/database/schema.md` + `docs/uml/README.md` — 涉及表/字段/领域模型（新增**或修改**）？→ 更新；未触及 → 核对结论
 - [ ] 2.3 `docs/api/overview.md` — 涉及端点/契约（新增**或修改**）？→ 更新；未触及 → 核对结论
-- [ ] 2.4 `docs/architecture.md` + `CLAUDE.md` — 涉及架构/模块/版本/测试规模/OpenSpec 流程？→ 更新；未触及 → 核对结论
+- [ ] 2.4 `docs/architecture.md` + `AGENTS.md` — 涉及架构/模块/版本/测试规模/OpenSpec 流程？→ 更新；未触及 → 核对结论
 - [ ] 2.5 `README.md` — 涉及版本/功能清单？→ 更新；未触及 → 核对结论
 - [ ] 2.6 运行 `node scripts/docs-check.mjs` + `./scripts/sync-version.sh --check` — 文档一致性检查通过
 - [ ] 2.7（CI/工具链类变更）运行 `pnpm run openspec:check` — OpenSpec 一致性检查通过

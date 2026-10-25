@@ -56,7 +56,7 @@
 - [ ] 8.1 `docs/frontend/component-catalog.md` — 涉及组件/目录（新增**或修改**）？→ 更新；未触及 → 核对结论
 - [ ] 8.2 `docs/database/schema.md` + `docs/uml/README.md` — 涉及表/字段/领域模型（新增**或修改**）？→ 更新；未触及 → 核对结论
 - [ ] 8.3 `docs/api/overview.md` — 涉及端点/契约（新增**或修改**）？→ 更新；未触及 → 核对结论
-- [ ] 8.4 `docs/architecture.md` + `CLAUDE.md` — 涉及架构/模块/版本/测试规模？→ 更新；未触及 → 核对结论
+- [ ] 8.4 `docs/architecture.md` + `AGENTS.md` — 涉及架构/模块/版本/测试规模？→ 更新；未触及 → 核对结论
 - [ ] 8.5 `README.md` — 涉及版本/功能清单？→ 更新；未触及 → 核对结论
 - [ ] 8.6 运行 `node scripts/docs-check.mjs` — 文档一致性检查通过
 

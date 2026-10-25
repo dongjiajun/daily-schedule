@@ -1,7 +1,7 @@
 # Service Caching（服务层查询缓存）
 
 ## Purpose
-分类/标签列表查询接入 Caffeine 本地缓存，兑现架构声明（CLAUDE.md「Caffeine 缓存」）；缓存键与失效均按 userId 隔离，写操作精确失效不跨用户误伤；测试环境禁用缓存防测试污染。
+分类/标签列表查询接入 Caffeine 本地缓存，兑现架构声明（AGENTS.md「Caffeine 缓存」）；缓存键与失效均按 userId 隔离，写操作精确失效不跨用户误伤；测试环境禁用缓存防测试污染。
 
 ## Requirements
 

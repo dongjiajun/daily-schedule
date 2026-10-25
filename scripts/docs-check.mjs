@@ -75,7 +75,7 @@ function checkVersion() {
     ['docs/api/overview.md', /当前 API 版本\*\*: ([\w.-]+)/],
     ['docs/database/schema.md', /当前状态: v([\w.-]+)/],
     ['docs/planning/execution-plan.md', /当前实际版本: \*\*v([\w.-]+)\*\*/],
-    ['CLAUDE.md', /当前版本：v([\w.-]+)/],
+    ['AGENTS.md', /当前版本：v([\w.-]+)/],
   ]
   for (const [file, re] of targets) {
     if (!exists(file)) {
@@ -184,7 +184,7 @@ const MARKER_RE = /<!--\s*DOCS-CHECK:\s*([a-z][a-z0-9-]*)=([\w.-]+)\s*-->/g
 function checkCounts() {
   const docFiles = [
     ...walk('docs', (f) => f.endsWith('.md')),
-    ...['CLAUDE.md', 'README.md'].filter((f) => exists(f)),
+    ...['AGENTS.md', 'README.md'].filter((f) => exists(f)),
   ]
   const seen = new Set()
   let markerTotal = 0

@@ -3,14 +3,15 @@
  * OpenSpec 一致性检查 — CI 门禁（openspec-validation job）+ 本地复跑。
  * 用法: node scripts/openspec-check.mjs [--self-test]
  *
- * 七类检查（依次执行，任一失败 → 非零退出）:
+ * 八类检查（依次执行，任一失败 → 非零退出）:
  *   1. validateAll      — openspec validate --all --strict --no-interactive（主 specs + 活动变更）
  *   2. doctor           — openspec doctor（OpenSpec 根与引用关系健康）
  *   3. guardDelta       — 主 spec 不得含 delta 标记行（openspec/specs/ 下所有 spec.md）
- *   4. checkVersion     — 版本单源：安装版本 = 根 package.json 锁定版本 = CLAUDE.md 声明
+ *   4. checkVersion     — 版本单源：安装版本 = 根 package.json 锁定版本 = AGENTS.md 声明
  *   5. validateArchived — openspec validate --archived --no-interactive（归档变更 tasks 完整性）
  *   6. checkTestPlan    — test-plan 内容门禁（活动变更场景↔test-plan 行映射一致；归档含 test-plan.md 时无残留 🔴）
- *   7. checkClaudeSequence — CLAUDE.md 工件序列声明 ↔ schema.yaml artifacts 链（指令层收敛守卫）
+ *   7. checkDocSequence — AGENTS.md 工件序列声明 ↔ schema.yaml artifacts 链（指令层收敛守卫）
+ *   8. checkMechanismLayer — 机制层完整性（.agents/skills generatedBy = 锁定版本；update --dry-run 无变更；.dsh 不被跟踪）
  *
  * 本地: pnpm run openspec:check（优先使用仓库 node_modules 内锁定 CLI，缺失时回退全局安装；
  *       依赖未安装时给出 `pnpm install` 指引）。
@@ -184,7 +185,7 @@ function checkCliVersion() {
   if (out === null) return
   const installed = out.trim()
   const pinned = exists('package.json') ? parsePinnedVersion(read('package.json')) : null
-  const declared = parseDeclaredVersion(exists('CLAUDE.md') ? read('CLAUDE.md') : '')
+  const declared = parseDeclaredVersion(exists('AGENTS.md') ? read('AGENTS.md') : '')
   if (!pinned) {
     FAILURES.push(
       '[VERSION] 根 package.json 未锁定 devDependencies["@fission-ai/openspec"] — 请执行 pnpm add -D -w @fission-ai/openspec@<version> --save-exact'
@@ -192,16 +193,16 @@ function checkCliVersion() {
     return
   }
   if (!declared) {
-    FAILURES.push('[VERSION] CLAUDE.md 未声明 "OpenSpec CLI <version>" — 请补声明（须等于根 package.json 锁定版本）')
+    FAILURES.push('[VERSION] AGENTS.md 未声明 "OpenSpec CLI <version>" — 请补声明（须等于根 package.json 锁定版本）')
     return
   }
   const drift = []
   if (installed !== pinned) drift.push(`实际安装 ${installed} ≠ package.json 锁定 ${pinned}（请 pnpm install）`)
-  if (declared !== pinned) drift.push(`CLAUDE.md 声明 ${declared} ≠ package.json 锁定 ${pinned}（请同步声明）`)
+  if (declared !== pinned) drift.push(`AGENTS.md 声明 ${declared} ≠ package.json 锁定 ${pinned}（请同步声明）`)
   if (drift.length) {
-    FAILURES.push(`[VERSION] OpenSpec CLI 版本不一致：${drift.join('；')} — 升级 SOP：改根 package.json 版本 + pnpm install + 同步 CLAUDE.md 声明`)
+    FAILURES.push(`[VERSION] OpenSpec CLI 版本不一致：${drift.join('；')} — 升级 SOP：改根 package.json 版本 + pnpm install + 同步 AGENTS.md 声明`)
   } else {
-    console.log(`✓ CLI 版本守卫（安装=${installed} = package.json=${pinned} = CLAUDE.md=${declared}）`)
+    console.log(`✓ CLI 版本守卫（安装=${installed} = package.json=${pinned} = AGENTS.md=${declared}）`)
   }
 }
 
@@ -317,10 +318,10 @@ function checkTestPlan() {
   console.log(`✓ test-plan 归档检查（${archivedChecked}/${archived.length} 个归档变更含 test-plan，${redHits ? redHits + ' 处残留 🔴' : '无残留 🔴'}）`)
 }
 
-// ── 7. CLAUDE.md 工件序列一致性守卫 ───────────────────────────────────────
+// ── 7. AGENTS.md 工件序列一致性守卫 ───────────────────────────────────────
 
-/** 从 CLAUDE.md 文本提取 Artifact 序列声明（纯函数，供 --self-test） */
-function parseClaudeSequence(text) {
+/** 从 AGENTS.md 文本提取 Artifact 序列声明（纯函数，供 --self-test） */
+function parseDocSequence(text) {
   const m = text.match(/\/opsx:new <name>\s*→\s*(.+?)\s*→\s*\/opsx:apply/)
   if (!m) return null
   return m[1].split('→').map((s) => s.trim()).filter(Boolean)
@@ -336,23 +337,88 @@ function parseSchemaArtifacts(text) {
   return out
 }
 
-function checkClaudeSequence() {
-  if (!exists('CLAUDE.md') || !exists('openspec/schemas/spec-driven-custom/schema.yaml')) return
-  const declared = parseClaudeSequence(read('CLAUDE.md'))
+function checkDocSequence() {
+  if (!exists('AGENTS.md') || !exists('openspec/schemas/spec-driven-custom/schema.yaml')) return
+  const declared = parseDocSequence(read('AGENTS.md'))
   const schemaChain = parseSchemaArtifacts(read('openspec/schemas/spec-driven-custom/schema.yaml'))
   if (!declared) {
-    FAILURES.push('[SEQUENCE] CLAUDE.md 未找到 Artifact 序列声明（/opsx:new <name> → … → /opsx:apply）— 请补声明或修正格式')
+    FAILURES.push('[SEQUENCE] AGENTS.md 未找到 Artifact 序列声明（/opsx:new <name> → … → /opsx:apply）— 请补声明或修正格式')
     return
   }
   const decl = declared.join(' → ')
   const chain = schemaChain.join(' → ')
   if (decl !== chain) {
     FAILURES.push(
-      `[SEQUENCE] CLAUDE.md 工件序列声明 "${decl}" 与 schema 链 "${chain}" 不一致（缺/多/乱序即漂移）— 修正 CLAUDE.md 或 schema.yaml`
+      `[SEQUENCE] AGENTS.md 工件序列声明 "${decl}" 与 schema 链 "${chain}" 不一致（缺/多/乱序即漂移）— 修正 AGENTS.md 或 schema.yaml`
     )
     return
   }
-  console.log(`✓ CLAUDE.md 序列一致性守卫（CLAUDE.md=${decl} = schema=${chain}）`)
+  console.log(`✓ AGENTS.md 序列一致性守卫（AGENTS.md=${decl} = schema=${chain}）`)
+}
+
+// ── 8. 机制层完整性守卫 ──────────────────────────────────────────────────
+
+/** 从 SKILL.md 文本提取 generatedBy 版本（纯函数，供 --self-test） */
+function parseGeneratedBy(text) {
+  const m = text.match(/^\s*generatedBy:\s*"([^"]+)"\s*$/m)
+  return m ? m[1] : null
+}
+
+function checkMechanismLayer() {
+  if (cliMissing) return
+  const pinned = exists('package.json') ? parsePinnedVersion(read('package.json')) : null
+  const skillsRoot = '.agents/skills'
+  const markerRel = `${skillsRoot}/.openspec-target`
+
+  if (!exists(markerRel)) {
+    FAILURES.push('[MECHANISM] 缺少 .agents/skills/.openspec-target — 请运行 pnpm exec openspec init --tools agents 生成机制层并提交')
+    return
+  }
+  const marker = read(markerRel).trim()
+  if (marker !== 'agents') {
+    FAILURES.push(`[MECHANISM] .agents/skills/.openspec-target = "${marker}"（应为 agents）`)
+  }
+
+  const skillFiles = walk(skillsRoot, (f) => f.endsWith('/SKILL.md') && f.includes('/openspec-'))
+  if (skillFiles.length === 0) {
+    FAILURES.push('[MECHANISM] .agents/skills 下未找到 openspec-* 技能 — 机制层未生成')
+  }
+  for (const file of skillFiles) {
+    const generatedBy = parseGeneratedBy(read(file))
+    if (!pinned) {
+      FAILURES.push('[MECHANISM] 无法从 package.json 读取锁定版本，无法校验 generatedBy')
+      break
+    }
+    if (generatedBy !== pinned) {
+      FAILURES.push(`[MECHANISM] ${file} 的 generatedBy=${generatedBy ?? '缺失'} ≠ 仓库锁定 ${pinned} — 请运行 pnpm exec openspec update 并提交`)
+    }
+  }
+
+  // 机制层内容应与 CLI 生成结果一致：--dry-run 无待变更项
+  const out = runOpenSpec(['update', '--dry-run', '--json'], 'openspec update --dry-run')
+  if (out !== null) {
+    try {
+      const planned = JSON.parse(out)
+      const changes = Array.isArray(planned.changes) ? planned.changes : []
+      if (changes.length > 0) {
+        FAILURES.push(`[MECHANISM] openspec update --dry-run 检测到 ${changes.length} 项机制层待变更 — 请运行 pnpm exec openspec update 并提交`)
+      }
+    } catch {
+      WARNINGS.push('[MECHANISM] 无法解析 openspec update --dry-run --json 输出，跳过一致性校验')
+    }
+  }
+
+  // .dsh/ 仅本机个人技能，不得被 git 跟踪
+  try {
+    const tracked = execSync('git ls-files -- .dsh', { cwd: ROOT, encoding: 'utf8' }).trim()
+    if (tracked) {
+      FAILURES.push(`[MECHANISM] .dsh/ 下存在已跟踪文件（应仅本机使用）：${tracked.split(/\r?\n/).slice(0, 3).join(', ')}`)
+    }
+  } catch {
+    WARNINGS.push('[MECHANISM] 无法执行 git ls-files，跳过 .dsh 跟踪检查')
+  }
+
+  console.log(`✓ 机制层完整性守卫（${skillFiles.length} 个 openspec-* skills，generatedBy=${pinned}）`)
 }
 
 // ── 自检 ─────────────────────────────────────────────────────────────────
@@ -426,15 +492,15 @@ function selfTest() {
     issues.push('parseTestPlanRows 未跳过注释占位行')
   }
 
-  // CLAUDE.md 序列解析器：正/负例
-  const seq = parseClaudeSequence(
+  // AGENTS.md 序列解析器：正/负例
+  const seq = parseDocSequence(
     '/opsx:new <name> → proposal → specs → design → test-plan → tasks → /opsx:apply → /opsx:verify → /opsx:archive'
   )
   if (seq?.join('|') !== 'proposal|specs|design|test-plan|tasks') {
-    issues.push('parseClaudeSequence 未正确提取工件序列')
+    issues.push('parseDocSequence 未正确提取工件序列')
   }
-  if (parseClaudeSequence('# 无序列声明的文本') !== null) {
-    issues.push('parseClaudeSequence 对无声明文本误报')
+  if (parseDocSequence('# 无序列声明的文本') !== null) {
+    issues.push('parseDocSequence 对无声明文本误报')
   }
 
   // schema 工件链解析器：正/负例
@@ -446,6 +512,14 @@ function selfTest() {
   }
   if (parseSchemaArtifacts('name: spec-driven-custom\nversion: 1').length !== 0) {
     issues.push('parseSchemaArtifacts 对无工件链文本误报')
+  }
+
+  // 机制层 generatedBy 解析器：正/负例
+  if (parseGeneratedBy('metadata:\n  author: openspec\n  generatedBy: "1.15.0"') !== '1.15.0') {
+    issues.push('parseGeneratedBy 未提取 generatedBy 版本')
+  }
+  if (parseGeneratedBy('metadata:\n  author: openspec') !== null) {
+    issues.push('parseGeneratedBy 对缺失 generatedBy 文本误报')
   }
 
   if (issues.length) {
@@ -468,7 +542,8 @@ guardDelta()
 checkCliVersion()
 validateArchived()
 checkTestPlan()
-checkClaudeSequence()
+checkDocSequence()
+checkMechanismLayer()
 
 console.log('openspec-check: 检查完成')
 for (const w of WARNINGS) console.log(`  ⚠ ${w}`)

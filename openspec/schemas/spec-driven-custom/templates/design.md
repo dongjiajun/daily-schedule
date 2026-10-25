@@ -1,6 +1,6 @@
 # Design: <!-- 变更名称 -->
 
-<!-- 参考: docs/architecture.md + CLAUDE.md 技术约定 -->
+<!-- 参考: docs/architecture.md + AGENTS.md 技术约定 -->
 
 ## Context
 <!-- 背景：当前状态、约束条件、利益相关者 -->

@@ -2,11 +2,12 @@
 
 ## Purpose
 
-确保代码变更后文档同步不遗漏：通过 OpenSpec tasks 模板、config rules、CLAUDE.md 检查清单三层机制约束文档更新，并规范 docs/ 目录生命周期（当前真值 vs 归档）与规划文档组织。
+确保代码变更后文档同步不遗漏：通过 OpenSpec tasks 模板、config rules、AGENTS.md 检查清单三层机制约束文档更新，并规范 docs/ 目录生命周期（当前真值 vs 归档）与规划文档组织。
 
 ## Requirements
+
 ### Requirement: Tasks 模板强制包含文档同步阶段
-`openspec/schemas/spec-driven-custom/templates/tasks.md` SHALL 包含独立的"文档同步"阶段（非可选收尾），在契约同步之后、验证之前。该阶段的条目 SHALL 为逐项评估语义：固定列出的每类文档（component-catalog / schema+uml / overview / architecture+CLAUDE.md / README）必须给出"已更新"或"现有描述已核对仍准确"的明确结论，不得仅以"无新增"标记 N/A；阶段末 SHALL 包含运行 `node scripts/docs-check.mjs` 且通过的验证条目。
+`openspec/schemas/spec-driven-custom/templates/tasks.md` SHALL 包含独立的"文档同步"阶段（非可选收尾），在契约同步之后、验证之前。该阶段的条目 SHALL 为逐项评估语义：固定列出的每类文档（component-catalog / schema+uml / overview / architecture+AGENTS.md / README）必须给出"已更新"或"现有描述已核对仍准确"的明确结论，不得仅以"无新增"标记 N/A；阶段末 SHALL 包含运行 `node scripts/docs-check.mjs` 且通过的验证条目。
 
 #### Scenario: 新变更生成 tasks 时自动包含文档检查
 - **WHEN** 开发者通过 `/opsx:propose` 或 `/opsx:ff` 创建新变更
@@ -18,7 +19,7 @@
 - **THEN** 每类文档条目要求写明"现有描述已核对仍准确"或列出具体更新，仅"无新增"不构成完成依据
 
 ### Requirement: Config rules 声明文档检查规则
-`openspec/config.yaml` 的 `rules.tasks` SHALL 包含文档检查规则：新增或修改前端组件→component-catalog.md、新增或修改实体/表/领域模型→schema.md + uml/README.md、新增或修改 API 端点→api/overview.md、架构/模块结构/测试规模/版本号变更→architecture.md + CLAUDE.md + README.md，且 SHALL 包含"文档同步条目必须逐项评估（未触及类别须写明核对结论），不得仅以'无新增'标记 N/A"与"文档同步完成后必须运行 `node scripts/docs-check.mjs` 且通过"两条约束。
+`openspec/config.yaml` 的 `rules.tasks` SHALL 包含文档检查规则：新增或修改前端组件→component-catalog.md、新增或修改实体/表/领域模型→schema.md + uml/README.md、新增或修改 API 端点→api/overview.md、架构/模块结构/测试规模/版本号变更→architecture.md + AGENTS.md + README.md，且 SHALL 包含"文档同步条目必须逐项评估（未触及类别须写明核对结论），不得仅以'无新增'标记 N/A"与"文档同步完成后必须运行 `node scripts/docs-check.mjs` 且通过"两条约束。
 
 #### Scenario: AI 在 task 生成阶段收到修改类规则约束
 - **WHEN** AI 读取 config.yaml 的 rules.tasks 约束生成 tasks
@@ -27,13 +28,13 @@
 #### Scenario: 架构与规模变更触发 architecture.md 任务
 - **GIVEN** 变更涉及模块结构或测试规模变动
 - **WHEN** AI 读取 rules.tasks 中对应的规则
-- **THEN** 生成的 tasks 包含 `docs/architecture.md` 与 CLAUDE.md 的更新条目
+- **THEN** 生成的 tasks 包含 `docs/architecture.md` 与 AGENTS.md 的更新条目
 
-### Requirement: CLAUDE.md 提交前验证包含文档检查
-CLAUDE.md 的"提交前验证"章节 SHALL 要求提交前检查 `docs/` 下文档是否需要同步更新，并引用 `node scripts/docs-check.mjs` 作为自动化验证手段。
+### Requirement: AGENTS.md 提交前验证包含文档检查
+AGENTS.md 的"提交前验证"章节 SHALL 要求提交前检查 `docs/` 下文档是否需要同步更新，并引用 `node scripts/docs-check.mjs` 作为自动化验证手段。
 
 #### Scenario: 开发者提交前执行完整验证
-- **WHEN** 开发者在提交前阅读 CLAUDE.md 验证清单
+- **WHEN** 开发者在提交前阅读 AGENTS.md 验证清单
 - **THEN** 清单明确提示"检查 docs/ 目录文档是否需要同步"并包含运行 docs-check 的验证步骤
 
 ### Requirement: 文档一致性自动化检查
@@ -45,7 +46,7 @@ CI 的 `version-check` job SHALL 在版本同步检查之后执行 `node scripts
 
 - **GIVEN** 文档中声明了版本号、端点覆盖与结构计数
 - **WHEN** 运行 `node scripts/docs-check.mjs`
-- **THEN** 版本声明——`specs/openapi.yaml` 的 `version` SHALL 与 `docs/api/overview.md`、`docs/database/schema.md`、`docs/planning/execution-plan.md`、`CLAUDE.md` 中的版本声明一致
+- **THEN** 版本声明——`specs/openapi.yaml` 的 `version` SHALL 与 `docs/api/overview.md`、`docs/database/schema.md`、`docs/planning/execution-plan.md`、`AGENTS.md` 中的版本声明一致
 - **THEN** 端点覆盖——`specs/openapi.yaml` 全部端点路径 SHALL 均出现在 `docs/api/overview.md` 中（`{id}` 归一化后做出现性匹配）；overview 中存在而 openapi 中不存在的路径仅告警，经确认后可加入脚本白名单
 - **THEN** 结构计数——文档中可独立验证的计数声明 SHALL 以 `<!-- DOCS-CHECK: <key>=<value> -->` 注释就地标注（如 `frontend-test-files`、`backend-test-classes`、`domain-files`、`specs-count`、`e2e-files`、`theme-sets`、`holiday-themes`、`ui-components`），脚本从代码树现场重算并比对
 
@@ -60,7 +61,7 @@ CI 的 `version-check` job SHALL 在版本同步检查之后执行 `node scripts
 - **THEN** 报告版本声明不一致并列出应更新的文件与期望值
 
 #### Scenario: 测试文件数漂移被计数检查拦截
-- **GIVEN** 新增前端测试文件后 CLAUDE.md 的 `frontend-test-files` marker 未同步
+- **GIVEN** 新增前端测试文件后 AGENTS.md 的 `frontend-test-files` marker 未同步
 - **WHEN** 运行 `node scripts/docs-check.mjs`
 - **THEN** 报告 `frontend-test-files` 实际值 ≠ marker 值，指示更新文档声明
 
@@ -76,13 +77,13 @@ CI 的 `version-check` job SHALL 在版本同步检查之后执行 `node scripts
 - **WHEN** 判断是否需更新 `docs/uml/README.md`
 - **THEN** 依据头部声明，方法级变更不强制更新本图，关系与字段级变更仍必须更新
 
-### Requirement: CLAUDE.md 检查清单覆盖架构与规模声明
-CLAUDE.md 的"文档检查"清单 SHALL 覆盖：架构/模块结构变动 → `docs/architecture.md` + CLAUDE.md；版本号/测试规模/模块列表变动 → CLAUDE.md 版本声明 + README.md。
+### Requirement: AGENTS.md 检查清单覆盖架构与规模声明
+AGENTS.md 的"文档检查"清单 SHALL 覆盖：架构/模块结构变动 → `docs/architecture.md` + AGENTS.md；版本号/测试规模/模块列表变动 → AGENTS.md 版本声明 + README.md。
 
 #### Scenario: 测试规模变动触发文档任务
 - **GIVEN** 变更新增或删除前端测试文件/用例
 - **WHEN** 生成 tasks 的文档同步阶段
-- **THEN** 自动包含更新 CLAUDE.md 测试覆盖声明（含 DOCS-CHECK marker）的任务
+- **THEN** 自动包含更新 AGENTS.md 测试覆盖声明（含 DOCS-CHECK marker）的任务
 
 ### Requirement: docs/ 目录只保留"当前真值"
 `docs/` 目录 SHALL 仅包含反映当前代码状态的参考文档；历史决议、一次性验收报告、已完成变更的中间产物 SHALL 归档至 `openspec/changes/archive/<date>-<name>/`，而非保留在 docs/ 中。
@@ -103,12 +104,12 @@ CLAUDE.md 的"文档检查"清单 SHALL 覆盖：架构/模块结构变动 → `
 - **WHEN** 读者浏览 `docs/planning/` 下文档
 - **THEN** 通过头部状态标记立即判断哪些章节已完成、哪些仍在规划，且版本号标注为内部代号
 
-### Requirement: CLAUDE.md 文档检查覆盖不走 OpenSpec 流程的小改动
-CLAUDE.md 的"文档检查"章节 SHALL 明确：不走 OpenSpec 流程的小改动（热修、文档勘误）同样适用文档同步检查清单，提交前逐项核对。
+### Requirement: AGENTS.md 文档检查覆盖不走 OpenSpec 流程的小改动
+AGENTS.md 的"文档检查"章节 SHALL 明确：不走 OpenSpec 流程的小改动（热修、文档勘误）同样适用文档同步检查清单，提交前逐项核对。
 
 #### Scenario: 小改动提交前执行文档核对
 - **GIVEN** 开发者直接修改代码未创建 OpenSpec 变更（如紧急热修）
-- **WHEN** 提交前阅读 CLAUDE.md 验证清单
+- **WHEN** 提交前阅读 AGENTS.md 验证清单
 - **THEN** 清单提示检查 docs/、specs/ 是否需同步更新，弥补流程外变更的文档盲区
 
 ### Requirement: 规划版本号声明为内部代号
@@ -119,17 +120,9 @@ CLAUDE.md 的"文档检查"章节 SHALL 明确：不走 OpenSpec 流程的小改
 - **WHEN** 读者对比规划版本与代码中实际版本（v3.3.0）
 - **THEN** 能立即理解二者关系，不产生"版本不一致"的困惑
 
-### Requirement: CLAUDE.md 保持精简（100-200 行）
-CLAUDE.md 篇幅 SHALL 维持在官方建议的 100-200 行范围内，只保留核心约定与高频命令，查表型与重复型信息外移或精简。
-
-#### Scenario: CLAUDE.md 行数检查
-- **GIVEN** 清理后 CLAUDE.md 为 176 行
-- **WHEN** 未来新增内容导致行数接近或超过 200 行
-- **THEN** 应优先精简/外移，而非无节制增长
-
 ### Requirement: 冗余文档移除
-- `frontend/README.md` SHALL 被删除（描述废弃目录结构，内容与根 README + CLAUDE.md 重复）
-- `memory/` 目录 SHALL 被删除（`feedback-process.md` 约束已并入 CLAUDE.md 文档检查段落，`v1.1-improvements.md` 为历史记录已被 CHANGELOG 覆盖；项目 memory/ 不被会话自动加载，无约束力）
+- `frontend/README.md` SHALL 被删除（描述废弃目录结构，内容与根 README + AGENTS.md 重复）
+- `memory/` 目录 SHALL 被删除（`feedback-process.md` 约束已并入 AGENTS.md 文档检查段落，`v1.1-improvements.md` 为历史记录已被 CHANGELOG 覆盖；项目 memory/ 不被会话自动加载，无约束力）
 - `README.md` 文档索引表 SHALL 同步移除被删文档条目
 
 #### Scenario: 删除后无引用残留
@@ -160,3 +153,11 @@ tasks 模板的任何修改 SHALL 同时落地两处：`openspec/schemas/spec-dr
 #### Scenario: 生成 tasks 时应用最新模板
 - **WHEN** 开发者通过 `/opsx:propose` 或 `/opsx:ff` 创建新变更
 - **THEN** 生成的 tasks.md §9.4 包含可替换的 smoke test 示例项（非空白注释框）
+
+### Requirement: AGENTS.md 保持精简（100-200 行）
+AGENTS.md 篇幅 SHALL 维持在官方建议的 100-200 行范围内，只保留核心约定与高频命令，查表型与重复型信息外移或精简。
+
+#### Scenario: AGENTS.md 行数检查
+- **GIVEN** AGENTS.md 经精简后为 176 行
+- **WHEN** 未来新增内容导致行数接近或超过 200 行
+- **THEN** 应优先精简/外移，而非无节制增长

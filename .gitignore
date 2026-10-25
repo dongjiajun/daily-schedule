@@ -1,6 +1,10 @@
-# === AI 工具指令目录（机制层由 CLI 本地生成，不入库；见 CLAUDE.md「指令体系分层」） ===
+# === AI 工具机制层与本地技能目录 ===
+# 机制层 .agents/skills/ 由 openspec init --tools agents 生成并入库（见 AGENTS.md「指令体系分层」）；
+# .dsh/ 仅存本机个人技能与工具状态，不入库；.claude/ 已废弃
 .dsh/
 .claude/
+AGENTS.local.md
+CLAUDE.local.md
 
 # === Sensitive (NEVER commit) ===
 .env
@@ -42,6 +46,7 @@ apps/miniprogram/dist/
 
 # === Archify diagram evidence (regenerable, see docs/diagrams/README note) ===
 docs/diagrams/*.visual-check.*
+docs/diagrams/_preview/
 
 # === Local pnpm content store (regenerable cache) ===
 /.pnpm-store/

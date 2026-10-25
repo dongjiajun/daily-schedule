@@ -74,7 +74,7 @@ artifacts:
 
       编排要点：
       - **1. 实施**：按文件/模块列出本次改动（含对应测试），粒度一次会话可完成，按依赖排序
-      - **2. 文档同步**：逐项评估每类文档（component-catalog / schema+uml / api overview / architecture+CLAUDE.md / README）——涉则更新，未触及须写明"现有描述已核对仍准确"，不得仅以"无新增"标记 N/A；阶段末必须含 docs-check（+sync-version）验证条目；CI/工具链类变更同时包含 `pnpm run openspec:check`
+      - **2. 文档同步**：逐项评估每类文档（component-catalog / schema+uml / api overview / architecture+AGENTS.md / README）——涉则更新，未触及须写明"现有描述已核对仍准确"，不得仅以"无新增"标记 N/A；阶段末必须含 docs-check（+sync-version）验证条目；CI/工具链类变更同时包含 `pnpm run openspec:check`
       - **3. 全量验证**：按变更面取用（前端 `pnpm run verify` / 后端 `mvn test` / `openspec validate --specs --strict` / E2E 评估），不逐层铺开
       - **4. 归档**：状态留痕（含 sync/validate 复跑结论）
 
@@ -90,4 +90,4 @@ apply:
   tracks: tasks.md
   instruction: |
     按 tasks.md 顺序实现，完成一项标记一项。遇到阻塞或需澄清时暂停。
-    实现过程中务必遵循 CLAUDE.md 中的技术约定（DDD 分层、契约驱动、前后端分离）。
+    实现过程中务必遵循 AGENTS.md 中的技术约定（DDD 分层、契约驱动、前后端分离）。

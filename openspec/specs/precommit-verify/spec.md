@@ -2,7 +2,7 @@
 
 ## Purpose
 
-提交前验证 — 提供前端一键验证脚本（lint + build），并在 CLAUDE.md 中记录提交前验证流程与 CI 门禁说明。
+提交前验证 — 提供前端一键验证脚本（lint + build），并在 AGENTS.md 中记录提交前验证流程与 CI 门禁说明。
 
 ## Requirements
 
@@ -17,9 +17,9 @@
 - **WHEN** CI 远端报告 lint 失败
 - **THEN** 开发者可在本地运行 `npm run verify` 精确复现相同错误
 
-### Requirement: CLAUDE.md 记录提交前验证流程
-CLAUDE.md SHALL 包含"提交前验证"章节，列明每次提交前必须运行的验证命令和 CI 三层门禁说明。
+### Requirement: AGENTS.md 记录提交前验证流程
+AGENTS.md SHALL 包含"提交前验证"章节，列明每次提交前必须运行的验证命令和 CI 三层门禁说明。
 
-#### Scenario: 新 Claude 实例读取项目约束
-- **WHEN** 新会话加载 CLAUDE.md
+#### Scenario: AI 会话读取项目约束
+- **WHEN** 新会话加载 AGENTS.md
 - **THEN** AI 知晓提交前必须通过 `npm run verify` + `mvn test`
