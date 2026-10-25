@@ -11,7 +11,7 @@
  *   5. validateArchived — openspec validate --archived --no-interactive（归档变更 tasks 完整性）
  *   6. checkTestPlan    — test-plan 内容门禁（活动变更场景↔test-plan 行映射一致；归档含 test-plan.md 时无残留 🔴）
  *   7. checkDocSequence — AGENTS.md 工件序列声明 ↔ schema.yaml artifacts 链（指令层收敛守卫）
- *   8. checkMechanismLayer — 机制层完整性（.agents/skills generatedBy = 锁定版本；update --dry-run 无变更；.dsh 不被跟踪）
+ *   8. checkMechanismLayer — 机制层完整性（.agents/skills generatedBy = 锁定版本；项目内 update --dry-run 无待变更；.dsh 不被跟踪）
  *   9. checkSchemaTemplates — 模板单源同步（node scripts/sync-schema-templates.mjs --check；custom 为源）
  *   10. checkInstructionBudget — 指令配置预算（context ≤20 行/≤1200 字符；rules ≤8；operations guidance 非空）
  *
@@ -366,6 +366,14 @@ function parseGeneratedBy(text) {
   return m ? m[1] : null
 }
 
+/** 过滤出项目内的机制层待变更项（排除 ~/ 全局配置与绝对路径的项目外变更），供 --self-test */
+function repoMechanismChanges(changes) {
+  const list = Array.isArray(changes) ? changes : []
+  return list.filter(
+    (change) => typeof change?.path === 'string' && !change.path.startsWith('~') && !path.isAbsolute(change.path)
+  )
+}
+
 function checkMechanismLayer() {
   if (cliMissing) return
   const pinned = exists('package.json') ? parsePinnedVersion(read('package.json')) : null
@@ -396,14 +404,25 @@ function checkMechanismLayer() {
     }
   }
 
-  // 机制层内容应与 CLI 生成结果一致：--dry-run 无待变更项
+  // 机制层内容应与 CLI 生成结果一致：仅校验项目内待变更项。
+  // 全新环境（CI runner/新机器）首次运行会计划创建 ~/.config/openspec/config.json 等
+  // 机器级全局配置/全局技能，不属于仓库机制层，不得判为漂移。
   const out = runOpenSpec(['update', '--dry-run', '--json'], 'openspec update --dry-run')
   if (out !== null) {
     try {
       const planned = JSON.parse(out)
-      const changes = Array.isArray(planned.changes) ? planned.changes : []
-      if (changes.length > 0) {
-        FAILURES.push(`[MECHANISM] openspec update --dry-run 检测到 ${changes.length} 项机制层待变更 — 请运行 pnpm exec openspec update 并提交`)
+      const allChanges = Array.isArray(planned.changes) ? planned.changes : []
+      const repoChanges = repoMechanismChanges(allChanges)
+      const externalCount = allChanges.length - repoChanges.length
+      if (repoChanges.length > 0) {
+        FAILURES.push(
+          `[MECHANISM] openspec update --dry-run 检测到 ${repoChanges.length} 项项目内机制层待变更：${repoChanges
+            .slice(0, 3)
+            .map((change) => change.path)
+            .join(', ')} — 请运行 pnpm exec openspec update 并提交`
+        )
+      } else if (externalCount > 0) {
+        console.log(`  （忽略 ${externalCount} 项项目外变更：全局配置初始化/全局技能，不属仓库机制层）`)
       }
     } catch {
       WARNINGS.push('[MECHANISM] 无法解析 openspec update --dry-run --json 输出，跳过一致性校验')
@@ -611,6 +630,20 @@ function selfTest() {
   }
   if (parseGeneratedBy('metadata:\n  author: openspec') !== null) {
     issues.push('parseGeneratedBy 对缺失 generatedBy 文本误报')
+  }
+
+  // 机制层变更过滤：项目外（~/ 全局、绝对路径）不计，项目内保留
+  const repoChangeList = repoMechanismChanges([
+    { path: '~/AppData/Roaming/openspec/config.json' },
+    { path: '/home/runner/.config/openspec/config.json' },
+    { path: '.agents/skills/openspec-apply-change/SKILL.md' },
+    { path: 'openspec/config.yaml' },
+  ])
+  if (repoChangeList.length !== 2) {
+    issues.push('repoMechanismChanges 未正确过滤项目外变更')
+  }
+  if (repoChangeList[0]?.path !== '.agents/skills/openspec-apply-change/SKILL.md') {
+    issues.push('repoMechanismChanges 保留顺序/内容不正确')
   }
 
   // 指令配置预算解析器：正/负例

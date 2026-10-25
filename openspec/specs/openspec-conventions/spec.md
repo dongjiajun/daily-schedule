@@ -153,7 +153,7 @@
 - **THEN** 第 5 项：`openspec validate --archived --no-interactive`——归档变更的 tasks SHALL 全部勾选完成（`- [x]`），任一归档变更残留 `- [ ]` 即失败
 - **THEN** 第 6 项：test-plan 内容门禁——活动变更：存在 test-plan.md 时，其行 SHALL 对 delta specs 中的每个 `#### Scenario:` 逐条对应（模式 A/B 均要求，无遗漏）；归档变更：含 test-plan.md 时其 `Initial State` SHALL 无残留 `🔴`
 - **THEN** 第 7 项：AGENTS.md 序列一致性守卫——AGENTS.md 声明的工件序列 SHALL 与 schema 实际工件链一致（漂移即失败）
-- **THEN** 第 8 项：机制层完整性守卫——`.agents/skills/.openspec-target` SHALL 为 `agents`；12 个 `openspec-*/SKILL.md` 的 `generatedBy` SHALL 等于 `package.json` 锁定版本；`openspec update --dry-run --json` 的 `changes` SHALL 为空；`.dsh/` SHALL NOT 出现在 git 索引
+- **THEN** 第 8 项：机制层完整性守卫——`.agents/skills/.openspec-target` SHALL 为 `agents`；12 个 `openspec-*/SKILL.md` 的 `generatedBy` SHALL 等于 `package.json` 锁定版本；`openspec update --dry-run --json` 的**项目内** `changes` SHALL 为空（`~/` 全局配置/全局技能等项目外变更不计为漂移）；`.dsh/` SHALL NOT 出现在 git 索引
 - **THEN** 第 9 项：模板单源同步守卫——`node scripts/sync-schema-templates.mjs --check` SHALL 通过：proposal/spec 模板在 custom、standard、lite 三档逐字节一致，design 模板在 custom 与 standard 逐字节一致
 - **THEN** 第 10 项：指令配置预算守卫——`openspec/config.yaml` 的 `context` SHALL ≤20 行且 ≤1200 字符，`rules` SHALL ≤8 条，`operations.apply.guidance` 与 `operations.archive.guidance` SHALL 非空
 
@@ -190,8 +190,12 @@
 - **THEN** 第 7 检输出 AGENTS.md 声明与 schema 链的差异并失败，CI 红（修正 AGENTS.md 对齐后通过）
 
 #### Scenario: 机制层漂移被第 8 检拦截
-- **WHEN** 升级 CLI 后未重生成并提交 `.agents/skills`（`generatedBy` 滞后 / `update --dry-run` 有待变更项），或手改 SKILL.md，或 `.dsh/` 被误提交
+- **WHEN** 项目内机制层漂移（升级 CLI 后未重生成并提交 `.agents/skills`、手改 SKILL.md，或 `.dsh/` 被误提交）
 - **THEN** 第 8 检输出具体不一致项并失败，CI 红（运行 `pnpm exec openspec update` 并提交，或移除 `.dsh` 跟踪后通过）
+
+#### Scenario: 项目外全局配置初始化不误报
+- **WHEN** 全新环境（CI runner / 新机器，无全局 OpenSpec 配置）运行第 8 检
+- **THEN** `openspec update --dry-run --json` 的计划可能包含 `~/` 下的全局配置初始化或全局技能项，第 8 检 SHALL 仅按项目内变更判定，仍通过并给出"忽略 N 项项目外变更"信息
 
 #### Scenario: 模板单源漂移被第 9 检拦截
 - **WHEN** 修改了 custom 的 proposal/spec/design 模板但未同步 standard/lite（或直接手改 standard/lite 的共享模板）

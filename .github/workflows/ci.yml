@@ -52,17 +52,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Validate OpenSpec consistency
-        # 失败时把检查输出转成 annotation（便于在没有日志权限/未登录场景排障）
-        run: |
-          set +e
-          pnpm run openspec:check > /tmp/openspec-check.log 2>&1
-          status=$?
-          cat /tmp/openspec-check.log
-          if [ "$status" -ne 0 ]; then
-            tail -c 3500 /tmp/openspec-check.log | tr '\n' '|' | sed 's/^/::error::openspec-check failed: /'
-            echo
-            exit "$status"
-          fi
+        run: pnpm run openspec:check
 
   backend:
     name: Backend (Maven compile)
