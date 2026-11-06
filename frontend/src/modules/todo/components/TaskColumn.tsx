@@ -5,6 +5,8 @@ import { TaskCard } from './TaskCard'
 import { cn } from '@/core/lib/utils'
 import { useState } from 'react'
 import { ClipboardList, CircleDot, CheckCircle2, Plus } from 'lucide-react'
+import { Badge } from '@/core/components/ui/badge'
+import { EmptyState } from '@/core/components/ui/empty-state'
 
 const columnConfig: Record<string, { title: string; Icon: React.ComponentType<{ className?: string }>; color: string }> = {
   TODO: { title: '待办', Icon: ClipboardList, color: 'border-info/40' },
@@ -75,9 +77,7 @@ export function TaskColumn({ status, tasks, onEdit }: TaskColumnProps) {
         <h3 className="font-semibold text-sm text-foreground flex items-center gap-1.5">
           <Icon className="size-4" />
           {config.title}
-          <span className="ml-2 text-xs bg-hover text-foreground-secondary px-1.5 py-0.5 rounded-full">
-            {tasks.length}
-          </span>
+          <Badge tone="neutral" className="ml-2 tabular-nums">{tasks.length}</Badge>
         </h3>
         <button
           onClick={() => setIsAdding(!isAdding)}
@@ -109,9 +109,10 @@ export function TaskColumn({ status, tasks, onEdit }: TaskColumnProps) {
       {/* Task cards */}
       <div className="flex-1 overflow-y-auto p-2 space-y-2 min-h-[100px]">
         {tasks.length === 0 && !isAdding && (
-          <p className="text-xs text-foreground-muted text-center py-4">
-            {status === 'TODO' ? '暂无待办任务' : status === 'IN_PROGRESS' ? '暂无进行中任务' : '暂无已完成任务'}
-          </p>
+          <EmptyState
+            className="py-6"
+            title={status === 'TODO' ? '暂无待办任务' : status === 'IN_PROGRESS' ? '暂无进行中任务' : '暂无已完成任务'}
+          />
         )}
         {tasks.map((task) => (
           <TaskCard key={task.id} task={task} onEdit={onEdit} />

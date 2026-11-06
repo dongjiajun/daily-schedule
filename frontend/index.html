@@ -9,9 +9,9 @@
   </head>
   <body>
     <script>
-      // 在 React 渲染前同步设置 data-theme，消除页面闪烁 (FOUC)
+      // 在 React 渲染前同步设置 data-theme / data-density，消除页面闪烁 (FOUC)
       // 与 useTheme 判定一致：auto 模式且已缓存活跃节日时直接应用节日主题
-      (function(){try{var s=localStorage.getItem('settings.v1');if(!s)return;var st=JSON.parse(s).state;if(!st||!st.theme)return;document.documentElement.dataset.theme=st.themeMode==='auto'&&st.activeHolidayId?'holiday-'+st.activeHolidayId:st.theme}catch(e){}})()
+      (function(){try{var s=localStorage.getItem('settings.v1');if(!s)return;var st=JSON.parse(s).state;if(!st)return;if(st.theme){document.documentElement.dataset.theme=st.themeMode==='auto'&&st.activeHolidayId?'holiday-'+st.activeHolidayId:st.theme}if(st.density){document.documentElement.dataset.density=st.density}}catch(e){}})()
     </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>

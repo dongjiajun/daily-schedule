@@ -32,8 +32,8 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
     <aside className="w-60 h-full bg-gradient-to-b from-surface via-surface to-sidebar-muted border-r border-border-subtle flex flex-col relative z-10">
       {/* Header */}
       <div className="px-5 py-4 border-b border-border-subtle flex items-center justify-between">
-        <h1 className="text-[15px] font-bold text-foreground flex items-center gap-2.5 tracking-tight">
-          <div className="w-8 h-8 rounded-xl bg-accent text-accent-fg flex items-center justify-center shadow-sm">
+        <h1 className="text-base font-bold text-foreground flex items-center gap-2.5 tracking-tight">
+          <div className="w-8 h-8 rounded-xl bg-accent text-accent-fg flex items-center justify-center shadow-card">
             <CalendarDays className="w-4 h-4" />
           </div>
           日程管理
@@ -68,7 +68,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                     }
                     onNavigate?.()
                   }}
-                  className={`flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-sm transition-all duration-150 ${
+                  className={`flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-sm transition-all duration-fast ${
                     isActive
                       ? 'bg-accent/10 text-foreground font-medium'
                       : 'text-foreground-muted hover:bg-hover hover:text-foreground-secondary'
@@ -104,7 +104,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
           onClick={logout}
           title="退出登录"
         >
-          <span className="text-[13px] text-foreground-muted truncate group-hover:text-foreground-secondary transition-colors">
+          <span className="text-sm text-foreground-muted truncate group-hover:text-foreground-secondary transition-colors">
             {user?.displayName ?? user?.username ?? '未登录'}
           </span>
           <LogOut className="w-3.5 h-3.5 text-foreground-muted group-hover:text-foreground-secondary transition-colors" />

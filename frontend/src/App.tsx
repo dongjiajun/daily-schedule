@@ -9,10 +9,19 @@ import { EffectLayer } from './core/components/effects/EffectLayer'
 import { LoginPage } from './pages/LoginPage'
 import { OnboardingGuide } from './components/layout/OnboardingGuide'
 import { useAuthStore } from './core/store/authStore'
+import { useSettingsStore } from './core/store/settingsStore'
 import { useCalendarStore } from '@/modules/calendar/store/calendarStore'
 import { useTheme } from './core/hooks/useTheme'
 import { moduleRegistry } from './core/lib/moduleRegistry'
 import { queryClient } from './core/lib/queryClient'
+
+/** 将密度设置同步到 <html data-density>；首帧由 index.html 内联脚本完成 */
+function useDensity() {
+  const density = useSettingsStore((s) => s.density)
+  useEffect(() => {
+    document.documentElement.dataset.density = density
+  }, [density])
+}
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
@@ -53,6 +62,7 @@ function AppRoutes() {
 
 export default function App() {
   useTheme()
+  useDensity()
 
   return (
     <ErrorBoundary>

@@ -33,7 +33,7 @@ export default function PetPage() {
           <div className="w-full flex flex-col gap-3">
             <button
               onClick={() => setMenuOpen(true)}
-              className="w-full rounded-xl border border-border bg-surface py-2.5 text-sm font-medium shadow-sm hover:bg-hover transition-colors"
+              className="w-full rounded-xl border border-border bg-surface py-2.5 text-sm font-medium shadow-card hover:bg-hover transition-colors"
             >
               🎾 互动（喂食 / 玩耍 / 商店）
             </button>

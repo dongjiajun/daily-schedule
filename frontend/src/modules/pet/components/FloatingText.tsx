@@ -26,7 +26,7 @@ export function FloatingText({ origin, items, onDone }: FloatingTextProps) {
           animate={{ opacity: [0, 1, 1, 0], y: -56 - i * 18 }}
           transition={{ duration: 1.4, delay: i * 0.12, ease: 'easeOut', times: [0, 0.15, 0.7, 1] }}
           onAnimationComplete={i === items.length - 1 ? onDone : undefined}
-          className={`absolute whitespace-nowrap text-sm font-semibold drop-shadow-md ${
+          className={`absolute whitespace-nowrap text-sm font-semibold drop-shadow-card ${
             item.tone === 'bad' ? 'text-error-fg' : 'text-success-fg'
           }`}
         >

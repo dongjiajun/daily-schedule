@@ -45,7 +45,7 @@ export function OnboardingGuide({ onClose }: { onClose: () => void }) {
       exit={{ opacity: 0 }}
     >
       <motion.div
-        className="bg-surface rounded-3xl shadow-2xl p-10 max-w-md mx-4 text-center relative"
+        className="bg-surface rounded-2xl shadow-overlay p-10 max-w-md mx-4 text-center relative"
         initial={{ opacity: 0, scale: 0.9, y: 24 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ type: 'spring', duration: 0.4 }}
@@ -109,7 +109,7 @@ export function OnboardingGuide({ onClose }: { onClose: () => void }) {
           {/* 下一步/开始按钮 */}
           <button
             onClick={handleNext}
-            className="flex-1 py-3 rounded-xl bg-accent text-accent-fg text-sm font-semibold hover:bg-accent-hover transition-colors shadow-sm"
+            className="flex-1 py-3 rounded-xl bg-accent text-accent-fg text-sm font-semibold hover:bg-accent-hover transition-colors shadow-card"
           >
             {isLast ? '开始使用' : '下一步'}
           </button>

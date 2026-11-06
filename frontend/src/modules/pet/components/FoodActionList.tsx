@@ -1,4 +1,5 @@
 import { Button } from '@/core/components/ui/button'
+import { Badge } from '@/core/components/ui/badge'
 import { useMyPet, useInteract, useShopItems, usePurchase } from '../hooks/usePet'
 import { usePetStore } from '../store/petStore'
 import type { FeedbackItem, ParticleType } from '../store/petStore'
@@ -99,10 +100,10 @@ export function FoodActionList({ mode }: FoodActionListProps) {
               <p className="text-sm leading-tight truncate">
                 {item.name}
                 {equipped && (
-                  <span className="ml-1.5 text-[10px] px-1.5 py-0.5 rounded bg-accent text-accent-fg">已装备</span>
+                  <Badge tone="accent" className="ml-1.5">已装备</Badge>
                 )}
               </p>
-              <p className="text-[11px] text-foreground-secondary leading-tight">
+              <p className="text-2xs text-foreground-secondary leading-tight">
                 {item.price ?? 0}🪙
                 {isAccessory ? ' · 纯外观' : ` · +${item.effectHunger ?? 0}饱腹 +${item.effectMood ?? 0}心情`}
               </p>

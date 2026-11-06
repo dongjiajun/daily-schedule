@@ -105,7 +105,7 @@ export function LoginPage() {
       >
         <div className="text-center mb-8">
           <motion.div
-            className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-surface shadow-lg border border-border-subtle mb-5"
+            className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-surface shadow-float border border-border-subtle mb-5"
             whileHover={{ rotate: -8, scale: 1.06 }}
             whileTap={{ scale: 0.95 }}
             transition={{ type: 'spring', stiffness: 300, damping: 15 }}
@@ -131,7 +131,7 @@ export function LoginPage() {
         </div>
 
         <motion.div
-          className="bg-surface rounded-2xl shadow-xl border border-border-subtle p-8 space-y-4"
+          className="bg-surface rounded-2xl shadow-overlay border border-border-subtle p-8 space-y-4"
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.35, duration: 0.4 }}
@@ -151,12 +151,12 @@ export function LoginPage() {
           </AnimatePresence>
 
           <div>
-            <label className="block text-xs font-medium text-foreground-muted mb-1.5 uppercase tracking-wider">
+            <label className="block text-xs font-medium text-foreground-muted mb-1.5 ">
               {isRegister ? '用户名' : '用户名 / 邮箱'}
             </label>
             <input
               type="text"
-              className="w-full rounded-xl border border-border px-4 py-3 text-sm bg-sidebar-muted focus:bg-surface focus:outline-none focus:ring-2 focus:ring-focus-strong/10 focus:border-focus transition-all duration-200"
+              className="w-full rounded-xl border border-border px-4 py-3 text-sm bg-sidebar-muted focus:bg-surface focus:outline-none focus:ring-2 focus:ring-focus-strong/10 focus:border-focus transition-all duration-base"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               placeholder={isRegister ? '3-50 位字母/数字/下划线' : '输入用户名或邮箱'}
@@ -167,12 +167,12 @@ export function LoginPage() {
 
           {isRegister && (
             <div>
-              <label className="block text-xs font-medium text-foreground-muted mb-1.5 uppercase tracking-wider">
+              <label className="block text-xs font-medium text-foreground-muted mb-1.5 ">
                 邮箱
               </label>
               <input
                 type="email"
-                className="w-full rounded-xl border border-border px-4 py-3 text-sm bg-sidebar-muted focus:bg-surface focus:outline-none focus:ring-2 focus:ring-focus-strong/10 focus:border-focus transition-all duration-200"
+                className="w-full rounded-xl border border-border px-4 py-3 text-sm bg-sidebar-muted focus:bg-surface focus:outline-none focus:ring-2 focus:ring-focus-strong/10 focus:border-focus transition-all duration-base"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
@@ -182,13 +182,13 @@ export function LoginPage() {
           )}
 
           <div>
-            <label className="block text-xs font-medium text-foreground-muted mb-1.5 uppercase tracking-wider">
+            <label className="block text-xs font-medium text-foreground-muted mb-1.5 ">
               密码
             </label>
             <div className="relative">
               <input
                 type={showPassword ? 'text' : 'password'}
-                className="w-full rounded-xl border border-border px-4 py-3 pr-11 text-sm bg-sidebar-muted focus:bg-surface focus:outline-none focus:ring-2 focus:ring-focus-strong/10 focus:border-focus transition-all duration-200"
+                className="w-full rounded-xl border border-border px-4 py-3 pr-11 text-sm bg-sidebar-muted focus:bg-surface focus:outline-none focus:ring-2 focus:ring-focus-strong/10 focus:border-focus transition-all duration-base"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder={isRegister ? '至少 8 位' : '输入密码'}
@@ -210,7 +210,7 @@ export function LoginPage() {
           <motion.button
             type="submit"
             disabled={loading}
-            className="w-full py-3 rounded-xl text-accent-fg text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg relative overflow-hidden"
+            className="w-full py-3 rounded-xl text-accent-fg text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-float relative overflow-hidden"
             style={{
               background: 'linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-hover) 50%, var(--color-accent) 100%)',
             }}

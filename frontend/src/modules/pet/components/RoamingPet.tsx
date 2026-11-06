@@ -738,6 +738,7 @@ export function RoamingPet() {
               // 移动结束：休息中回 sleep，否则回 idle（getState 读取避免旧闭包）
               s.setAction(s.isResting ? 'sleep' : 'idle')
             }}
+            data-testid="roaming-pet"
             className="fixed z-40 select-none"
             style={{ pointerEvents: 'none' }}
             initial={{ x: window.innerWidth / 2, y: window.innerHeight / 2 }}
@@ -779,7 +780,7 @@ export function RoamingPet() {
                     initial={{ opacity: 0, y: 5 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 5 }}
-                    className="absolute top-full left-1/2 -translate-x-1/2 mt-2 bg-surface/95 backdrop-blur rounded-xl shadow-lg border border-border-subtle p-2 min-w-[120px]"
+                    className="absolute top-full left-1/2 -translate-x-1/2 mt-2 bg-surface/95 backdrop-blur rounded-xl shadow-float border border-border-subtle p-2 min-w-[120px]"
                     style={{ pointerEvents: 'none' }}
                   >
                     <PetStatus pet={pet} isLoading={false} />

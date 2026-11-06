@@ -6,6 +6,7 @@ describe('settingsStore', () => {
     useSettingsStore.setState({
       themeMode: 'manual',
       effectIntensity: 'low',
+      density: 'comfortable',
       locale: 'CN',
       holidayCheckDate: null,
       activeHolidayId: null,
@@ -35,6 +36,17 @@ describe('settingsStore', () => {
 
     useSettingsStore.getState().setEffectIntensity('off')
     expect(useSettingsStore.getState().effectIntensity).toBe('off')
+  })
+
+  it('默认密度为 comfortable', () => {
+    expect(useSettingsStore.getState().density).toBe('comfortable')
+  })
+
+  it('切换密度并持久化', () => {
+    useSettingsStore.getState().setDensity('compact')
+    expect(useSettingsStore.getState().density).toBe('compact')
+    const raw = window.localStorage.getItem('settings.v1')
+    expect(raw).toContain('"density":"compact"')
   })
 
   it('setHolidayCheckResult 同时设置日期和节日 id', () => {

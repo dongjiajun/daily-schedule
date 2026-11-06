@@ -6,6 +6,8 @@ import { TaskToolbar } from './TaskToolbar'
 import { BoardView } from './BoardView'
 import { ListView } from './ListView'
 import { TaskForm } from './TaskForm'
+import { Skeleton } from '@/core/components/ui/skeleton'
+import { EmptyState } from '@/core/components/ui/empty-state'
 
 export default function TodoPage() {
   const { viewMode, setViewMode } = useTodoStore()
@@ -15,18 +17,16 @@ export default function TodoPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <p className="text-foreground-muted">加载中…</p>
+      <div className="flex flex-col gap-3 p-4" aria-busy="true">
+        <Skeleton className="h-10 w-64" />
+        <Skeleton className="h-24 w-full" />
+        <Skeleton className="h-24 w-full" />
       </div>
     )
   }
 
   if (isError) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <p className="text-error-fg">加载失败，请刷新重试</p>
-      </div>
-    )
+    return <EmptyState title="加载失败" description="请刷新页面重试" />
   }
 
   return (

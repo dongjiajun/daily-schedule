@@ -1,4 +1,5 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/core/components/ui/dialog'
+import { Kbd } from '@/core/components/ui/kbd'
 import { useCalendarStore } from '@/modules/calendar/store/calendarStore'
 
 const SHORTCUTS: Array<{ keys: string[]; desc: string }> = [
@@ -27,12 +28,9 @@ export function ShortcutsDialog() {
               <span className="text-sm text-foreground-secondary">{desc}</span>
               <span className="flex items-center gap-1">
                 {keys.map((k) => (
-                  <kbd
-                    key={k}
-                    className="min-w-[24px] px-1.5 py-1 text-[11px] font-mono text-center bg-hover border border-border rounded-md text-foreground-secondary shadow-sm"
-                  >
+                  <Kbd key={k} className="text-foreground-secondary shadow-card">
                     {k}
-                  </kbd>
+                  </Kbd>
                 ))}
               </span>
             </div>

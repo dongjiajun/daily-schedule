@@ -53,11 +53,11 @@ export function AppShell() {
       </AnimatePresence>
 
       <main className="flex-1 overflow-hidden p-4 relative z-0">
-        <div className="h-full bg-surface/90 backdrop-blur rounded-2xl shadow-lg border border-border-subtle overflow-hidden relative">
+        <div className="h-full bg-surface/90 backdrop-blur rounded-2xl shadow-float border border-border-subtle overflow-hidden relative">
           {/* 移动端打开侧边栏按钮 */}
           <button
             onClick={() => setSidebarOpen(true)}
-            className="md:hidden absolute left-3 bottom-3 z-20 w-11 h-11 rounded-full bg-accent text-accent-fg shadow-lg flex items-center justify-center"
+            className="md:hidden absolute left-3 bottom-3 z-20 w-11 h-11 rounded-full bg-accent text-accent-fg shadow-float flex items-center justify-center"
             aria-label="打开侧边栏"
           >
             <Menu className="w-5 h-5" />

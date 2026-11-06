@@ -25,7 +25,7 @@ export function PetStatus({ pet, isLoading }: PetStatusProps) {
         <span>❤️</span>
         <div className="flex-1 h-2 bg-hover rounded-full overflow-hidden">
           <div
-            className="h-full rounded-full transition-all duration-500"
+            className="h-full rounded-full transition-all duration-slow"
             style={{ width: `${pet.mood ?? 0}%`, backgroundColor: statusColor(pet.mood ?? 0), opacity: Math.max(0.3, (pet.mood ?? 0) / 100) }}
           />
         </div>
@@ -35,7 +35,7 @@ export function PetStatus({ pet, isLoading }: PetStatusProps) {
         <span>🍖</span>
         <div className="flex-1 h-2 bg-hover rounded-full overflow-hidden">
           <div
-            className="h-full rounded-full transition-all duration-500"
+            className="h-full rounded-full transition-all duration-slow"
             style={{ width: `${pet.hunger ?? 0}%`, backgroundColor: statusColor(pet.hunger ?? 0), opacity: Math.max(0.3, (pet.hunger ?? 0) / 100) }}
           />
         </div>

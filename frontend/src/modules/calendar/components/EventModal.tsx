@@ -4,6 +4,7 @@ import { useCreateEvent, useUpdateEvent, useDeleteEvent, useEvents, useToggleEve
 import { useCategories } from '../hooks/useCategories'
 import { useTags } from '../hooks/useTags'
 import { useCalendarStore } from '../store/calendarStore'
+import { Badge } from '@/core/components/ui/badge'
 import {
   Dialog,
   DialogContent,
@@ -67,11 +68,7 @@ export function EventModal({ open, eventId, onClose }: EventModalProps) {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {eventId ? '编辑日程' : '新建日程'}
-            {isCompleted && (
-              <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-success-bg text-success-fg border border-success/30">
-                已完成
-              </span>
-            )}
+            {isCompleted && <Badge tone="success">已完成</Badge>}
           </DialogTitle>
           {eventId && existingEvent && (
             <div className="flex items-center gap-1 mr-8">

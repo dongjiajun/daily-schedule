@@ -76,13 +76,13 @@ export function PetMenu({ open, onOpenChange }: PetMenuProps) {
           {/* tab 切换：喂食 / 商店 */}
           <div className="flex rounded-lg bg-hover p-0.5 text-xs">
             <button
-              className={`flex-1 rounded-md py-1.5 transition-colors ${tab === 'feed' ? 'bg-surface shadow-sm' : 'text-foreground-secondary'}`}
+              className={`flex-1 rounded-md py-1.5 transition-colors ${tab === 'feed' ? 'bg-surface shadow-card' : 'text-foreground-secondary'}`}
               onClick={() => setTab('feed')}
             >
               喂食
             </button>
             <button
-              className={`flex-1 rounded-md py-1.5 transition-colors ${tab === 'shop' ? 'bg-surface shadow-sm' : 'text-foreground-secondary'}`}
+              className={`flex-1 rounded-md py-1.5 transition-colors ${tab === 'shop' ? 'bg-surface shadow-card' : 'text-foreground-secondary'}`}
               onClick={() => setTab('shop')}
             >
               商店

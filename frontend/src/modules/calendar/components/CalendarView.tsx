@@ -17,6 +17,10 @@ import { useCalendarStore, type CalendarView } from '../store/calendarStore'
 import { useSettingsStore } from '@/core/store/settingsStore'
 import { useEvents, useUpdateEvent, useToggleEventStatus } from '../hooks/useEvents'
 import { cn } from '@/core/lib/utils'
+import { Segmented } from '@/core/components/ui/segmented'
+import { Skeleton } from '@/core/components/ui/skeleton'
+import { Kbd } from '@/core/components/ui/kbd'
+import { Tooltip } from '@/core/components/ui/tooltip'
 import type { EventResponse } from '@/api/types.gen'
 
 import 'react-big-calendar/lib/css/react-big-calendar.css'
@@ -236,23 +240,25 @@ export function CalendarView() {
     }
     return (
       <span className="group/event flex items-center gap-1 min-w-0">
-        <button
-          type="button"
-          tabIndex={-1}
-          title={done ? '恢复为计划中' : '标记完成'}
-          onClick={(e) => {
-            e.stopPropagation()
-            toggleStatus.mutate(resource)
-          }}
-          className={cn(
-            'flex-shrink-0 w-3.5 h-3.5 rounded-full border flex items-center justify-center transition-all',
-            done
-              ? 'bg-success border-success text-white'
-              : 'border-border bg-surface/70 text-transparent opacity-0 group-hover/event:opacity-100 hover:border-success hover:text-success-fg'
-          )}
-        >
-          {done ? <Check className="w-2.5 h-2.5" /> : <Check className="w-2.5 h-2.5" />}
-        </button>
+        <Tooltip content={done ? '恢复为计划中' : '标记完成'}>
+          <button
+            type="button"
+            tabIndex={-1}
+            aria-label={done ? '恢复为计划中' : '标记完成'}
+            onClick={(e) => {
+              e.stopPropagation()
+              toggleStatus.mutate(resource)
+            }}
+            className={cn(
+              'flex-shrink-0 w-3.5 h-3.5 rounded-full border flex items-center justify-center transition-all',
+              done
+                ? 'bg-success border-success text-white'
+                : 'border-border bg-surface/70 text-transparent opacity-0 group-hover/event:opacity-100 hover:border-success hover:text-success-fg'
+            )}
+          >
+            {done ? <Check className="w-2.5 h-2.5" /> : <Check className="w-2.5 h-2.5" />}
+          </button>
+        </Tooltip>
         <span className={cn('block truncate', isLong && 'font-semibold', done && 'line-through')}>
           {label}
         </span>
@@ -266,7 +272,7 @@ export function CalendarView() {
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-4">
-        <div className="animate-pulse rounded-2xl bg-hover h-[65vh] w-[92%]" />
+        <Skeleton className="h-[65vh] w-[92%] rounded-2xl" />
         <p className="text-sm text-foreground-muted">加载中...</p>
       </div>
     )
@@ -350,7 +356,7 @@ export function CalendarView() {
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.35, duration: 0.3 }}
               >
-                暂无日程，点击空白区域或按 <kbd className="px-1.5 py-0.5 text-[11px] font-mono bg-hover rounded text-foreground-muted">N</kbd> 键创建
+                暂无日程，点击空白区域或按 <Kbd>N</Kbd> 键创建
               </motion.p>
             </div>
           </motion.div>
@@ -380,54 +386,55 @@ function CalendarToolbar({
     }
   }, [date, view])
 
-  const btnClass = 'px-3 py-1.5 text-[13px] font-medium rounded-lg transition-all duration-200'
-  const activeClass = 'bg-accent text-accent-fg shadow-md'
+  const btnClass = 'px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-base'
   const inactiveClass = 'text-foreground-muted hover:text-foreground-secondary hover:bg-hover'
 
   const viewKeys = ['month', 'week', 'day', 'agenda'] as const
   const labels: Record<string, string> = { month: '月', week: '周', day: '日', agenda: '议程' }
+  const viewOptions = viewKeys.map((v, i) => ({
+    value: v,
+    label: labels[v],
+    title: `${labels[v]}视图（${i + 1}）`,
+  }))
 
   return (
     <div className="flex items-center justify-between px-5 py-3 bg-surface/95 backdrop-blur border-b border-border-subtle">
-      <div className="flex items-center bg-hover rounded-lg p-0.5 gap-0.5">
-        {viewKeys.map((v, i) => (
-          <button
-            key={v}
-            className={cn(btnClass, view === v ? activeClass : inactiveClass)}
-            onClick={() => onView(v)}
-            title={`${labels[v]}视图（${i + 1}）`}
-          >
-            {labels[v]}
-          </button>
-        ))}
-      </div>
+      <Segmented
+        ariaLabel="日历视图"
+        value={view as (typeof viewKeys)[number]}
+        onChange={(next) => onView(next as View)}
+        options={viewOptions}
+      />
 
-      <h2 className="text-[15px] font-semibold text-foreground tracking-tight">{label}</h2>
+      <h2 className="text-base font-semibold text-foreground tracking-tight">{label}</h2>
 
       <div className="flex items-center gap-1">
-        <button
-          className={cn(btnClass, inactiveClass, 'text-base w-8 h-8 flex items-center justify-center')}
-          onClick={() => onNavigate('PREV')}
-          aria-label="上一页"
-          title="上一页（←）"
-        >
-          ‹
-        </button>
-        <button
-          className={cn(btnClass, inactiveClass, 'text-[12px]')}
-          onClick={() => onNavigate('TODAY')}
-          title="回到今天（T）"
-        >
-          今天
-        </button>
-        <button
-          className={cn(btnClass, inactiveClass, 'text-base w-8 h-8 flex items-center justify-center')}
-          onClick={() => onNavigate('NEXT')}
-          aria-label="下一页"
-          title="下一页（→）"
-        >
-          ›
-        </button>
+        <Tooltip content="上一页（←）">
+          <button
+            className={cn(btnClass, inactiveClass, 'text-base w-8 h-8 flex items-center justify-center')}
+            onClick={() => onNavigate('PREV')}
+            aria-label="上一页"
+          >
+            ‹
+          </button>
+        </Tooltip>
+        <Tooltip content="回到今天（T）">
+          <button
+            className={cn(btnClass, inactiveClass, 'text-xs')}
+            onClick={() => onNavigate('TODAY')}
+          >
+            今天
+          </button>
+        </Tooltip>
+        <Tooltip content="下一页（→）">
+          <button
+            className={cn(btnClass, inactiveClass, 'text-base w-8 h-8 flex items-center justify-center')}
+            onClick={() => onNavigate('NEXT')}
+            aria-label="下一页"
+          >
+            ›
+          </button>
+        </Tooltip>
       </div>
     </div>
   )

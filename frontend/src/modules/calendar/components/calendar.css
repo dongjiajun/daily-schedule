@@ -41,7 +41,7 @@
 }
 
 .rbc-month-row {
-  min-height: 120px !important;
+  min-height: var(--density-cal-row-min, 120px) !important;
   border: none !important;
   padding: 0 4px !important;
 }

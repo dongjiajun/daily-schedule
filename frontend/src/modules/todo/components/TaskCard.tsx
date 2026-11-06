@@ -38,7 +38,7 @@ export function TaskCard({ task, onEdit }: TaskCardProps) {
     <div
       draggable
       onDragStart={handleDragStart}
-      className="bg-surface rounded-xl shadow-sm border border-border p-3 cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow group"
+      className="bg-surface rounded-xl shadow-card border border-border p-[var(--density-card-pad)] cursor-grab active:cursor-grabbing hover:shadow-card transition-shadow group"
     >
       {/* Title + priority */}
       <div className="flex items-start justify-between gap-2 mb-1">

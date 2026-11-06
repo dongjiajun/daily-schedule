@@ -2,11 +2,13 @@
 /**
  * UI 设计 token 门禁 — 与 docs-check / openspec-check 同风格：从代码树独立重算事实，不信任文档声明。
  *
- * 四项检查：
+ * 六项检查：
  *   1. token 完整性  每套主题（5 基础 + 18 节日）必须覆盖 design-tokens.json 契约
  *   2. 对比度        文本配对 >= 4.5:1，控件边界 >= 3:1（派生值 color-mix/rgba 记为跳过）
  *   3. 裸色值        白名单之外禁止十六进制色值与 Tailwind 调色板类
  *   4. 未知 token    禁止引用 @theme 未注册的 token utility（如 bg-muted）
+ *   5. CSS 死 token  CSS 声明了契约外的 --color-* 自定义属性
+ *   6. 几何/动效     圆角/阴影/时长/曲线必须来自契约 token
  *
  * 用法: node scripts/ui-check.mjs [--self-test]
  * 退出码: 0 全部通过 / 1 存在失败
@@ -243,6 +245,7 @@ function isKnownUtility(cls, unknown) {
   if (rest.startsWith('[')) return true
   rest = rest.split('/')[0]
   if (!rest) return true
+  if (prefix === 'shadow' && Object.hasOwn(CONTRACT.geometry.shadow, rest)) return true
   if (TOKEN_NAMES.has(rest) || KEYWORDS.has(rest) || NON_COLOR.has(rest)) return true
   if (NUMERIC.test(rest)) return true
   unknown.push(cls)
@@ -316,6 +319,57 @@ function checkDeclaredTokens(themes, failures) {
   }
 }
 
+// ── 检查 6：几何 / 动效裸值 ─────────────────────────────────────────────────
+const RADIUS_ALLOWED = new Set([...Object.keys(CONTRACT.geometry.radius), 'none'])
+const SHADOW_ALLOWED = new Set([...Object.keys(CONTRACT.geometry.shadow), 'none', 'inner'])
+const DURATION_ALLOWED = new Set([...Object.keys(CONTRACT.motion.duration), '0'])
+const EASE_ALLOWED = new Set([...Object.keys(CONTRACT.motion.ease), 'linear', 'in', 'out', 'in-out'])
+
+/** 返回违规描述；合法返回 null（token 已去掉变体前缀与透明度后缀） */
+function geometryViolation(token) {
+  const radius = /^rounded(?:-(?:t|r|b|l|tl|tr|bl|br))?-([a-z0-9[\]%().-]+)$/.exec(token)
+  if (radius) {
+    if (/^[\[]/.test(radius[1])) return `圆角使用了契约外的任意值（${radius[1]}）`
+    if (!RADIUS_ALLOWED.has(radius[1])) return `圆角档位 ${radius[1]} 不在契约内`
+    return null
+  }
+  const shadow = /^shadow-([a-z0-9[\]%().-]+)$/.exec(token)
+  if (shadow) {
+    if (/^[\[]/.test(shadow[1])) return `阴影使用了契约外的任意值（${shadow[1]}）`
+    if (!SHADOW_ALLOWED.has(shadow[1])) return `阴影档位 ${shadow[1]} 不在契约内`
+    return null
+  }
+  const duration = /^duration-([a-z0-9[\]%().-]+)$/.exec(token)
+  if (duration) {
+    if (!DURATION_ALLOWED.has(duration[1])) return `动效时长 ${duration[1]} 不在契约内`
+    return null
+  }
+  const ease = /^ease-([a-z-]+)$/.exec(token)
+  if (ease && !EASE_ALLOWED.has(ease[1])) return `动效曲线 ${ease[1]} 不在契约内`
+  return null
+}
+
+function checkGeometryAndMotion(failures) {
+  const hits = []
+  for (const dir of SOURCE_DIRS) {
+    for (const rel of walk(dir)) {
+      if (!rel.endsWith('.tsx')) continue
+      const lines = read(rel).split(/\r?\n/)
+      lines.forEach((line, index) => {
+        for (const { raw, token } of splitTokens(line)) {
+          const violation = geometryViolation(token)
+          if (violation) hits.push(`${rel}:${index + 1} ${violation}（${raw}）`)
+        }
+      })
+    }
+  }
+  if (hits.length) {
+    failures.push(`几何/动效裸值失败（${hits.length} 处）：\n${hits.slice(0, 30).map((h) => `      ${h}`).join('\n')}`)
+  } else {
+    pass('几何/动效：圆角/阴影/时长/曲线全部来自契约 token')
+  }
+}
+
 // ── 自检：核心算法的内联样例 ────────────────────────────────────────────────
 function selfTest() {
   const assert = (cond, msg) => {
@@ -370,6 +424,14 @@ function selfTest() {
   deadThemes.rootDefaults.set('primary', '#E63946')
   assert(findUnregisteredDeclarations(deadThemes).has('primary'), '未注册的自定义属性应被判为死 token')
 
+  // 失败路径 5：几何/动效裸值
+  assert(geometryViolation('rounded-3xl') !== null, 'rounded-3xl 应报违规')
+  assert(geometryViolation('rounded-lg') === null, 'rounded-lg 应合法')
+  assert(geometryViolation('shadow-md') !== null, 'shadow-md 应报违规')
+  assert(geometryViolation('shadow-card') === null, 'shadow-card 应合法')
+  assert(geometryViolation('duration-150') !== null, 'duration-150 应报违规')
+  assert(geometryViolation('duration-fast') === null, 'duration-fast 应合法')
+
   console.log('ui-check self-test: 通过')
 }
 
@@ -386,6 +448,7 @@ function main() {
   checkRawColors(failures)
   checkUnknownTokens(failures)
   checkDeclaredTokens(themes, failures)
+  checkGeometryAndMotion(failures)
 
   console.log('ui-check: 设计 token 门禁')
   console.log(`  契约：${CONTRACT.tokens.length} token × ${themeNames.length} 套主题`)

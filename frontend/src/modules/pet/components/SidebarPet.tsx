@@ -97,7 +97,7 @@ export function SidebarPet({ onNavigate }: { onNavigate?: () => void }) {
         <div className="flex-1 min-w-0">
           {pet ? (
             <>
-              <div className="text-[13px] font-medium text-foreground truncate">
+              <div className="text-sm font-medium text-foreground truncate">
                 {pet.name}
               </div>
               <div className="flex items-center gap-2 mt-0.5">
@@ -117,13 +117,13 @@ export function SidebarPet({ onNavigate }: { onNavigate?: () => void }) {
                     title={`饱食度: ${pet.hunger}`}
                   />
                 </span>
-                <span className="text-[11px] text-foreground-muted">
+                <span className="text-2xs text-foreground-muted">
                   Lv.{pet.level}
                 </span>
               </div>
             </>
           ) : (
-            <span className="text-[13px] text-foreground-muted group-hover:text-accent transition-colors">
+            <span className="text-sm text-foreground-muted group-hover:text-accent transition-colors">
               领养一只伙伴
             </span>
           )}

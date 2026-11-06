@@ -41,7 +41,7 @@ ErrorBoundary（最外层错误捕获）
 frontend/src/
 ├── core/                    # 稳定基础设施
 │   ├── components/
-│   │   ├── ui/              # shadcn/ui 基础组件（9 个，<!-- DOCS-CHECK: ui-components=9 -->）
+│   │   ├── ui/              # shadcn/ui 基础组件 + 设计系统原语（17 个，<!-- DOCS-CHECK: ui-components=17 -->）
 │   │   └── layout/          # 通用布局组件
 │   │       └── TabbedDialog.tsx   # 通用标签对话框容器
 │   ├── hooks/               # 跨模块共享 hooks
@@ -247,7 +247,12 @@ apps/miniprogram/
 
 ### UI 基础（shadcn/ui, `core/components/ui/`）
 
-9 个基础组件：Button, Input, Textarea, Label, Dialog, Switch, Select, Popover, Tabs
+17 个组件 = 9 个 shadcn 基础（Button, Input, Textarea, Label, Dialog, Switch, Select, Popover, Tabs）
++ 8 个设计系统原语（Card, Badge, Segmented, EmptyState, Skeleton, Tooltip, Kbd, Progress）。
+
+- 原语只使用设计 token 表达颜色/圆角/阴影/动效/密度；几何与动效裸值由 `pnpm run ui:check` 拦截
+- 密度模式：`<html data-density="comfortable|compact">` 驱动 `--density-*` 变量（控件高度/卡片内边距/行距/日历行高）
+- 视觉基线：`pnpm run test:visual`（5 主题 × 6 截面，基线见 `e2e/visual.spec.ts-snapshots/`，CI 默认排除）
 
 ## 自定义 Hooks
 

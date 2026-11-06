@@ -4,6 +4,8 @@ import { Button } from '@/core/components/ui/button'
 import { Input } from '@/core/components/ui/input'
 import { Label } from '@/core/components/ui/label'
 import { Switch } from '@/core/components/ui/switch'
+import { Segmented } from '@/core/components/ui/segmented'
+import { Tooltip } from '@/core/components/ui/tooltip'
 import {
   Select,
   SelectContent,
@@ -152,30 +154,34 @@ function ItemList({ items, emptyText, placeholder, maxLength, pendingCreate, onC
               <span className="flex-1 text-sm text-foreground-secondary truncate">{item.name}</span>
               {deletingId === item.id ? (
                 <span className="flex items-center gap-1.5">
-                  <span className="text-[11px] text-error-fg">确认删除？</span>
-                  <Button size="sm" variant="destructive" className="h-6 px-2 text-[11px] rounded-md" onClick={() => { onDelete(item.id!); setDeletingId(null) }}>
+                  <span className="text-2xs text-error-fg">确认删除？</span>
+                  <Button size="sm" variant="destructive" className="h-6 px-2 text-2xs rounded-md" onClick={() => { onDelete(item.id!); setDeletingId(null) }}>
                     删除
                   </Button>
-                  <Button size="sm" variant="ghost" className="h-6 px-2 text-[11px] rounded-md" onClick={() => setDeletingId(null)}>
+                  <Button size="sm" variant="ghost" className="h-6 px-2 text-2xs rounded-md" onClick={() => setDeletingId(null)}>
                     取消
                   </Button>
                 </span>
               ) : (
                 <span className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button
-                    className="p-1.5 rounded-md text-foreground-muted hover:text-foreground-secondary hover:bg-hover transition-colors"
-                    onClick={() => startEdit(item)}
-                    title="编辑"
-                  >
-                    <Pencil className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    className="p-1.5 rounded-md text-foreground-muted hover:text-error-fg hover:bg-error-bg transition-colors"
-                    onClick={() => { setDeletingId(item.id!); setEditingId(null) }}
-                    title="删除"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                  <Tooltip content="编辑">
+                    <button
+                      className="p-1.5 rounded-md text-foreground-muted hover:text-foreground-secondary hover:bg-hover transition-colors"
+                      onClick={() => startEdit(item)}
+                      aria-label="编辑"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                  </Tooltip>
+                  <Tooltip content="删除">
+                    <button
+                      className="p-1.5 rounded-md text-foreground-muted hover:text-error-fg hover:bg-error-bg transition-colors"
+                      onClick={() => { setDeletingId(item.id!); setEditingId(null) }}
+                      aria-label="删除"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </Tooltip>
                 </span>
               )}
             </div>
@@ -254,7 +260,7 @@ export function ManagePanel() {
                 ))}
               </SelectContent>
             </Select>
-            <p className="text-[11px] text-foreground-muted">下次打开应用时生效</p>
+            <p className="text-2xs text-foreground-muted">下次打开应用时生效</p>
           </div>
 
           <div className="space-y-1.5">
@@ -294,13 +300,27 @@ export function ManagePanel() {
           <div className="flex items-center justify-between pt-1">
             <div>
               <Label className="cursor-pointer" htmlFor="show-completed">显示已完成日程</Label>
-              <p className="text-[11px] text-foreground-muted mt-0.5">关闭后日历上隐藏已完成/已取消的日程</p>
+              <p className="text-2xs text-foreground-muted mt-0.5">关闭后日历上隐藏已完成/已取消的日程</p>
             </div>
             <Switch
               id="show-completed"
               checked={settings.showCompleted}
               onCheckedChange={settings.setShowCompleted}
             />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>界面密度</Label>
+            <Segmented
+              ariaLabel="界面密度"
+              value={settings.density}
+              onChange={(value) => settings.setDensity(value)}
+              options={[
+                { value: 'comfortable', label: '舒适' },
+                { value: 'compact', label: '紧凑' },
+              ]}
+            />
+            <p className="text-2xs text-foreground-muted">紧凑模式收窄控件高度、行距与日历行高</p>
           </div>
 
           <div className="space-y-1.5">
@@ -320,7 +340,7 @@ export function ManagePanel() {
                 ))}
               </SelectContent>
             </Select>
-            <p className="text-[11px] text-foreground-muted">切换后即时生效，自动保存</p>
+            <p className="text-2xs text-foreground-muted">切换后即时生效，自动保存</p>
           </div>
         </div>
       ),

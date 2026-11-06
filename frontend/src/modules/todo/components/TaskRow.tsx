@@ -38,7 +38,7 @@ export function TaskRow({ task, onEdit }: TaskRowProps) {
   const StatusIcon = statusIcon[task.status ?? 'TODO'] ?? ClipboardList
 
   return (
-    <div className="flex items-center gap-3 px-4 py-2 bg-surface border-b border-border hover:bg-hover transition-colors">
+    <div className="flex items-center gap-3 px-4 py-[var(--density-row-py)] bg-surface border-b border-border hover:bg-hover transition-colors">
       {/* Status dropdown */}
       <Select
         value={task.status ?? 'TODO'}
