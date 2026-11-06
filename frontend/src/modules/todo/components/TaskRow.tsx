@@ -12,9 +12,9 @@ const priorityLabels: Record<string, string> = {
 }
 
 const priorityTextColors: Record<string, string> = {
-  URGENT: 'text-red-500',
-  HIGH: 'text-orange-400',
-  MEDIUM: 'text-blue-400',
+  URGENT: 'text-error-fg',
+  HIGH: 'text-warning-fg',
+  MEDIUM: 'text-info-fg',
   LOW: 'text-foreground-muted',
 }
 
@@ -81,7 +81,7 @@ export function TaskRow({ task, onEdit }: TaskRowProps) {
       </span>
 
       {/* Due date */}
-      <span className={`text-xs min-w-[90px] ${isOverdue ? 'text-red-500 font-semibold' : 'text-foreground-muted'}`}>
+      <span className={`text-xs min-w-[90px] ${isOverdue ? 'text-error-fg font-semibold' : 'text-foreground-muted'}`}>
         {task.dueDate ? task.dueDate : '—'}
       </span>
 
@@ -91,7 +91,7 @@ export function TaskRow({ task, onEdit }: TaskRowProps) {
           <span
             key={tag.id}
             className="text-xs px-1.5 py-0.5 rounded-full text-white"
-            style={{ backgroundColor: tag.color ?? '#888' }}
+            style={{ backgroundColor: tag.color ?? 'var(--color-foreground-muted)' }}
           >
             {tag.name}
           </span>
@@ -108,7 +108,7 @@ export function TaskRow({ task, onEdit }: TaskRowProps) {
           variant="ghost"
           size="sm"
           onClick={() => deleteWithUndo(task)}
-          className="text-red-500 hover:text-red-700"
+          className="text-error-fg hover:text-error"
         >
           <Trash2 className="size-3" />
           删除

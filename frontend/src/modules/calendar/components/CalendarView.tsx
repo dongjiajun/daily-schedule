@@ -192,12 +192,15 @@ export function CalendarView() {
   const eventStyleGetter = useCallback((event: CalendarEvent) => {
     const color = event.resource.categoryColor ?? event.resource.color ?? 'var(--color-cal-today-ring)'
     const done = event.resource.status === 'COMPLETED' || event.resource.status === 'CANCELLED'
+    // 用 color-mix 代替十六进制透明度拼接：对用户自定义 hex 与 CSS 变量（默认色分支）都合法
+    const tint = done ? '10%' : '13%'
+    const borderWidth = done ? '40%' : '100%'
     return {
       style: {
-        backgroundColor: color + (done ? '12' : '22'),
+        backgroundColor: `color-mix(in srgb, ${color} ${tint}, transparent)`,
         borderRadius: '6px',
         border: 'none',
-        borderLeft: `3px solid ${done ? color + '66' : color}`,
+        borderLeft: `3px solid color-mix(in srgb, ${color} ${borderWidth}, transparent)`,
         color: done ? 'var(--color-event-done-text)' : 'var(--color-event-text)',
         fontSize: '12px',
         fontWeight: 500,
@@ -244,8 +247,8 @@ export function CalendarView() {
           className={cn(
             'flex-shrink-0 w-3.5 h-3.5 rounded-full border flex items-center justify-center transition-all',
             done
-              ? 'bg-emerald-500 border-emerald-500 text-white'
-              : 'border-border bg-surface/70 text-transparent opacity-0 group-hover/event:opacity-100 hover:border-emerald-400 hover:text-emerald-400'
+              ? 'bg-success border-success text-white'
+              : 'border-border bg-surface/70 text-transparent opacity-0 group-hover/event:opacity-100 hover:border-success hover:text-success-fg'
           )}
         >
           {done ? <Check className="w-2.5 h-2.5" /> : <Check className="w-2.5 h-2.5" />}

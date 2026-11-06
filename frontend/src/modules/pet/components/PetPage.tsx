@@ -21,7 +21,7 @@ export default function PetPage() {
 
       {isLoading ? (
         <div className="flex justify-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+          <Loader2 className="w-8 h-8 animate-spin text-foreground-muted" />
         </div>
       ) : pet ? (
         <div className="flex flex-col items-center gap-6">
@@ -89,7 +89,7 @@ export default function PetPage() {
         <div className="text-center py-12 text-foreground-muted">
           <p>你还没有宠物</p>
           <button
-            className="mt-2 text-blue-500 hover:underline"
+            className="mt-2 text-info-fg hover:underline"
             onClick={() => setSelectionOpen(true)}
           >
             创建一个

@@ -16,7 +16,7 @@ export default function TodoPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-gray-400">加载中…</p>
+        <p className="text-foreground-muted">加载中…</p>
       </div>
     )
   }
@@ -24,7 +24,7 @@ export default function TodoPage() {
   if (isError) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-red-500">加载失败，请刷新重试</p>
+        <p className="text-error-fg">加载失败，请刷新重试</p>
       </div>
     )
   }

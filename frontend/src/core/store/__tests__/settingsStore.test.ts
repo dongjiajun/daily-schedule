@@ -6,7 +6,6 @@ describe('settingsStore', () => {
     useSettingsStore.setState({
       themeMode: 'manual',
       effectIntensity: 'low',
-      autoDarkMode: false,
       locale: 'CN',
       holidayCheckDate: null,
       activeHolidayId: null,
@@ -19,10 +18,6 @@ describe('settingsStore', () => {
 
   it('默认 effectIntensity 为 low', () => {
     expect(useSettingsStore.getState().effectIntensity).toBe('low')
-  })
-
-  it('默认 autoDarkMode 为 false', () => {
-    expect(useSettingsStore.getState().autoDarkMode).toBe(false)
   })
 
   it('默认 locale 为 CN', () => {
@@ -42,11 +37,6 @@ describe('settingsStore', () => {
     expect(useSettingsStore.getState().effectIntensity).toBe('off')
   })
 
-  it('切换 autoDarkMode', () => {
-    useSettingsStore.getState().setAutoDarkMode(true)
-    expect(useSettingsStore.getState().autoDarkMode).toBe(true)
-  })
-
   it('setHolidayCheckResult 同时设置日期和节日 id', () => {
     useSettingsStore.getState().setHolidayCheckResult('2026-02-17', 'spring-festival')
     expect(useSettingsStore.getState().holidayCheckDate).toBe('2026-02-17')
@@ -59,12 +49,13 @@ describe('settingsStore', () => {
     expect(useSettingsStore.getState().activeHolidayId).toBeNull()
   })
 
-  it('新字段不在 partialize 中持久化的字段使用默认值', () => {
-    // 验证 partialize 只持久化指定字段
-    const state = useSettingsStore.getState()
-    // holidayCheckDate 和 activeHolidayId 不应持久化（不在 partialize 中）
-    // 但它们在内存中应有默认值
-    expect(state.holidayCheckDate).toBeNull()
-    expect(state.activeHolidayId).toBeNull()
+  it('节日检测结果参与持久化（首帧主题脚本依赖）', () => {
+    useSettingsStore.getState().setHolidayCheckResult('2026-02-17', 'spring-festival')
+    useSettingsStore.getState().setThemeMode('auto')
+    const raw = window.localStorage.getItem('settings.v1')
+    expect(raw).toBeTruthy()
+    expect(raw).toContain('"holidayCheckDate":"2026-02-17"')
+    expect(raw).toContain('"activeHolidayId":"spring-festival"')
+    expect(raw).toContain('"themeMode":"auto"')
   })
 })

@@ -22,10 +22,10 @@
   background: transparent !important;
 }
 
-/* 周末头部微区分（保持暖色标记，所有主题通用） */
+/* 周末头部微区分（走主题 muted 派生，深色/节日主题下不再恒定暖色） */
 .rbc-header:nth-child(1),
 .rbc-header:nth-child(7) {
-  color: #c4b5b0 !important;
+  color: color-mix(in srgb, var(--color-foreground-muted) 82%, transparent) !important;
 }
 
 /* ========== 月视图 ========== */
@@ -62,10 +62,10 @@
   margin-left: 2px !important;
 }
 
-/* 周末天格子微妙暖色（保持视觉一致性） */
+/* 周末天格子微妙区分（跟随主题 hover 底色） */
 .rbc-day-bg:nth-child(1),
 .rbc-day-bg:nth-child(7) {
-  background: rgba(251, 246, 243, 0.6) !important;
+  background: color-mix(in srgb, var(--color-hover) 45%, transparent) !important;
 }
 
 /* 悬停反馈 */
@@ -88,7 +88,7 @@
 }
 
 .rbc-off-range {
-  color: #cbd5e1 !important;
+  color: color-mix(in srgb, var(--color-foreground-muted) 55%, transparent) !important;
 }
 
 /* 日期数字 */
@@ -131,7 +131,7 @@
 /* 周末日期数字 */
 .rbc-date-cell:nth-child(1),
 .rbc-date-cell:nth-child(7) {
-  color: #b0a098 !important;
+  color: color-mix(in srgb, var(--color-foreground-muted) 82%, transparent) !important;
 }
 
 /* ========== 周/日视图 ========== */
@@ -295,7 +295,7 @@
 .rbc-calendar ::-webkit-scrollbar { width: 5px; }
 .rbc-calendar ::-webkit-scrollbar-track { background: transparent; }
 .rbc-calendar ::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 3px; }
-.rbc-calendar ::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
+.rbc-calendar ::-webkit-scrollbar-thumb:hover { background: var(--color-foreground-muted); }
 
 /* ========== 时间段 hover ========== */
 .rbc-day-slot .rbc-time-slot:hover {

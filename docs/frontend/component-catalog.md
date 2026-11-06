@@ -274,8 +274,9 @@ apps/miniprogram/
 |------|------|
 | modules/calendar/lib/ics.ts | iCalendar (.ics) 导出：当前视图日程一键导出，可导入系统日历 |
 | lib/colors.ts | PRESET_COLORS 共享常量（9 个色板预设值） |
-| core/styles/themes.css | 主题 Token 定义：5 套预设 × 27 个 CSS 自定义属性 |
-| core/styles/holiday-themes.css | 节日主题：18 套节日配色（`[data-theme="holiday-<id>"]`），由 holidayEngine 在 auto 模式激活 |
+| core/styles/design-tokens.json | 设计 token 契约唯一真相源：token 分组清单、对比度配对与裸色值白名单（`pnpm run ui:check` 校验） |
+| core/styles/themes.css | 主题 Token 定义：5 套预设（每套主题色 + 共享语义色/控件边界），契约见 design-tokens.json |
+| core/styles/holiday-themes.css | 节日主题：18 套节日种子色（`[data-theme="holiday-<id>"]`）+ `[data-theme^="holiday-"]` 共享契约层（派生前景/边框/日历 token），由 holidayEngine 在 auto 模式激活 |
 | core/lib/unwrap.ts | hey-api 响应错误统一抛出（带后端 message），修复"失败也弹成功"的问题 |
 
 ## 自动生成代码

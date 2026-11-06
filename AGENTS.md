@@ -50,6 +50,7 @@ This file provides guidance to AI coding agents (DeepSeek Harness, Codex, and ot
 pnpm install                    # 安装所有 workspace 依赖（含仓库锁定的 OpenSpec CLI）
 turbo run build                 # 按依赖顺序构建（shared → frontend / miniprogram）
 turbo run verify                # 全量 lint + build + test
+pnpm run ui:check               # 设计 token 门禁（契约完整性/对比度/裸色值/未知 token/CSS 死 token）
 ```
 
 **shared 包子路径**: `@daily-schedule/shared/holiday` 独立导出 HolidayEngine、`@daily-schedule/shared/pet` 独立导出 roam engine（避免 barrel export 级联加载）。消费：
@@ -96,7 +97,7 @@ pnpm run generate:api # 从 ../specs/openapi.yaml 生成 SDK
 turbo run verify && cd backend && mvn test && cd frontend && npm run test:e2e
 ```
 
-**CI 门禁**: openspec-validation（OpenSpec 一致性：validate --all --strict + doctor + 主 spec 无 delta 头 + CLI 版本单源校验 + 归档完整性 validate --archived + test-plan 内容门禁 + AGENTS.md 序列一致性守卫 + 机制层完整性 + 模板单源同步 + 指令配置预算）+ version-check（版本同步 + 文档一致性）+ 后端 `mvn test` + 前端 `pnpm run lint` + `pnpm run test` + `pnpm run build`（含 SDK freshness check）为阻断门禁；`npm run test:e2e`（continue-on-error 软性）
+**CI 门禁**: openspec-validation（OpenSpec 一致性：validate --all --strict + doctor + 主 spec 无 delta 头 + CLI 版本单源校验 + 归档完整性 validate --archived + test-plan 内容门禁 + AGENTS.md 序列一致性守卫 + 机制层完整性 + 模板单源同步 + 指令配置预算）+ version-check（版本同步 + 文档一致性）+ 后端 `mvn test` + 前端 `pnpm run lint` + `pnpm run ui:check`（设计 token 门禁：契约完整性/对比度/裸色值/未知 token/CSS 死 token）+ `pnpm run test` + `pnpm run build`（含 SDK freshness check）为阻断门禁；`npm run test:e2e`（continue-on-error 软性）
 **常见失败**: `@typescript-eslint/no-explicit-any` / `tsc -b` 类型错误 / 后端单测失败
 
 **文档检查**（每次变更后逐项确认——未触及的类别须写明"现有描述已核对仍准确"，不得仅以"无新增"跳过；不走 OpenSpec 流程的小改动（热修/文档勘误）同样适用，提交前逐项核对）：
@@ -105,6 +106,7 @@ turbo run verify && cd backend && mvn test && cd frontend && npm run test:e2e
 - API 端点/契约（新增**或修改**）→ `docs/api/overview.md`
 - 架构/模块/测试规模变动 → `docs/architecture.md` + `AGENTS.md`
 - 版本号/测试数/模块列表变动 → `AGENTS.md` 底部版本声明 + `README.md`
+- 主题/配色/样式 token（新增**或修改**）→ `frontend/src/core/styles/design-tokens.json`（契约唯一真相源）+ `pnpm run ui:check`
 - **自动化验证**: 提交前运行 `pnpm run docs:check`（`scripts/docs-check.mjs`）——版本声明/端点覆盖/结构计数与代码不一致会非零退出（CI version-check job 已接入）；`pnpm run openspec:check`（`scripts/openspec-check.mjs`）——OpenSpec 一致性不合规会非零退出（CI openspec-validation job 已接入）
 
 ## 关键文档
@@ -202,5 +204,5 @@ API 契约版本号在三个文件中保持一致：`specs/openapi.yaml` → `ba
 
 ## 当前版本：v3.5.1（2026-08-17）
 
-核心能力：Event 状态闭环 + 日历拖拽改期/拉伸时长 + 标签筛选 + 5 套主题 + 节日主题自动切换 + 特效系统（6 种）+ 键盘快捷键 + JWT 自动续签 + SSE 提醒推送 + ICS 导出 + PWA + 移动端适配 + 宠物养成（区域感知游走/小窝进窝休息/日程框互动：格内物理四边绕行+吸附落地弹跳/情绪/粒子；动作动画层：eat 进食 + idle 小动作 stretch/yawn/scratch/look + 情绪眨眼过渡；昼夜节律：夜间回窝/早晨唤醒问候/午后小憩/深夜打哈欠提示；健壮性：兴趣区惰性过期 + 游走节奏与渲染解耦）+ 任务看板（三列看板+列表+拖拽）+ 微信小程序（Taro 4.2 骨架 + 微信登录：wx.login code→JWT 静默注册 + 日历月视图只读 + 任务列表：三组分组/状态移动/新建/删除 + 宠物互动：状态/创建/喂食玩耍/游走动效）
-测试覆盖：45 类 342 用例（后端 H2，`<!-- DOCS-CHECK: backend-test-classes=45 -->`）+ 51 文件 267 用例（前端 vitest，`<!-- DOCS-CHECK: frontend-test-files=51 -->`）+ 13 文件 57 用例（Playwright E2E，`<!-- DOCS-CHECK: e2e-files=13 -->`）+ 7 文件 83 用例（小程序 vitest）
+核心能力：Event 状态闭环 + 日历拖拽改期/拉伸时长 + 标签筛选 + 5 套主题 + 节日主题自动切换 + 特效系统（6 种）+ 键盘快捷键 + JWT 自动续签 + SSE 提醒推送 + ICS 导出 + PWA + 移动端适配 + 宠物养成（区域感知游走/小窝进窝休息/日程框互动：格内物理四边绕行+吸附落地弹跳/情绪/粒子；动作动画层：eat 进食 + idle 小动作 stretch/yawn/scratch/look + 情绪眨眼过渡；昼夜节律：夜间回窝/早晨唤醒问候/午后小憩/深夜打哈欠提示；健壮性：兴趣区惰性过期 + 游走节奏与渲染解耦）+ 任务看板（三列看板+列表+拖拽）+ 微信小程序（Taro 4.2 骨架 + 微信登录：wx.login code→JWT 静默注册 + 日历月视图只读 + 任务列表：三组分组/状态移动/新建/删除 + 宠物互动：状态/创建/喂食玩耍/游走动效）+ 设计 token 契约（契约清单 × 23 套主题，ui:check 门禁）
+测试覆盖：45 类 342 用例（后端 H2，`<!-- DOCS-CHECK: backend-test-classes=45 -->`）+ 52 文件 269 用例（前端 vitest，`<!-- DOCS-CHECK: frontend-test-files=52 -->`）+ 14 文件 65 用例（Playwright E2E，`<!-- DOCS-CHECK: e2e-files=14 -->`）+ 7 文件 83 用例（小程序 vitest）

@@ -148,11 +148,11 @@ function ItemList({ items, emptyText, placeholder, maxLength, pendingCreate, onC
               key={item.id}
               className="group flex items-center gap-2.5 rounded-lg px-2.5 py-2 hover:bg-hover transition-colors"
             >
-              <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: item.color ?? '#3b82f6' }} />
+              <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: item.color ?? 'var(--color-info)' }} />
               <span className="flex-1 text-sm text-foreground-secondary truncate">{item.name}</span>
               {deletingId === item.id ? (
                 <span className="flex items-center gap-1.5">
-                  <span className="text-[11px] text-red-500">确认删除？</span>
+                  <span className="text-[11px] text-error-fg">确认删除？</span>
                   <Button size="sm" variant="destructive" className="h-6 px-2 text-[11px] rounded-md" onClick={() => { onDelete(item.id!); setDeletingId(null) }}>
                     删除
                   </Button>
@@ -170,7 +170,7 @@ function ItemList({ items, emptyText, placeholder, maxLength, pendingCreate, onC
                     <Pencil className="w-3.5 h-3.5" />
                   </button>
                   <button
-                    className="p-1.5 rounded-md text-foreground-muted hover:text-red-500 hover:bg-red-50 transition-colors"
+                    className="p-1.5 rounded-md text-foreground-muted hover:text-error-fg hover:bg-error-bg transition-colors"
                     onClick={() => { setDeletingId(item.id!); setEditingId(null) }}
                     title="删除"
                   >

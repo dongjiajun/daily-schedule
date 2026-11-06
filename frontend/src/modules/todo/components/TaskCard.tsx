@@ -5,10 +5,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { AlertTriangle, Calendar, Pencil, Trash2, ClipboardList, CircleDot, CheckCircle2 } from 'lucide-react'
 
 const priorityColors: Record<string, string> = {
-  URGENT: 'bg-red-500 text-white',
-  HIGH: 'bg-orange-400 text-white',
-  MEDIUM: 'bg-blue-400 text-white',
-  LOW: 'bg-gray-300 text-gray-700',
+  URGENT: 'bg-error text-white',
+  HIGH: 'bg-warning text-white',
+  MEDIUM: 'bg-info text-white',
+  LOW: 'bg-hover text-foreground-secondary',
 }
 
 const priorityLabels: Record<string, string> = {
@@ -54,7 +54,7 @@ export function TaskCard({ task, onEdit }: TaskCardProps) {
 
       {/* Due date */}
       {task.dueDate && (
-        <div className={`flex items-center gap-1 text-xs mb-1 ${isOverdue ? 'text-red-500 font-semibold' : 'text-foreground-muted'}`}>
+        <div className={`flex items-center gap-1 text-xs mb-1 ${isOverdue ? 'text-error-fg font-semibold' : 'text-foreground-muted'}`}>
           {isOverdue && <AlertTriangle className="size-3" />}
           <Calendar className="size-3" />
           {task.dueDate}
@@ -68,7 +68,7 @@ export function TaskCard({ task, onEdit }: TaskCardProps) {
             <span
               key={tag.id}
               className="text-xs px-1.5 py-0.5 rounded-full text-white"
-              style={{ backgroundColor: tag.color ?? '#888' }}
+              style={{ backgroundColor: tag.color ?? 'var(--color-foreground-muted)' }}
             >
               {tag.name}
             </span>
@@ -119,7 +119,7 @@ export function TaskCard({ task, onEdit }: TaskCardProps) {
             variant="ghost"
             size="sm"
             onClick={() => deleteWithUndo(task)}
-            className="text-red-500 hover:text-red-700"
+            className="text-error-fg hover:text-error"
           >
             <Trash2 className="size-3" />
             删除

@@ -7,9 +7,9 @@ import { useState } from 'react'
 import { ClipboardList, CircleDot, CheckCircle2, Plus } from 'lucide-react'
 
 const columnConfig: Record<string, { title: string; Icon: React.ComponentType<{ className?: string }>; color: string }> = {
-  TODO: { title: '待办', Icon: ClipboardList, color: 'border-blue-300' },
-  IN_PROGRESS: { title: '进行中', Icon: CircleDot, color: 'border-amber-300' },
-  DONE: { title: '已完成', Icon: CheckCircle2, color: 'border-green-300' },
+  TODO: { title: '待办', Icon: ClipboardList, color: 'border-info/40' },
+  IN_PROGRESS: { title: '进行中', Icon: CircleDot, color: 'border-warning/40' },
+  DONE: { title: '已完成', Icon: CheckCircle2, color: 'border-success/40' },
 }
 
 interface TaskColumnProps {

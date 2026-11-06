@@ -1,0 +1,98 @@
+{
+  "version": 1,
+  "description": "前端设计 token 契约唯一真相源：主题 CSS、Tailwind @theme 注册与 ui-check 门禁均以此为准。新增 token 必须同时更新本文件，否则门禁会在全部主题上报缺失。",
+  "tokens": [
+    { "name": "bg", "group": "background" },
+    { "name": "surface", "group": "background" },
+    { "name": "surface-elevated", "group": "background" },
+    { "name": "sidebar", "group": "background" },
+    { "name": "sidebar-muted", "group": "background" },
+    { "name": "foreground", "group": "text" },
+    { "name": "foreground-secondary", "group": "text" },
+    { "name": "foreground-muted", "group": "text" },
+    { "name": "accent-fg", "group": "text" },
+    { "name": "border", "group": "border" },
+    { "name": "border-subtle", "group": "border" },
+    { "name": "border-strong", "group": "border" },
+    { "name": "accent", "group": "interactive" },
+    { "name": "accent-hover", "group": "interactive" },
+    { "name": "hover", "group": "interactive" },
+    { "name": "overlay", "group": "interactive" },
+    { "name": "focus", "group": "interactive" },
+    { "name": "focus-strong", "group": "interactive" },
+    { "name": "cal-bg", "group": "calendar" },
+    { "name": "cal-border", "group": "calendar" },
+    { "name": "cal-today-bg", "group": "calendar" },
+    { "name": "cal-today-ring", "group": "calendar" },
+    { "name": "event-text", "group": "calendar" },
+    { "name": "event-done-text", "group": "calendar" },
+    { "name": "grid-dot", "group": "calendar" },
+    { "name": "gradient-from", "group": "gradient" },
+    { "name": "gradient-via", "group": "gradient" },
+    { "name": "gradient-to", "group": "gradient" },
+    { "name": "success", "group": "semantic" },
+    { "name": "success-fg", "group": "semantic" },
+    { "name": "success-bg", "group": "semantic" },
+    { "name": "error", "group": "semantic" },
+    { "name": "error-fg", "group": "semantic" },
+    { "name": "error-bg", "group": "semantic" },
+    { "name": "warning", "group": "semantic" },
+    { "name": "warning-fg", "group": "semantic" },
+    { "name": "warning-bg", "group": "semantic" },
+    { "name": "info", "group": "semantic" },
+    { "name": "info-fg", "group": "semantic" },
+    { "name": "info-bg", "group": "semantic" }
+  ],
+  "contrastRules": [
+    { "fg": "foreground", "bg": "bg", "min": 4.5 },
+    { "fg": "foreground", "bg": "surface", "min": 4.5 },
+    { "fg": "foreground-secondary", "bg": "surface", "min": 4.5 },
+    { "fg": "foreground-secondary", "bg": "bg", "min": 4.5 },
+    { "fg": "foreground-muted", "bg": "surface", "min": 4.5 },
+    { "fg": "foreground-muted", "bg": "bg", "min": 4.5 },
+    { "fg": "event-text", "bg": "cal-bg", "min": 4.5 },
+    { "fg": "event-done-text", "bg": "cal-bg", "min": 4.5 },
+    { "fg": "accent-fg", "bg": "accent", "min": 4.5 },
+    { "fg": "accent-fg", "bg": "accent-hover", "min": 4.5 },
+    { "fg": "success-fg", "bg": "success-bg", "min": 4.5 },
+    { "fg": "error-fg", "bg": "error-bg", "min": 4.5 },
+    { "fg": "warning-fg", "bg": "warning-bg", "min": 4.5 },
+    { "fg": "info-fg", "bg": "info-bg", "min": 4.5 },
+    { "fg": "border-strong", "bg": "surface", "min": 3, "kind": "non-text" },
+    { "fg": "border-strong", "bg": "bg", "min": 3, "kind": "non-text" },
+    { "fg": "focus-strong", "bg": "surface", "min": 3, "kind": "non-text" }
+  ],
+  "whitelist": [
+    {
+      "pattern": "frontend/src/modules/pet/assets/svg/**",
+      "reason": "宠物角色 SVG 造型色（视觉资产，非主题语义）"
+    },
+    {
+      "pattern": "frontend/src/modules/pet/components/AccessoryOverlay.tsx",
+      "reason": "宠物配饰 SVG 造型色（视觉资产）"
+    },
+    {
+      "pattern": "frontend/src/modules/pet/lib/accessoryRenderMap.ts",
+      "reason": "宠物配饰配色数据（视觉资产）"
+    },
+    {
+      "pattern": "frontend/src/core/components/effects/**",
+      "reason": "节日特效粒子配色（视觉资产）"
+    },
+    {
+      "pattern": "frontend/src/pages/LoginPage.tsx",
+      "reason": "登录页装饰光斑与阴影（视觉资产）"
+    },
+    {
+      "pattern": "frontend/src/core/store/settingsStore.ts",
+      "reason": "主题预览色数据（主题选择器 Dot，表达主题身份而非界面配色）"
+    }
+  ],
+  "cssFiles": [
+    "frontend/src/core/styles/themes.css",
+    "frontend/src/core/styles/holiday-themes.css"
+  ],
+  "themeSourceFile": "frontend/src/core/styles/themes.css",
+  "holidaySourceFile": "frontend/src/core/styles/holiday-themes.css",
+  "themeRegistrationFile": "frontend/src/index.css"
+}

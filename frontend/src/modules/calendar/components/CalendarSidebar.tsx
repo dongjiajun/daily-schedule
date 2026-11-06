@@ -30,7 +30,7 @@ function WeekStats() {
         </div>
         <div className="h-1.5 rounded-full bg-hover overflow-hidden">
           <div
-            className="h-full rounded-full bg-emerald-500/80 transition-all duration-500"
+            className="h-full rounded-full bg-success/80 transition-all duration-500"
             style={{ width: `${rate}%` }}
           />
         </div>
@@ -134,7 +134,7 @@ export function CalendarSidebar({ onNavigate }: { onNavigate?: () => void }) {
               >
                 <span
                   className="w-2 h-2 rounded-full flex-shrink-0 ring-2 ring-offset-1 ring-border/50"
-                  style={{ backgroundColor: cat.color ?? '#3b82f6' }}
+                  style={{ backgroundColor: cat.color ?? 'var(--color-info)' }}
                 />
                 <span className="truncate">{cat.name}</span>
               </button>
@@ -170,12 +170,12 @@ export function CalendarSidebar({ onNavigate }: { onNavigate?: () => void }) {
                     active ? 'shadow-sm font-medium' : 'opacity-75 hover:opacity-100'
                   )}
                   style={{
-                    backgroundColor: active ? (tag.color ?? '#3b82f6') + '22' : 'var(--color-sidebar-muted)',
-                    borderColor: active ? (tag.color ?? '#3b82f6') : 'var(--color-border)',
+                    backgroundColor: active ? (tag.color ?? 'var(--color-info)') + '22' : 'var(--color-sidebar-muted)',
+                    borderColor: active ? (tag.color ?? 'var(--color-info)') : 'var(--color-border)',
                     color: 'var(--color-foreground-secondary)',
                   }}
                 >
-                  <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: tag.color ?? '#3b82f6' }} />
+                  <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: tag.color ?? 'var(--color-info)' }} />
                   {tag.name}
                 </button>
               )

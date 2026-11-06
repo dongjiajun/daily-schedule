@@ -10,7 +10,8 @@
   <body>
     <script>
       // 在 React 渲染前同步设置 data-theme，消除页面闪烁 (FOUC)
-      (function(){try{var s=localStorage.getItem('settings.v1');if(s){var p=JSON.parse(s);if(p.state&&p.state.theme){document.documentElement.dataset.theme=p.state.theme}}}catch(e){}})()
+      // 与 useTheme 判定一致：auto 模式且已缓存活跃节日时直接应用节日主题
+      (function(){try{var s=localStorage.getItem('settings.v1');if(!s)return;var st=JSON.parse(s).state;if(!st||!st.theme)return;document.documentElement.dataset.theme=st.themeMode==='auto'&&st.activeHolidayId?'holiday-'+st.activeHolidayId:st.theme}catch(e){}})()
     </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>

@@ -29,6 +29,7 @@
   --color-foreground-muted: var(--color-foreground-muted);
   --color-border: var(--color-border);
   --color-border-subtle: var(--color-border-subtle);
+  --color-border-strong: var(--color-border-strong);
   --color-accent: var(--color-accent);
   --color-accent-fg: var(--color-accent-fg);
   --color-accent-hover: var(--color-accent-hover);
@@ -46,6 +47,18 @@
   --color-gradient-from: var(--color-gradient-from);
   --color-gradient-via: var(--color-gradient-via);
   --color-gradient-to: var(--color-gradient-to);
+  --color-success: var(--color-success);
+  --color-success-fg: var(--color-success-fg);
+  --color-success-bg: var(--color-success-bg);
+  --color-error: var(--color-error);
+  --color-error-fg: var(--color-error-fg);
+  --color-error-bg: var(--color-error-bg);
+  --color-warning: var(--color-warning);
+  --color-warning-fg: var(--color-warning-fg);
+  --color-warning-bg: var(--color-warning-bg);
+  --color-info: var(--color-info);
+  --color-info-fg: var(--color-info-fg);
+  --color-info-bg: var(--color-info-bg);
 }
 
 body {

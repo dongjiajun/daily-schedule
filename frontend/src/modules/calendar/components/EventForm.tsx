@@ -92,7 +92,7 @@ export function EventForm({ initialValues, categories, tags, onSubmit, loading }
   const [allDay, setAllDay] = useState(initialValues?.allDay ?? false)
   const [location, setLocation] = useState(initialValues?.location ?? '')
   const [color, setColor] = useState(
-    initialValues?.categoryId ? (initialValues?.categoryColor ?? initialValues?.color ?? '#3b82f6') : (initialValues?.color ?? '#3b82f6')
+    initialValues?.categoryId ? (initialValues?.categoryColor ?? initialValues?.color ?? 'var(--color-info)') : (initialValues?.color ?? 'var(--color-info)')
   )
   const [categoryId, setCategoryId] = useState<number | undefined>(
     initialValues?.categoryId ?? undefined
@@ -149,9 +149,9 @@ export function EventForm({ initialValues, categories, tags, onSubmit, loading }
           maxLength={200}
           required
           autoFocus
-          className={errors.title ? 'border-red-300 focus-visible:ring-red-500/20' : ''}
+          className={errors.title ? 'border-error focus-visible:ring-error/20' : ''}
         />
-        {errors.title && <p className="text-xs text-red-500">{errors.title}</p>}
+        {errors.title && <p className="text-xs text-error-fg">{errors.title}</p>}
       </div>
 
       {/* 全天 + 时间 */}
@@ -177,9 +177,9 @@ export function EventForm({ initialValues, categories, tags, onSubmit, loading }
             value={startTime}
             onChange={(e) => { setStartTime(e.target.value); if (errors.startTime) setErrors((p) => ({ ...p, startTime: undefined })) }}
             required
-            className={errors.startTime ? 'border-red-300 focus-visible:ring-red-500/20' : ''}
+            className={errors.startTime ? 'border-error focus-visible:ring-error/20' : ''}
           />
-          {errors.startTime && <p className="text-xs text-red-500">{errors.startTime}</p>}
+          {errors.startTime && <p className="text-xs text-error-fg">{errors.startTime}</p>}
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="event-end">结束时间 *</Label>
@@ -189,9 +189,9 @@ export function EventForm({ initialValues, categories, tags, onSubmit, loading }
             value={endTime}
             onChange={(e) => { setEndTime(e.target.value); if (errors.endTime) setErrors((p) => ({ ...p, endTime: undefined })) }}
             required
-            className={errors.endTime ? 'border-red-300 focus-visible:ring-red-500/20' : ''}
+            className={errors.endTime ? 'border-error focus-visible:ring-error/20' : ''}
           />
-          {errors.endTime && <p className="text-xs text-red-500">{errors.endTime}</p>}
+          {errors.endTime && <p className="text-xs text-error-fg">{errors.endTime}</p>}
         </div>
       </div>
 
@@ -220,7 +220,7 @@ export function EventForm({ initialValues, categories, tags, onSubmit, loading }
               {categories.map((cat) => (
                 <SelectItem key={cat.id} value={String(cat.id)}>
                   <span className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: cat.color ?? '#3b82f6' }} />
+                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: cat.color ?? 'var(--color-info)' }} />
                     {cat.name}
                   </span>
                 </SelectItem>
@@ -287,11 +287,11 @@ export function EventForm({ initialValues, categories, tags, onSubmit, loading }
                     'focus:outline-none focus-visible:ring-2 focus-visible:ring-focus'
                   )}
                   style={{
-                    backgroundColor: active ? (tag.color ?? '#3b82f6') + '20' : 'var(--color-hover)',
-                    borderColor: tag.color ?? '#3b82f6',
+                    backgroundColor: active ? (tag.color ?? 'var(--color-info)') + '20' : 'var(--color-hover)',
+                    borderColor: tag.color ?? 'var(--color-info)',
                   }}
                 >
-                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: tag.color ?? '#3b82f6' }} />
+                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: tag.color ?? 'var(--color-info)' }} />
                   {tag.name}
                 </button>
               )

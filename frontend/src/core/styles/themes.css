@@ -1,5 +1,6 @@
 /* ===== 主题预设 ===== */
 /* 切换 <html data-theme="..."> 即可换肤 */
+/* token 契约清单唯一真相源：design-tokens.json（改动前先改契约） */
 
 /* ---- default：冷灰蓝（当前视觉，零回归） ---- */
 :root[data-theme="default"] {
@@ -10,7 +11,7 @@
   --color-sidebar-muted: #f9fafb;
   --color-foreground: #111827;
   --color-foreground-secondary: #4b5563;
-  --color-foreground-muted: #9ca3af;
+  --color-foreground-muted: #5f6875;
   --color-border: #e5e7eb;
   --color-border-subtle: #f3f4f6;
   --color-accent: #111827;
@@ -24,7 +25,7 @@
   --color-cal-border: #f1f5f9;
   --color-cal-today-bg: #f0f7ff;
   --color-cal-today-ring: #3b82f6;
-  --color-event-done-text: #94a3b8;
+  --color-event-done-text: #64748b;
   --color-event-text: #1e293b;
   --color-grid-dot: #0f172a;
   --color-gradient-from: #f4f6f9;
@@ -102,8 +103,8 @@
   --color-sidebar: #1e293b;
   --color-sidebar-muted: #0f172a;
   --color-foreground: #f1f5f9;
-  --color-foreground-secondary: #94a3b8;
-  --color-foreground-muted: #64748b;
+  --color-foreground-secondary: #b6c2d2;
+  --color-foreground-muted: #8b9bb0;
   --color-border: #334155;
   --color-border-subtle: #1e293b;
   --color-accent: #e2e8f0;
@@ -117,12 +118,22 @@
   --color-cal-border: #334155;
   --color-cal-today-bg: #1e293b;
   --color-cal-today-ring: #60a5fa;
-  --color-event-done-text: #64748b;
+  --color-event-done-text: #8b9bb0;
   --color-event-text: #e2e8f0;
   --color-grid-dot: #475569;
   --color-gradient-from: #0f172a;
   --color-gradient-via: #1a2744;
   --color-gradient-to: #16213e;
+  /* 语义色深色变体 + 控件边界覆盖（色相不变，仅按暗底提亮 fg / 压暗 bg） */
+  --color-border-strong: #64748b;
+  --color-success-fg: #6ee7b7;
+  --color-success-bg: #0f3d2e;
+  --color-error-fg: #fca5a5;
+  --color-error-bg: #3f1d1d;
+  --color-warning-fg: #fcd34d;
+  --color-warning-bg: #3d2f0a;
+  --color-info-fg: #93c5fd;
+  --color-info-bg: #1e2f52;
 }
 
 /* ---- lavender：薰衣草紫 ---- */
@@ -156,11 +167,19 @@
   --color-gradient-to: #f6f4fa;
 }
 
-/* ===== 语义色（不随主题变化） ===== */
+/* ===== 语义色与控件边界（浅色基底；dark 与节日主题覆盖 -fg / -bg） ===== */
 :root {
-  --color-success: #10b981;
+  --color-border-strong: #878b92;
+  --color-success: #047857;
+  --color-success-fg: #047857;
   --color-success-bg: #ecfdf5;
-  --color-error: #ef4444;
+  --color-error: #b91c1c;
+  --color-error-fg: #b91c1c;
   --color-error-bg: #fef2f2;
-  --color-warning: #f59e0b;
+  --color-warning: #b45309;
+  --color-warning-fg: #b45309;
+  --color-warning-bg: #fffbeb;
+  --color-info: #1d4ed8;
+  --color-info-fg: #1d4ed8;
+  --color-info-bg: #eff6ff;
 }

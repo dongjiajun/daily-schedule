@@ -46,10 +46,10 @@ export function PetSelection() {
                 onClick={() => setSpecies(opt.value)}
                 className={`
                   flex-1 flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all
-                  ${selected ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'}
+                  ${selected ? 'border-accent bg-accent/10' : 'border-border hover:border-border-strong'}
                 `}
               >
-                <Icon className={`w-10 h-10 ${selected ? 'text-blue-500' : 'text-gray-400'}`} />
+                <Icon className={`w-10 h-10 ${selected ? 'text-accent' : 'text-foreground-muted'}`} />
                 <span className="font-medium text-sm">{opt.label}</span>
                 <span className="text-xs text-foreground-muted text-center">{opt.desc}</span>
               </button>

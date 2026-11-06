@@ -14,7 +14,7 @@ export const THEME_LABELS: Record<ThemePreset, string> = {
   lavender: '薰衣草紫',
 }
 
-/** 主题预览色（用于选择器中的颜色 Dot） */
+/** 主题预览色（用于选择器中的颜色 Dot）。 */
 export const THEME_COLORS: Record<ThemePreset, string> = {
   default: '#3b82f6',
   warm: '#d97706',
@@ -38,8 +38,6 @@ export interface SettingsState {
   themeMode: ThemeMode
   /** 特效强度：off（关闭）/ low（低密度，默认）/ full（全密度）。 */
   effectIntensity: EffectIntensity
-  /** 是否根据系统偏好自动切换暗黑模式。默认 false。 */
-  autoDarkMode: boolean
   /** 地区设置（用于地区性节日匹配）。默认 'CN'。 */
   locale: string
   /** 上次检测节日的日期 (YYYY-MM-DD)，用于日缓存。 */
@@ -54,7 +52,6 @@ export interface SettingsState {
   setTheme: (theme: ThemePreset) => void
   setThemeMode: (mode: ThemeMode) => void
   setEffectIntensity: (intensity: EffectIntensity) => void
-  setAutoDarkMode: (enabled: boolean) => void
   setLocale: (locale: string) => void
   setHolidayCheckResult: (date: string, holidayId: string | null) => void
 }
@@ -69,7 +66,6 @@ export const useSettingsStore = create<SettingsState>()(
       theme: 'default',
       themeMode: 'manual',
       effectIntensity: 'low',
-      autoDarkMode: false,
       locale: 'CN',
       holidayCheckDate: null,
       activeHolidayId: null,
@@ -81,12 +77,12 @@ export const useSettingsStore = create<SettingsState>()(
       setTheme: (theme) => set({ theme }),
       setThemeMode: (themeMode) => set({ themeMode }),
       setEffectIntensity: (effectIntensity) => set({ effectIntensity }),
-      setAutoDarkMode: (autoDarkMode) => set({ autoDarkMode }),
       setLocale: (locale) => set({ locale }),
       setHolidayCheckResult: (holidayCheckDate, activeHolidayId) => set({ holidayCheckDate, activeHolidayId }),
     }),
     {
       name: 'settings.v1',
+      // holidayCheckDate / activeHolidayId 参与持久化：首帧脚本据此直接应用节日主题，避免 auto 模式闪动
       partialize: (state) => ({
         defaultView: state.defaultView,
         defaultReminderMinutes: state.defaultReminderMinutes,
@@ -95,8 +91,9 @@ export const useSettingsStore = create<SettingsState>()(
         theme: state.theme,
         themeMode: state.themeMode,
         effectIntensity: state.effectIntensity,
-        autoDarkMode: state.autoDarkMode,
         locale: state.locale,
+        holidayCheckDate: state.holidayCheckDate,
+        activeHolidayId: state.activeHolidayId,
       }),
     }
   )

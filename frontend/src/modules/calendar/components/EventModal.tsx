@@ -68,7 +68,7 @@ export function EventModal({ open, eventId, onClose }: EventModalProps) {
           <DialogTitle className="flex items-center gap-2">
             {eventId ? '编辑日程' : '新建日程'}
             {isCompleted && (
-              <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100">
+              <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-success-bg text-success-fg border border-success/30">
                 已完成
               </span>
             )}
@@ -83,7 +83,7 @@ export function EventModal({ open, eventId, onClose }: EventModalProps) {
                   'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all',
                   isCompleted
                     ? 'text-foreground-muted hover:text-foreground-secondary hover:bg-hover'
-                    : 'text-emerald-600 hover:bg-emerald-50'
+                    : 'text-success-fg hover:bg-success-bg'
                 )}
               >
                 {isCompleted ? <RotateCcw className="w-3.5 h-3.5" /> : <Check className="w-3.5 h-3.5" />}
@@ -95,8 +95,8 @@ export function EventModal({ open, eventId, onClose }: EventModalProps) {
                 className={cn(
                   'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all',
                   showDelete
-                    ? 'bg-red-50 text-red-600'
-                    : 'text-foreground-muted hover:text-red-500 hover:bg-red-50'
+                    ? 'bg-error-bg text-error-fg'
+                    : 'text-foreground-muted hover:text-error-fg hover:bg-error-bg'
                 )}
               >
                 <Trash2 className="w-3.5 h-3.5" />
@@ -108,8 +108,8 @@ export function EventModal({ open, eventId, onClose }: EventModalProps) {
 
         <div className="p-6">
           {showDelete && (
-            <div className="flex items-center justify-between rounded-xl bg-red-50 border border-red-100 p-3 mb-4">
-              <span className="text-sm text-red-700 font-medium">确认删除此日程？此操作不可撤销。</span>
+            <div className="flex items-center justify-between rounded-xl bg-error-bg border border-error/30 p-3 mb-4">
+              <span className="text-sm text-error-fg font-medium">确认删除此日程？此操作不可撤销。</span>
               <div className="flex gap-2">
                 <Button type="button" variant="ghost" size="sm" onClick={() => setShowDelete(false)}>
                   取消

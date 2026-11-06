@@ -35,8 +35,8 @@ export function SidebarPet({ onNavigate }: { onNavigate?: () => void }) {
   }
 
   // 心情/饱食度颜色（共享三段色函数）
-  const moodColor = pet ? statusColor(pet.mood!) : '#9ca3af'
-  const hungerColor = pet ? statusColor(pet.hunger!) : '#9ca3af'
+  const moodColor = pet ? statusColor(pet.mood!) : 'var(--color-foreground-muted)'
+  const hungerColor = pet ? statusColor(pet.hunger!) : 'var(--color-foreground-muted)'
 
   // ── 注册宠物小窝 Zone（pet-spot）──
   // 组件生命周期 = Zone 生命周期：挂载注册、卸载注销；scroll/resize 事件驱动 rect 更新

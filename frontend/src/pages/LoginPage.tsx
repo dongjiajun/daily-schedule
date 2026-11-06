@@ -140,7 +140,7 @@ export function LoginPage() {
             {error && (
               <motion.div
                 key="error"
-                className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2.5"
+                className="text-sm text-error-fg bg-error-bg rounded-lg px-3 py-2.5"
                 initial={{ opacity: 0, height: 0, marginBottom: 0 }}
                 animate={{ opacity: 1, height: 'auto', marginBottom: 8 }}
                 exit={{ opacity: 0, height: 0, marginBottom: 0 }}
