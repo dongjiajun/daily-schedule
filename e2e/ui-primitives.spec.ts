@@ -50,7 +50,10 @@ async function seedAndOpen(page: Page, settings: Record<string, unknown>) {
   await page.addInitScript(
     ({ sessionValue, config }) => {
       localStorage.setItem('auth.v3', JSON.stringify(sessionValue))
-      localStorage.setItem('settings.v1', JSON.stringify({ state: config, version: 0 }))
+      // 仅在首次导航注入配置；reload 时保留页面内已持久化的设置（用于验证密度持久化）
+      if (!localStorage.getItem('settings.v1')) {
+        localStorage.setItem('settings.v1', JSON.stringify({ state: config, version: 0 }))
+      }
       localStorage.setItem('onboarding_done', '1')
     },
     { sessionValue: session, config: { theme: 'default', themeMode: 'manual', density: 'comfortable', ...settings } }
@@ -91,6 +94,19 @@ test.describe('设计系统原语行为', () => {
     await seedAndOpen(page, { density: 'comfortable' })
     await expect(page.locator('html')).toHaveAttribute('data-density', 'comfortable')
     expect(await segmentedHeight(page)).toBe('32px')
+  })
+
+  test('偏好设置切换紧凑密度后刷新仍保持', async ({ page }) => {
+    await seedAndOpen(page, { density: 'comfortable' })
+    await page.locator('button[title="偏好设置"]').click()
+    await page.getByRole('radio', { name: '紧凑' }).click()
+
+    await page.reload()
+    await expect(page.locator('html')).toHaveAttribute('data-density', 'compact')
+    const height = await page
+      .getByRole('radio', { name: '月' })
+      .evaluate((element) => getComputedStyle(element).height)
+    expect(height).toBe('28px')
   })
 
   test('紧凑密度 compact：分段控件高度收窄到 28px', async ({ page }) => {

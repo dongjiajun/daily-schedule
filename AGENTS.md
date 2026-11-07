@@ -205,4 +205,4 @@ API 契约版本号在三个文件中保持一致：`specs/openapi.yaml` → `ba
 ## 当前版本：v3.5.1（2026-08-17）
 
 核心能力：Event 状态闭环 + 日历拖拽改期/拉伸时长 + 标签筛选 + 5 套主题 + 节日主题自动切换 + 特效系统（6 种）+ 键盘快捷键 + JWT 自动续签 + SSE 提醒推送 + ICS 导出 + PWA + 移动端适配 + 宠物养成（区域感知游走/小窝进窝休息/日程框互动：格内物理四边绕行+吸附落地弹跳/情绪/粒子；动作动画层：eat 进食 + idle 小动作 stretch/yawn/scratch/look + 情绪眨眼过渡；昼夜节律：夜间回窝/早晨唤醒问候/午后小憩/深夜打哈欠提示；健壮性：兴趣区惰性过期 + 游走节奏与渲染解耦）+ 任务看板（三列看板+列表+拖拽）+ 微信小程序（Taro 4.2 骨架 + 微信登录：wx.login code→JWT 静默注册 + 日历月视图只读 + 任务列表：三组分组/状态移动/新建/删除 + 宠物互动：状态/创建/喂食玩耍/游走动效）+ 设计 token 契约（契约清单 × 23 套主题，ui:check 六项门禁）+ 设计系统基建（8 个组件原语 / 双密度 / 中文排版 / 视觉回归基线）
-测试覆盖：45 类 342 用例（后端 H2，`<!-- DOCS-CHECK: backend-test-classes=45 -->`）+ 53 文件 281 用例（前端 vitest，`<!-- DOCS-CHECK: frontend-test-files=53 -->`）+ 16 文件 74 用例（Playwright E2E，`<!-- DOCS-CHECK: e2e-files=16 -->`）+ 7 文件 83 用例（小程序 vitest）
+测试覆盖：45 类 342 用例（后端 H2，`<!-- DOCS-CHECK: backend-test-classes=45 -->`）+ 53 文件 284 用例（前端 vitest，`<!-- DOCS-CHECK: frontend-test-files=53 -->`）+ 16 文件 75 用例（Playwright E2E，`<!-- DOCS-CHECK: e2e-files=16 -->`）+ 7 文件 83 用例（小程序 vitest）

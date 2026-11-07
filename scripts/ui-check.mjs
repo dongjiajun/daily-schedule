@@ -16,6 +16,13 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import {
+  contrastRatio,
+  createGeometryGuard,
+  lookup,
+  readThemes as readThemeFiles,
+  resolveColor,
+} from './lib/tokens.mjs'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const CONTRACT_PATH = path.join(ROOT, 'frontend/src/core/styles/design-tokens.json')
@@ -61,77 +68,8 @@ function globToRegex(glob) {
 const WHITELIST = CONTRACT.whitelist.map((entry) => ({ ...entry, regex: globToRegex(entry.pattern) }))
 const isWhitelisted = (rel) => WHITELIST.find((entry) => entry.regex.test(rel))
 
-// ── CSS 解析 ────────────────────────────────────────────────────────────────
-function parseDeclarations(block) {
-  const map = new Map()
-  const regex = /(--color-[a-z-]+)\s*:\s*([^;]+);/g
-  let match
-  while ((match = regex.exec(block)) !== null) {
-    map.set(match[1].replace('--color-', ''), match[2].trim())
-  }
-  return map
-}
-
-function collectBlocks(css, selectorSource) {
-  const result = new Map()
-  const regex = new RegExp(selectorSource + '\\s*\\{([^}]*)\\}', 'g')
-  let match
-  while ((match = regex.exec(css)) !== null) {
-    result.set(match[1], parseDeclarations(match[2]))
-  }
-  return result
-}
-
-function readThemes() {
-  const themesCss = read(CONTRACT.themeSourceFile)
-  const holidayCss = read(CONTRACT.holidaySourceFile)
-  const rootMatch = /:root\s*\{([^}]*)\}/.exec(themesCss)
-  const sharedMatch = /\[data-theme\^="holiday-"\]\s*\{([^}]*)\}/.exec(holidayCss)
-  return {
-    rootDefaults: rootMatch ? parseDeclarations(rootMatch[1]) : new Map(),
-    sharedHoliday: sharedMatch ? parseDeclarations(sharedMatch[1]) : new Map(),
-    baseThemes: collectBlocks(themesCss, ':root\\[data-theme="([a-z-]+)"\\]'),
-    holidayThemes: collectBlocks(holidayCss, '\\[data-theme="(holiday-[a-z-]+)"\\]'),
-  }
-}
-
-function lookup(theme, token, themes) {
-  const layers = [themes.rootDefaults]
-  if (theme.startsWith('holiday-')) layers.push(themes.sharedHoliday)
-  const block = themes.baseThemes.get(theme) ?? themes.holidayThemes.get(theme)
-  if (block) layers.push(block)
-  for (let i = layers.length - 1; i >= 0; i -= 1) {
-    const value = layers[i].get(token)
-    if (value !== undefined) return value
-  }
-  return undefined
-}
-
-/** @returns {string|null} 可计算 hex；空/派生值返回 null */
-function resolveColor(theme, token, themes, depth = 0) {
-  if (depth > 6) return null
-  const raw = lookup(theme, token, themes)
-  if (raw === undefined) return null
-  const varMatch = /^var\(--color-([a-z-]+)\)$/.exec(raw)
-  if (varMatch) return resolveColor(theme, varMatch[1], themes, depth + 1)
-  if (/^#[0-9a-fA-F]{3,8}$/.test(raw)) return raw
-  return null
-}
-
-// ── 对比度 ──────────────────────────────────────────────────────────────────
-const linearize = (c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4)
-
-function luminance(hex) {
-  const value = hex.replace('#', '')
-  const [r, g, b] = [0, 2, 4].map((i) => linearize(parseInt(value.slice(i, i + 2), 16) / 255))
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b
-}
-
-function contrastRatio(a, b) {
-  const l1 = luminance(a)
-  const l2 = luminance(b)
-  return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05)
-}
+// ── CSS 解析 / 对比度：共享实现见 scripts/lib/tokens.mjs ─────────────────────
+const readThemes = () => readThemeFiles(ROOT, CONTRACT)
 
 // ── 检查 1：token 完整性 ────────────────────────────────────────────────────
 function checkCompleteness(themes, failures) {
@@ -319,35 +257,8 @@ function checkDeclaredTokens(themes, failures) {
   }
 }
 
-// ── 检查 6：几何 / 动效裸值 ─────────────────────────────────────────────────
-const RADIUS_ALLOWED = new Set([...Object.keys(CONTRACT.geometry.radius), 'none'])
-const SHADOW_ALLOWED = new Set([...Object.keys(CONTRACT.geometry.shadow), 'none', 'inner'])
-const DURATION_ALLOWED = new Set([...Object.keys(CONTRACT.motion.duration), '0'])
-const EASE_ALLOWED = new Set([...Object.keys(CONTRACT.motion.ease), 'linear', 'in', 'out', 'in-out'])
-
-/** 返回违规描述；合法返回 null（token 已去掉变体前缀与透明度后缀） */
-function geometryViolation(token) {
-  const radius = /^rounded(?:-(?:t|r|b|l|tl|tr|bl|br))?-([a-z0-9[\]%().-]+)$/.exec(token)
-  if (radius) {
-    if (/^[\[]/.test(radius[1])) return `圆角使用了契约外的任意值（${radius[1]}）`
-    if (!RADIUS_ALLOWED.has(radius[1])) return `圆角档位 ${radius[1]} 不在契约内`
-    return null
-  }
-  const shadow = /^shadow-([a-z0-9[\]%().-]+)$/.exec(token)
-  if (shadow) {
-    if (/^[\[]/.test(shadow[1])) return `阴影使用了契约外的任意值（${shadow[1]}）`
-    if (!SHADOW_ALLOWED.has(shadow[1])) return `阴影档位 ${shadow[1]} 不在契约内`
-    return null
-  }
-  const duration = /^duration-([a-z0-9[\]%().-]+)$/.exec(token)
-  if (duration) {
-    if (!DURATION_ALLOWED.has(duration[1])) return `动效时长 ${duration[1]} 不在契约内`
-    return null
-  }
-  const ease = /^ease-([a-z-]+)$/.exec(token)
-  if (ease && !EASE_ALLOWED.has(ease[1])) return `动效曲线 ${ease[1]} 不在契约内`
-  return null
-}
+// ── 检查 6：几何 / 动效裸值（共享判定器，允许集合来自契约） ─────────────────
+const geometryGuard = createGeometryGuard(CONTRACT)
 
 function checkGeometryAndMotion(failures) {
   const hits = []
@@ -357,7 +268,7 @@ function checkGeometryAndMotion(failures) {
       const lines = read(rel).split(/\r?\n/)
       lines.forEach((line, index) => {
         for (const { raw, token } of splitTokens(line)) {
-          const violation = geometryViolation(token)
+          const violation = geometryGuard.geometryViolation(token)
           if (violation) hits.push(`${rel}:${index + 1} ${violation}（${raw}）`)
         }
       })
@@ -425,12 +336,12 @@ function selfTest() {
   assert(findUnregisteredDeclarations(deadThemes).has('primary'), '未注册的自定义属性应被判为死 token')
 
   // 失败路径 5：几何/动效裸值
-  assert(geometryViolation('rounded-3xl') !== null, 'rounded-3xl 应报违规')
-  assert(geometryViolation('rounded-lg') === null, 'rounded-lg 应合法')
-  assert(geometryViolation('shadow-md') !== null, 'shadow-md 应报违规')
-  assert(geometryViolation('shadow-card') === null, 'shadow-card 应合法')
-  assert(geometryViolation('duration-150') !== null, 'duration-150 应报违规')
-  assert(geometryViolation('duration-fast') === null, 'duration-fast 应合法')
+  assert(geometryGuard.geometryViolation('rounded-3xl') !== null, 'rounded-3xl 应报违规')
+  assert(geometryGuard.geometryViolation('rounded-lg') === null, 'rounded-lg 应合法')
+  assert(geometryGuard.geometryViolation('shadow-md') !== null, 'shadow-md 应报违规')
+  assert(geometryGuard.geometryViolation('shadow-card') === null, 'shadow-card 应合法')
+  assert(geometryGuard.geometryViolation('duration-150') !== null, 'duration-150 应报违规')
+  assert(geometryGuard.geometryViolation('duration-fast') === null, 'duration-fast 应合法')
 
   console.log('ui-check self-test: 通过')
 }

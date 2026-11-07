@@ -1,4 +1,6 @@
 import { test, expect } from '@playwright/test'
+import fs from 'node:fs'
+import path from 'node:path'
 
 /**
  * 主题 token 契约的浏览器侧验证（change: ui-token-contract）。
@@ -7,16 +9,11 @@ import { test, expect } from '@playwright/test'
 
 const BASE_THEMES = ['default', 'warm', 'nature', 'dark', 'lavender'] as const
 
-const CRITICAL_TOKENS = [
-  '--color-bg',
-  '--color-surface',
-  '--color-foreground',
-  '--color-foreground-muted',
-  '--color-border-strong',
-  '--color-success-fg',
-  '--color-error-fg',
-  '--color-info-fg',
-]
+/** token 清单唯一来源：design-tokens.json（避免 E2E 硬编码清单随契约漂移） */
+const CONTRACT = JSON.parse(
+  fs.readFileSync(path.resolve(__dirname, '../frontend/src/core/styles/design-tokens.json'), 'utf8')
+) as { tokens: Array<{ name: string }> }
+const THEME_TOKENS = CONTRACT.tokens.map((token) => `--color-${token.name}`)
 
 interface PersistedSettings {
   state: Record<string, unknown>
@@ -36,7 +33,7 @@ async function readTokens(page: import('@playwright/test').Page): Promise<Array<
   return page.evaluate((names: string[]) => {
     const style = getComputedStyle(document.documentElement)
     return names.map((name) => [name, style.getPropertyValue(name).trim()] as [string, string])
-  }, CRITICAL_TOKENS)
+  }, THEME_TOKENS)
 }
 
 test.describe('UI token 主题契约', () => {

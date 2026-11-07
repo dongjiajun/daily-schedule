@@ -94,3 +94,13 @@ describe('TaskCard', () => {
     await waitFor(() => expect(screen.getByText('已撤销删除')).toBeInTheDocument())
   })
 })
+
+describe('TaskCard 优先级配色', () => {
+  it('URGENT 使用 error 语义色、MEDIUM 使用 info 语义色', () => {
+    const { rerender } = render(<TaskCard task={{ ...mockTask, priority: 'URGENT' }} onEdit={vi.fn()} />, { wrapper })
+    expect(screen.getByText('紧急').className).toContain('bg-error')
+
+    rerender(<TaskCard task={{ ...mockTask, priority: 'MEDIUM' }} onEdit={vi.fn()} />)
+    expect(screen.getByText('中').className).toContain('bg-info')
+  })
+})

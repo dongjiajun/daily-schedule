@@ -258,9 +258,9 @@ ModuleDefinition {
 ## 测试
 
 - **后端**: 45 个测试类，342 个用例，0 失败。H2 内存数据库（MySQL 兼容模式）。`<!-- DOCS-CHECK: backend-test-classes=45 -->`
-- **前端**: 53 个测试文件，281 个用例，0 失败。vitest + jsdom。`<!-- DOCS-CHECK: frontend-test-files=53 -->`
+- **前端**: 53 个测试文件，284 个用例，0 失败。vitest + jsdom。`<!-- DOCS-CHECK: frontend-test-files=53 -->`
 - **小程序**: 7 个测试文件，83 个用例（vitest 纯逻辑——shared 跨端复用回归 + wechat-auth 登录响应解析 + miniprogram-calendar 日期纯函数/数据层/请求封装 + miniprogram-todo 任务数据层分组/校验/四函数请求路径 + miniprogram-pet 宠物数据层校验/换算纯函数/三函数请求路径与 404 业务态）。Taro 组件渲染级测试待业务变更引入
-- **E2E**: 16 个 spec 文件，74 条 Playwright 用例（auth/calendar/task/pet/theme/primitives + 5 条 `@visual` 截图基线），CI 集成。webServer 复用后台启动的后端 + 自动启动前端 Vite；视觉基线本地执行（跨 OS 渲染差异）。`<!-- DOCS-CHECK: e2e-files=16 -->`
+- **E2E**: 16 个 spec 文件，75 条 Playwright 用例（auth/calendar/task/pet/theme/primitives + 5 条 `@visual` 截图基线），CI 集成。webServer 复用后台启动的后端 + 自动启动前端 Vite；视觉基线本地执行（跨 OS 渲染差异）。`<!-- DOCS-CHECK: e2e-files=16 -->`
 - **CI**: GitHub Actions — version-check（版本 + 文档一致性）→ openspec-validation（OpenSpec 十检：validate --all --strict + doctor + 主 spec 无 delta 头 + CLI 版本单源（安装版本 = 根 `package.json` 锁定 = AGENTS.md 声明）+ 归档完整性 validate --archived + test-plan 内容门禁（模式 A 场景↔命名测试 / 模式 B 场景↔等价机械验证 / 归档无残留 🔴）+ AGENTS.md 序列一致性守卫 + 机制层完整性（`.agents/skills` `generatedBy`=`package.json`、`openspec update --dry-run` 无变更、`.dsh` 不被跟踪）+ 模板单源同步（`scripts/sync-schema-templates.mjs --check`）+ 指令配置预算（context/rules/operations guidance，第 10 检）+ 需求正文 ≤500 字符（1.14.1+ strict））→ backend mvn test → frontend lint → ui:check（设计 token 门禁：契约完整性/对比度/裸色值/未知 token/CSS 死 token/几何与动效）→ test → build（含 SDK freshness）四道阻断门禁 + E2E（`continue-on-error` 软性，不阻断）
 - **运行**: `cd backend && mvn test` / `cd frontend && pnpm run test`
 
