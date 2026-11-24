@@ -15,11 +15,15 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class PetDomainServiceTest {
 
+    private static final ZoneId SHANGHAI = ZoneId.of("Asia/Shanghai");
+    private static final Clock FIXED_CLOCK = Clock.fixed(Instant.parse("2026-08-15T10:00:00Z"), SHANGHAI);
+    private static final LocalDateTime FIXED_NOW = LocalDateTime.now(FIXED_CLOCK);
+
     private PetDomainService domainService;
 
     @BeforeEach
     void setUp() {
-        domainService = new PetDomainService();
+        domainService = new PetDomainService(FIXED_CLOCK);
     }
 
     @Test
@@ -82,7 +86,7 @@ class PetDomainServiceTest {
         Pet pet = new Pet();
         pet.setMood(100);
         pet.setHunger(100);
-        pet.setLastInteractedAt(LocalDateTime.now().minusHours(1));
+        pet.setLastInteractedAt(FIXED_NOW.minusHours(1));
 
         domainService.decay(pet);
         assertThat(pet.getMood()).isEqualTo(99);
@@ -95,7 +99,7 @@ class PetDomainServiceTest {
         Pet pet = new Pet();
         pet.setMood(100);
         pet.setHunger(100);
-        pet.setLastInteractedAt(LocalDateTime.now().minusHours(2));
+        pet.setLastInteractedAt(FIXED_NOW.minusHours(2));
 
         domainService.decay(pet);
         assertThat(pet.getMood()).isEqualTo(98);
@@ -111,7 +115,7 @@ class PetDomainServiceTest {
         Pet pet = new Pet();
         pet.setMood(100);
         pet.setHunger(100);
-        pet.setLastInteractedAt(LocalDateTime.now().minusHours(1));
+        pet.setLastInteractedAt(FIXED_NOW.minusHours(1));
 
         domainService.decay(pet);
         assertThat(pet.getMood()).isEqualTo(96);
@@ -124,7 +128,7 @@ class PetDomainServiceTest {
         Pet pet = new Pet();
         pet.setMood(80);
         pet.setHunger(80);
-        pet.setLastInteractedAt(LocalDateTime.now().minusSeconds(30));
+        pet.setLastInteractedAt(FIXED_NOW.minusSeconds(30));
 
         domainService.decay(pet);
         assertThat(pet.getMood()).isEqualTo(80);
@@ -134,7 +138,7 @@ class PetDomainServiceTest {
     @Test
     @DisplayName("衰减 → 注入固定 Clock 确定性计算")
     void decay_withFixedClock_isDeterministic() {
-        Clock fixedClock = Clock.fixed(Instant.parse("2026-08-15T10:00:00Z"), ZoneId.of("Asia/Shanghai"));
+        Clock fixedClock = Clock.fixed(Instant.parse("2026-08-15T10:00:00Z"), SHANGHAI);
         PetDomainService fixedService = new PetDomainService(fixedClock);
 
         Pet pet = new Pet();
@@ -146,6 +150,21 @@ class PetDomainServiceTest {
         fixedService.decay(pet);
         assertThat(pet.getMood()).isEqualTo(96);
         assertThat(pet.getHunger()).isEqualTo(94);
+    }
+
+    @Test
+    @DisplayName("衰减 → 无参构造显式使用上海时区时钟（不随 JVM 默认时区漂移）")
+    void decay_defaultConstructor_usesShanghaiClock() {
+        PetDomainService defaultService = new PetDomainService();
+
+        Pet pet = new Pet();
+        pet.setMood(100);
+        pet.setHunger(100);
+        pet.setLastInteractedAt(LocalDateTime.now(SHANGHAI).minusHours(1));
+
+        defaultService.decay(pet);
+        assertThat(pet.getMood()).isEqualTo(99);
+        assertThat(pet.getHunger()).isEqualTo(99);
     }
 
     @Test

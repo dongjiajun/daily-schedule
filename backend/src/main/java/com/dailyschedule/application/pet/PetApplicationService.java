@@ -7,7 +7,6 @@ import com.dailyschedule.infrastructure.security.CurrentUserService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -51,7 +50,7 @@ public class PetApplicationService {
         pet.setCoins(100);
         pet.setExperience(0);
         pet.setLevel(1);
-        pet.setLastInteractedAt(LocalDateTime.now());
+        pet.setLastInteractedAt(domainService.now());
 
         if (!pet.isValid()) {
             throw new IllegalArgumentException("宠物数据不合法：名称不能为空且不超过30字符");
@@ -100,7 +99,7 @@ public class PetApplicationService {
         }
 
         InteractionResult result = domainService.interact(pet, type, item);
-        pet.applyInteraction(result);
+        pet.applyInteraction(result, domainService.now());
 
         // 记录互动
         interactionRepository.save(PetInteraction.of(pet.getId(), type, result));
@@ -133,7 +132,7 @@ public class PetApplicationService {
             // 购买即装备：覆盖旧装备（无库存概念）
             pet.setCurrentAccessory(item.getId());
         }
-        pet.applyInteraction(purchaseResult);
+        pet.applyInteraction(purchaseResult, domainService.now());
 
         petRepository.save(pet);
 
@@ -178,7 +177,7 @@ public class PetApplicationService {
         }
 
         InteractionResult interaction = domainService.grant(pet, source);
-        pet.applyInteraction(interaction);
+        pet.applyInteraction(interaction, domainService.now());
 
         petRepository.save(pet);
         rewardRepository.save(PetReward.of(pet.getId(), source, refId, interaction));

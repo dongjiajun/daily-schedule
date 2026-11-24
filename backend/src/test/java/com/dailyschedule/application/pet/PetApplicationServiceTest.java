@@ -11,7 +11,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 
@@ -327,6 +330,39 @@ class PetApplicationServiceTest {
         assertThat(result.isGranted()).isTrue();
         assertThat(result.getMoodChange()).isEqualTo(-10);
         assertThat(result.getNewMood()).isZero();
+    }
+
+    @Test
+    @DisplayName("create/interact → 统一使用注入 Clock 的当前时间 → 任意 JVM 时区下零误衰减")
+    void createAndInteract_useDomainClock_noPhantomDecayUnderAnyTimezone() {
+        Clock fixedClock = Clock.fixed(Instant.parse("2026-08-15T10:00:00Z"), ZoneId.of("Asia/Shanghai"));
+        PetDomainService fixedDomain = new PetDomainService(fixedClock);
+        PetApplicationService fixedService = new PetApplicationService(
+            petRepository, fixedDomain, accessoryRepository, interactionRepository, rewardRepository, currentUserService);
+        LocalDateTime expectedShanghaiNow = LocalDateTime.of(2026, 8, 15, 18, 0);
+
+        when(petRepository.findByUserId(1L)).thenReturn(Optional.empty());
+        when(petRepository.save(any(Pet.class))).thenAnswer(inv -> {
+            Pet saved = inv.getArgument(0);
+            if (saved.getId() == null) saved.setId(1L);
+            return saved;
+        });
+
+        Pet created = fixedService.create(PetSpecies.ORANGE_CAT, "大橘");
+        assertThat(created.getLastInteractedAt()).isEqualTo(expectedShanghaiNow);
+        fixedDomain.decay(created);
+        assertThat(created.getMood()).isEqualTo(100);
+        assertThat(created.getHunger()).isEqualTo(100);
+
+        // 模拟历史旧时间戳后触发 PLAY 互动，lastInteractedAt 应更新为 fixedClock 对应的 18:00
+        created.setLastInteractedAt(LocalDateTime.of(2026, 8, 15, 10, 0));
+        when(petRepository.findByUserId(1L)).thenReturn(Optional.of(created));
+        fixedService.interact(InteractionType.PLAY, null);
+        assertThat(created.getLastInteractedAt()).isEqualTo(expectedShanghaiNow);
+
+        fixedDomain.decay(created);
+        assertThat(created.getMood()).isEqualTo(100);
+        assertThat(created.getHunger()).isEqualTo(90);
     }
 
     private ShopItem sampleFood() {

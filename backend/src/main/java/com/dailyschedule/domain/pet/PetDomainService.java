@@ -93,12 +93,17 @@ public class PetDomainService {
         return result;
     }
 
+    /** 返回当前领域时钟对应的本地时间（默认 Asia/Shanghai，可注入 Clock 测试）。 */
+    public LocalDateTime now() {
+        return LocalDateTime.now(clock);
+    }
+
     /**
      * 计算时间衰减量。
      * mood/hunger 按配置的小时速率衰减（默认 1.0/1.5 每小时），均不得低于 0。
      */
     public void decay(Pet pet) {
-        LocalDateTime now = LocalDateTime.now(clock);
+        LocalDateTime now = now();
         LocalDateTime last = pet.getLastInteractedAt();
         if (last == null) return;
 

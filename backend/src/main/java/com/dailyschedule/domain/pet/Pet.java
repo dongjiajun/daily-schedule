@@ -1,6 +1,7 @@
 package com.dailyschedule.domain.pet;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 public class Pet {
     private Long id;
@@ -26,11 +27,15 @@ public class Pet {
     }
 
     public void applyInteraction(InteractionResult result) {
+        applyInteraction(result, LocalDateTime.now(ZoneId.of("Asia/Shanghai")));
+    }
+
+    public void applyInteraction(InteractionResult result, LocalDateTime interactedAt) {
         this.mood = Math.max(0, Math.min(100, this.mood + result.getMoodChange()));
         this.hunger = Math.max(0, Math.min(100, this.hunger + result.getHungerChange()));
         this.experience += result.getExperienceGain();
         this.coins += result.getCoinChange();
-        this.lastInteractedAt = LocalDateTime.now();
+        this.lastInteractedAt = interactedAt;
         // 重新计算等级
         this.level = PetDomainService.calculateLevel(this.experience);
         // 回填结果中的新值

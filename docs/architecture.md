@@ -259,7 +259,7 @@ ModuleDefinition {
 
 ## 测试
 
-- **后端**: 45 个测试类，352 个用例，0 失败。H2 内存数据库（MySQL 兼容模式）。`<!-- DOCS-CHECK: backend-test-classes=45 -->`
+- **后端**: 45 个测试类，354 个用例，0 失败。H2 内存数据库（MySQL 兼容模式）。`<!-- DOCS-CHECK: backend-test-classes=45 -->`
 - **前端**: 55 个测试文件，289 个用例，0 失败。vitest + jsdom。`<!-- DOCS-CHECK: frontend-test-files=55 -->`
 - **小程序**: 8 个测试文件，86 个用例（vitest 纯逻辑——shared 跨端复用回归 + wechat-auth 登录响应解析 + miniprogram-calendar 日期纯函数/数据层/请求封装 + miniprogram-todo 任务数据层分组/校验/四函数请求路径 + miniprogram-pet 宠物数据层校验/换算纯函数/三函数请求路径与 404 业务态 + 页面配置断言）。Taro 组件渲染级测试待业务变更引入
 - **E2E**: 16 个 spec 文件，75 条 Playwright 用例（auth/calendar/task/pet/theme/primitives + 5 条 `@visual` 截图基线），CI 集成。webServer 复用后台启动的后端 + 自动启动前端 Vite；视觉基线本地执行（跨 OS 渲染差异）。`<!-- DOCS-CHECK: e2e-files=16 -->`
