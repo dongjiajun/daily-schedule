@@ -65,7 +65,7 @@
 | password_hash | VARCHAR(255) | NOT NULL | | BCrypt 加密 |
 | display_name | VARCHAR(50) | | NULL | v3.0 新增 |
 | avatar_url | VARCHAR(255) | | NULL | v3.0 新增 |
-| status | VARCHAR(20) | NOT NULL | 'ACTIVE' | v3.0 新增；ACTIVE / INACTIVE |
+| status | VARCHAR(20) | NOT NULL | 'ACTIVE' | v3.0 新增；ACTIVE / DISABLED / DELETED / SYSTEM |
 | last_login_at | DATETIME | | NULL | v3.0 新增 |
 | created_at | DATETIME | NOT NULL | NOW() | |
 | updated_at | DATETIME | NOT NULL | NOW() ON UPDATE | |
@@ -140,6 +140,8 @@
 | V6 | `V6__create_task_tables.sql` | 新增任务看板两张表：tasks / task_tags |
 | V7 | `V7__create_pet_rewards.sql` | 新增宠物奖励发放记录表 pet_rewards（经济闭环幂等键） |
 | V8 | `V8__seed_pet_accessories.sql` | 新增 11 个节日配饰种子（ACCESSORY，纯外观，名称对齐前端 themeMapping） |
+| V9 | `V9__add_user_openid.sql` | user 表新增 `openid` 列及唯一索引 `uk_user_openid`（微信小程序登录） |
+| V10 | `V10__make_user_email_nullable.sql` | `user.email` 改为可空（微信静默注册用户无邮箱） |
 
 
 

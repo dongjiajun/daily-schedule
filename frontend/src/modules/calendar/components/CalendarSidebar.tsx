@@ -5,6 +5,7 @@ import { useCategories } from '../hooks/useCategories'
 import { useTags } from '../hooks/useTags'
 import { useEvents } from '../hooks/useEvents'
 import { useCalendarStore } from '../store/calendarStore'
+import { useShellStore } from '@/core/store/shellStore'
 import { downloadICS } from '../lib/ics'
 import { Button } from '@/core/components/ui/button'
 import { Card } from '@/core/components/ui/card'
@@ -44,8 +45,10 @@ export function CalendarSidebar({ onNavigate }: { onNavigate?: () => void }) {
     currentDate, view,
     filterCategoryId, filterTagId, searchKeyword,
     setFilterCategory, setFilterTag, setSearchKeyword,
-    openCreateModal, openOnboarding, openManage, setShowShortcuts,
+    openCreateModal, openManage,
   } = useCalendarStore()
+  const openOnboarding = useShellStore((s) => s.openOnboarding)
+  const setShowShortcuts = useShellStore((s) => s.setShowShortcuts)
   const { data: visibleEvents } = useEvents(currentDate, view, {
     categoryId: filterCategoryId,
     tagId: filterTagId,

@@ -33,7 +33,8 @@ ErrorBoundary（最外层错误捕获）
 |------|------|------|
 | `/` | HomePage (calendar 模块) | 主日历页面（AuthGuard 保护，未认证内联渲染 LoginPage） |
 | `/todo` | TodoPage (todo 模块) | 任务看板页面（看板+列表双视图） |
-| 未来 | pet/habits 等 | 各模块通过 `moduleRegistry.register()` 声明路由 |
+| `/pet` | PetPage (pet 模块) | 宠物管理页面（头像/状态/喂食/商店/配饰装备与取下） |
+| 未来 | habits 等 | 各模块通过 `moduleRegistry.register()` 声明路由 |
 
 ## 目录结构
 
@@ -53,10 +54,12 @@ frontend/src/
 │   │   ├── eventBus.ts      # EventBus 单例
 │   │   ├── moduleRegistry.ts
 │   │   ├── unwrap.ts
-│   │   └── utils.ts
+│   │   ├── utils.ts
+│   │   └── zoneRegistry.ts  # 兴趣区注册表（user-interaction/pet-spot/calendar-cell）
 │   ├── store/               # 跨模块 Zustand stores
 │   │   ├── authStore.ts
-│   │   └── settingsStore.ts
+│   │   ├── settingsStore.ts
+│   │   └── shellStore.ts    # 全局壳层 UI 状态（引导/快捷键/移动端侧栏）
 │   └── styles/
 │       ├── themes.css       # 5 套主题定义（<!-- DOCS-CHECK: theme-sets=5 -->）
 │       └── holiday-themes.css # 18 套节日主题（<!-- DOCS-CHECK: holiday-themes=18 -->）
@@ -87,7 +90,6 @@ frontend/src/
 │       │                     #   PetStatus/PetSelection/ParticleBurst/
 │       │                     #   SidebarPet/PetPage
 │       ├── hooks/usePet.ts
-│       ├── lib/zoneRegistry.ts   # 兴趣区注册表（user-interaction/pet-spot/calendar-cell）
 │       ├── lib/statusColor.ts    # 状态三段色共享函数
 │       └── store/petStore.ts     # 含浮动数值反馈（feedbackTrigger）+ 动作维度（action）
 │                                 #   + persist 持久化（v3.5.1：位置/朝向/休息态/稳定情绪白名单）
@@ -164,7 +166,8 @@ apps/miniprogram/
 | 工具 | 用途 | 存储内容 |
 |------|------|----------|
 | Zustand (`authStore`) | 认证状态 | accessToken、refreshToken、expiresAt、user；localStorage `auth.v3`；logout 调用 `/auth/logout` |
-| Zustand (`calendarStore`) | 日历 UI 状态 | 当前日期、视图、弹窗状态、分类/标签筛选、搜索词、管理弹窗、快捷键帮助、移动端侧栏 |
+| Zustand (`calendarStore`) | 日历 UI 状态 | 当前日期、视图、弹窗状态、分类/标签筛选、搜索词、管理弹窗 |
+| Zustand (`shellStore`) | 全局壳层状态 | 新手引导开关、快捷键帮助弹窗、移动端侧栏抽屉 |
 | Zustand (`settingsStore`) | 用户偏好（persist） | 默认视图、默认提醒、快速新建时长、是否显示已完成、主题预设（5 套）+ 主题标签/颜色映射；localStorage `settings.v1` |
 | React Query | 服务端数据 | 事件列表(按范围+筛选缓存)、分类列表、标签列表 |
 
@@ -208,7 +211,7 @@ apps/miniprogram/
 ### 宠物模块 (`modules/pet/`)
 
 - **RoamingPet** (`modules/pet/components/RoamingPet.tsx`) — v2 游走宠物：以独立角色精灵在页面自由漫步，`pointer-events:none` 穿透，点击摸头/双击玩耍（jump 动作），hover 状态浮窗（含"互动"按钮打开 PetMenu 与"回窝"按钮）；朝向翻转（scaleX）仅作用于宠物身体，气泡/hover 浮窗文字保持正读；鼠标停留/点击/输入触发兴趣区域（Zone）吸引；渲染浮动数值反馈（FloatingText）；**action 接线**：移动→walk、进窝→sleep（蜷缩+Zzz）、双击→jump、移动结束 `onAnimationComplete` 回 idle/sleep；**空闲小动作调度器**：8-18s 随机选 stretch/yawn/scratch/look 播放一次（守卫：仅平静 idle 且非休息非格内非行走）；**昼夜节律**（`determineMode` 输出 period：night/morning/afternoon/daytime）：夜间（≥23）立即走向小窝进窝睡觉（不等 2 分钟）、早晨（7-9）睡眠中唤醒 + "早上好"气泡（每日一次）、午后（12-14）低概率小憩 rest 90s 原地打盹、深夜未睡低概率打哈欠提示（10min 冷却）；**格内物理状态机**（rAF 帧循环，替换旧左右横移）：进格→落向最近底边吸附点（重力落地+落定弹跳）→沿四边连续绕行（14 吸附点含四角转角，每段移动都在边上不斜穿），接近目标加速滑入+精确吸附落定，到达点概率分流（40% 跳跃/30% 短暂停留/30% 直接续走），完成度决定风格（快=绕圈+跳跃+happy / 慢=绕四边+idle_variant），绕 2 圈自然退出（45s 兜底防卡死）或离开格子强制退出恢复游走；贴左/右壁时形象横过来（rotate ±90° + 0.15s 过渡）
-- **ZoneRegistry** (`modules/pet/lib/zoneRegistry.ts`) — 区域注册表：Zone 生命周期管理（注册/更新/移除/decay 自动衰减），类型化区域（user-interaction/pet-spot/calendar-cell）供区域感知机制消费
+- **ZoneRegistry** (`core/lib/zoneRegistry.ts`) — 区域注册表：Zone 生命周期管理（注册/更新/移除/decay 自动衰减），类型化区域（user-interaction/pet-spot/calendar-cell）供跨模块区域感知消费
 - **PetAvatar** (`modules/pet/components/PetAvatar.tsx`) — 宠物形象渲染器：SVG 插画（SvgAvatar）+ 地面阴影椭圆（jump 时缩小变淡）；从 petStore 读 emotionState + action 双维；v3.5 起经 `useEquippedAccessoryName` 解析当前配饰并传入 SvgAvatar
 - **SvgAvatar** (`modules/pet/components/SvgAvatar.tsx`) — SVG 插画引擎：根据 species + emotionState + action 选择对应插画（橘猫/柴犬 × 8 种情绪 × 11 种动作）；`data-action` 属性驱动 CSS 动画层（呼吸/眨眼/步伐/蜷缩/Zzz/跳跃/进食咀嚼/伸懒腰/打哈欠/挠耳/张望）；**情绪切换眨眼过渡**：emotion 变化先闭眼（data-blink 驱动 50ms 一次性动画）再换表情参数睁开，消除换脸感；**装扮层（v3.5）**：`accessory` prop 相对容器包裹——皮肤类对基础插画应用 CSS filter，其余经 `AccessoryOverlay` 同 viewBox 叠放
 - **AccessoryOverlay** (`modules/pet/components/AccessoryOverlay.tsx`) — 配饰叠加层（v3.5 新增）：帽子（巫师帽/新年帽/火鸡帽/绿帽子）/角（麋鹿角）/耳（兔耳朵）/发饰（樱花）/背包（粽子）五类 SVG 叠放；皮肤类返回 null（filter 由 SvgAvatar 应用）；未知名称静默回退
@@ -268,10 +271,10 @@ apps/miniprogram/
 
 ## 模块注册中心
 
-- **ModuleRegistry** (`core/lib/moduleRegistry.ts`) — 管理插件式架构中所有模块的生命周期
+- **ModuleRegistry** (`core/lib/moduleRegistry.ts`) — 管理插件式架构中所有模块的生命周期（路由、`sidebarComponent`、`globalOverlayComponent` 与 `sidebarFooterComponent` 扩展槽位）
 - **EventBus** (`core/lib/eventBus.ts`) — 类型安全的同步事件总线（单例，从 `@daily-schedule/shared` 导入 EventBus 类）
 - **queryClient** (`core/lib/queryClient.ts`) — React Query 客户端单例（v3.4 新增）：供非组件上下文（petEventBridge 事件桥接）安全 invalidate 查询缓存，App.tsx 的 QueryClientProvider 引用同一实例
-- 模块间不允许直接 import store/组件，仅通过事件总线通信
+- 模块间及 `core/`/`components/layout/` 与 `modules/` 间不允许直接相互 import（由 `moduleBoundary.test.ts` 静态守卫），仅通过事件总线与扩展槽位通信
 
 ## 工具库
 

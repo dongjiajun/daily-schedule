@@ -1,5 +1,6 @@
 package com.dailyschedule.application.tag;
 
+import com.dailyschedule.api.exception.BusinessException;
 import com.dailyschedule.api.exception.ResourceNotFoundException;
 import com.dailyschedule.domain.tag.Tag;
 import com.dailyschedule.domain.tag.TagRepository;
@@ -62,6 +63,37 @@ class TagApplicationServiceTest {
         assertThatThrownBy(() -> appService.create(bad))
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessageContaining("名称不能为空");
+        verify(tagRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("create → 名称已存在抛出 BusinessException（409）")
+    void create_duplicateName_shouldThrow() {
+        Tag dup = new Tag("紧急", "#ff4d4f");
+        dup.setUserId(1L);
+        when(tagRepository.existsByName("紧急", 1L)).thenReturn(true);
+
+        assertThatThrownBy(() -> appService.create(dup))
+            .isInstanceOf(BusinessException.class)
+            .hasMessageContaining("已存在");
+        verify(tagRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("update → 名称冲突抛出 BusinessException（409）")
+    void update_duplicateName_shouldThrow() {
+        Tag existing = new Tag("紧急", "#ff0000");
+        existing.setId(1L);
+        existing.setUserId(1L);
+        when(tagRepository.findById(1L)).thenReturn(Optional.of(existing));
+        when(tagRepository.existsByNameExcludingId("重要", 1L, 1L)).thenReturn(true);
+
+        Tag patch = new Tag();
+        patch.setName("重要");
+
+        assertThatThrownBy(() -> appService.update(1L, patch, 1L))
+            .isInstanceOf(BusinessException.class)
+            .hasMessageContaining("已存在");
         verify(tagRepository, never()).save(any());
     }
 

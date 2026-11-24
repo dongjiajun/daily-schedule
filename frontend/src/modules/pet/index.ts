@@ -2,6 +2,8 @@ import { Cat } from 'lucide-react'
 import type { ModuleDefinition } from '@/core/lib/moduleRegistry'
 import { petRoutes } from './routes'
 import { registerPetEventListeners, unregisterPetEventListeners } from './lib/petEventBridge'
+import { RoamingPet } from './components/RoamingPet'
+import { SidebarPet } from './components/SidebarPet'
 
 export const petModule: ModuleDefinition = {
   id: 'pet',
@@ -10,6 +12,8 @@ export const petModule: ModuleDefinition = {
   icon: Cat,
   order: 2,
   routes: petRoutes,
+  globalOverlayComponent: RoamingPet,
+  sidebarFooterComponent: SidebarPet,
   onInit: () => {
     registerPetEventListeners()
   },

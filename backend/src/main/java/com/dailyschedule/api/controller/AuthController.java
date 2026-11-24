@@ -14,11 +14,13 @@ import com.dailyschedule.application.auth.Tokens;
 import com.dailyschedule.application.auth.WechatLoginCommand;
 import com.dailyschedule.infrastructure.security.CurrentUserService;
 import com.dailyschedule.infrastructure.security.JwtAuthFilter;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
@@ -33,6 +35,9 @@ public class AuthController implements AuthApi {
 
     private final AuthApplicationService authAppService;
     private final CurrentUserService currentUserService;
+
+    @Value("${app.cookie.secure:false}")
+    private boolean cookieSecure = false;
 
     public AuthController(AuthApplicationService authAppService,
                           CurrentUserService currentUserService) {
@@ -100,26 +105,27 @@ public class AuthController implements AuthApi {
     private void setSseCookie(String accessToken) {
         HttpServletResponse resp = currentResponse();
         if (resp == null) return;
-        Cookie c = new Cookie(JwtAuthFilter.SSE_COOKIE, accessToken);
-        c.setHttpOnly(true);
-        c.setSecure(false);   // 生产部署 HTTPS 时改为 true（建议放 application-prod.yml 控制）
-        c.setPath("/api/v1/sse");
-        c.setMaxAge(60 * 60); // 1h；SSE 端点本身仍可正常重连，重连时若 access 已失效，前端走 refresh 后重新建立连接
-        resp.addCookie(c);
-        resp.addHeader("Set-Cookie", c.getName() + "=" + c.getValue()
-            + "; Path=" + c.getPath() + "; HttpOnly; SameSite=Lax; Max-Age=" + c.getMaxAge());
+        ResponseCookie cookie = ResponseCookie.from(JwtAuthFilter.SSE_COOKIE, accessToken)
+            .httpOnly(true)
+            .secure(cookieSecure)
+            .path("/api/v1/sse")
+            .sameSite("Lax")
+            .maxAge(60 * 60) // 1h；SSE 端点本身仍可正常重连，重连时若 access 已失效，前端走 refresh 后重新建立连接
+            .build();
+        resp.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
     }
 
     private void clearSseCookie() {
         HttpServletResponse resp = currentResponse();
         if (resp == null) return;
-        Cookie c = new Cookie(JwtAuthFilter.SSE_COOKIE, "");
-        c.setHttpOnly(true);
-        c.setPath("/api/v1/sse");
-        c.setMaxAge(0);
-        resp.addCookie(c);
-        resp.addHeader("Set-Cookie", JwtAuthFilter.SSE_COOKIE
-            + "=; Path=/api/v1/sse; HttpOnly; SameSite=Lax; Max-Age=0");
+        ResponseCookie cookie = ResponseCookie.from(JwtAuthFilter.SSE_COOKIE, "")
+            .httpOnly(true)
+            .secure(cookieSecure)
+            .path("/api/v1/sse")
+            .sameSite("Lax")
+            .maxAge(0)
+            .build();
+        resp.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
     }
 
     private static HttpServletResponse currentResponse() {

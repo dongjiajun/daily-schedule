@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useCallback } from 'react'
 import { Calendar, dayjsLocalizer, type ToolbarProps, type View } from 'react-big-calendar'
 import _withDragAndDrop, { type withDragAndDropProps } from 'react-big-calendar/lib/addons/dragAndDrop'
-import { registerZone, removeZone, getZones } from '@/modules/pet/lib/zoneRegistry'
+import { registerZone, removeZone, getZones } from '@/core/lib/zoneRegistry'
 
 // Vite CJS 预打包将 exports.default 包装为 ESM default，导致拿到的是
 /* { default: fn, __esModule: true } 而非函数本身，此处手动解包 */

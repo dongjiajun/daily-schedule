@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, act } from '@testing-library/react'
-import { getZones } from '../../lib/zoneRegistry'
+import { getZones } from '@/core/lib/zoneRegistry'
 
 vi.mock('react-router-dom', () => ({
   useNavigate: () => vi.fn(),

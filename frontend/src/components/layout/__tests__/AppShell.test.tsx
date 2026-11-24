@@ -1,24 +1,27 @@
 import { describe, it, expect, vi } from 'vitest'
+import { render, screen } from '@testing-library/react'
+import { AppShell } from '../AppShell'
 
 vi.mock('react-router-dom', () => ({
-  Outlet: () => null,
+  Outlet: () => <div data-testid="outlet" />,
   useLocation: () => ({ pathname: '/' }),
   useNavigate: () => vi.fn(),
 }))
 
-vi.mock('@/modules/pet/components/SidebarPet', () => ({
-  SidebarPet: () => null,
-}))
-
-vi.mock('@/modules/pet/store/petStore', () => ({
-  usePetStore: () => ({}),
+vi.mock('@/core/lib/moduleRegistry', () => ({
+  moduleRegistry: {
+    getAll: () => [],
+    getGlobalOverlays: () => [
+      { moduleId: 'test-overlay', Component: () => <div data-testid="slot-overlay" /> },
+    ],
+    getSidebarFooters: () => [],
+  },
 }))
 
 describe('AppShell', () => {
-  // 动态 import 需加载整棵模块树（含宠物模块），turbo 并行/CI 资源紧张时
-  // 默认 5s 超时会被环境抖动击穿（flaky）→ 放宽到 30s（仅此用例）
-  it('模块可导入', async () => {
-    const mod = await import('../AppShell')
-    expect(mod.AppShell).toBeDefined()
-  }, 30_000)
+  it('模块可导入并渲染 globalOverlayComponent 扩展槽位', () => {
+    render(<AppShell />)
+    expect(screen.getByTestId('outlet')).toBeInTheDocument()
+    expect(screen.getByTestId('slot-overlay')).toBeInTheDocument()
+  })
 })

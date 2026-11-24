@@ -1,8 +1,8 @@
 import { create } from 'zustand'
 import dayjs from 'dayjs'
-import { useSettingsStore } from '@/core/store/settingsStore'
+import { useSettingsStore, type CalendarView } from '@/core/store/settingsStore'
 
-export type CalendarView = 'month' | 'week' | 'day' | 'agenda'
+export type { CalendarView }
 
 interface CalendarState {
   currentDate: dayjs.Dayjs
@@ -26,21 +26,10 @@ interface CalendarState {
   setFilterTag: (id: number | null) => void
   setSearchKeyword: (keyword: string) => void
 
-  showOnboarding: boolean
-  openOnboarding: () => void
-  closeOnboarding: () => void
-
-  showShortcuts: boolean
-  setShowShortcuts: (show: boolean) => void
-
   showManage: boolean
   manageTab: 'categories' | 'tags' | 'preferences'
   openManage: (tab?: 'categories' | 'tags' | 'preferences') => void
   closeManage: () => void
-
-  /** 移动端侧边栏抽屉。 */
-  sidebarOpen: boolean
-  setSidebarOpen: (open: boolean) => void
 }
 
 export const useCalendarStore = create<CalendarState>((set) => ({
@@ -67,21 +56,8 @@ export const useCalendarStore = create<CalendarState>((set) => ({
   setFilterTag: (id) => set({ filterTagId: id }),
   setSearchKeyword: (keyword) => set({ searchKeyword: keyword }),
 
-  showOnboarding: false,
-  openOnboarding: () => set({ showOnboarding: true }),
-  closeOnboarding: () => {
-    localStorage.setItem('onboarding_done', '1')
-    set({ showOnboarding: false })
-  },
-
-  showShortcuts: false,
-  setShowShortcuts: (show) => set({ showShortcuts: show }),
-
   showManage: false,
   manageTab: 'categories',
   openManage: (tab) => set({ showManage: true, manageTab: tab ?? 'categories' }),
   closeManage: () => set({ showManage: false }),
-
-  sidebarOpen: false,
-  setSidebarOpen: (open) => set({ sidebarOpen: open }),
 }))

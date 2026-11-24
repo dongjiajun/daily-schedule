@@ -97,7 +97,7 @@ pnpm run generate:api # 从 ../specs/openapi.yaml 生成 SDK
 turbo run verify && cd backend && mvn test && cd frontend && npm run test:e2e
 ```
 
-**CI 门禁**: openspec-validation（OpenSpec 一致性：validate --all --strict + doctor + 主 spec 无 delta 头 + CLI 版本单源校验 + 归档完整性 validate --archived + test-plan 内容门禁 + AGENTS.md 序列一致性守卫 + 机制层完整性 + 模板单源同步 + 指令配置预算）+ version-check（版本同步 + 文档一致性）+ 后端 `mvn test` + 前端 `pnpm run lint` + `pnpm run ui:check`（设计 token 门禁：契约完整性/对比度/裸色值/未知 token/CSS 死 token/几何与动效）+ `pnpm run test` + `pnpm run build`（含 SDK freshness check）为阻断门禁；`npm run test:e2e`（continue-on-error 软性）
+**CI 门禁**: openspec-validation（OpenSpec 一致性：validate --all --strict + doctor + 主 spec 无 delta 头 + CLI 版本单源校验 + 归档完整性 validate --archived + test-plan 内容门禁 + AGENTS.md 序列一致性守卫 + 机制层完整性 + 模板单源同步 + 指令配置预算）+ version-check（版本同步 + 文档一致性）+ 后端 `mvn test` + 前端 `pnpm run lint` + `pnpm run ui:check`（设计 token 门禁：契约完整性/对比度/裸色值/未知 token/CSS 死 token/几何与动效）+ `pnpm run test` + `pnpm run build`（含 SDK freshness check）+ 小程序 `pnpm --filter @daily-schedule/miniprogram run verify` 五道阻断门禁；`npm run test:e2e`（continue-on-error 软性）
 **常见失败**: `@typescript-eslint/no-explicit-any` / `tsc -b` 类型错误 / 后端单测失败
 
 **文档检查**（每次变更后逐项确认——未触及的类别须写明"现有描述已核对仍准确"，不得仅以"无新增"跳过；不走 OpenSpec 流程的小改动（热修/文档勘误）同样适用，提交前逐项核对）：
@@ -154,7 +154,7 @@ specs/openapi.yaml
 
 ```
 src/
-├── core/       # 稳定基础设施（lib: eventBus/moduleRegistry/unwrap/authInterceptor; store: auth/settings; components/ui: shadcn; hooks: useTheme/useNotification; styles: themes.css）
+├── core/       # 稳定基础设施（lib: eventBus/moduleRegistry/zoneRegistry/unwrap/authInterceptor; store: auth/settings/shell; components/ui: shadcn; hooks: useTheme/useNotification; styles: themes.css）
 ├── modules/    # 可插拔功能模块（calendar/pet/todo），各含 index.ts + routes.tsx + components/hooks/store/lib
 ├── components/layout/   # AppShell, Sidebar, ShortcutsDialog
 ├── pages/               # LoginPage
@@ -162,8 +162,8 @@ src/
 └── api/                 # 自动生成 SDK
 ```
 
-- **状态管理两层分离**: Zustand（UI 状态: authStore/calendarStore/settingsStore）+ React Query（服务端数据: useEvents/useCategories/useTags）
-- **模块间通信唯一通道**: `core/lib/eventBus.ts`（模块间不直接 import store/组件）；模块注册 `core/lib/moduleRegistry.ts`（路由收集/petActions/sidebarComponent）
+- **状态管理两层分离**: Zustand（UI 状态: authStore/calendarStore/settingsStore/shellStore）+ React Query（服务端数据: useEvents/useCategories/useTags）
+- **模块间通信唯一通道**: `core/lib/eventBus.ts`（模块间不直接 import store/组件）；模块注册 `core/lib/moduleRegistry.ts`（路由收集/petActions/sidebarComponent/globalOverlayComponent/sidebarFooterComponent）
 - **持久层**: MyBatis-Plus（domain 定义仓储接口，infrastructure 用 PO + Mapper 实现）；Flyway `V*__*.sql` 启动自动迁移
 - **测试**: 单元测试 H2 内存库（`src/test/resources/application-test.yml`，Flyway 关闭，`schema-h2.sql` 初始化）；启动用 test profile 连接 MySQL `daily_schedule_test`（CI/E2E 用）
 - **PWA**: `vite-plugin-pwa`（autoUpdate + CacheFirst 静态资源 + NetworkOnly API）
@@ -205,4 +205,4 @@ API 契约版本号在三个文件中保持一致：`specs/openapi.yaml` → `ba
 ## 当前版本：v3.5.1（2026-08-17）
 
 核心能力：Event 状态闭环 + 日历拖拽改期/拉伸时长 + 标签筛选 + 5 套主题 + 节日主题自动切换 + 特效系统（6 种）+ 键盘快捷键 + JWT 自动续签 + SSE 提醒推送 + ICS 导出 + PWA + 移动端适配 + 宠物养成（区域感知游走/小窝进窝休息/日程框互动：格内物理四边绕行+吸附落地弹跳/情绪/粒子；动作动画层：eat 进食 + idle 小动作 stretch/yawn/scratch/look + 情绪眨眼过渡；昼夜节律：夜间回窝/早晨唤醒问候/午后小憩/深夜打哈欠提示；健壮性：兴趣区惰性过期 + 游走节奏与渲染解耦）+ 任务看板（三列看板+列表+拖拽）+ 微信小程序（Taro 4.2 骨架 + 微信登录：wx.login code→JWT 静默注册 + 日历月视图只读 + 任务列表：三组分组/状态移动/新建/删除 + 宠物互动：状态/创建/喂食玩耍/游走动效）+ 设计 token 契约（契约清单 × 23 套主题，ui:check 六项门禁）+ 设计系统基建（8 个组件原语 / 双密度 / 中文排版 / 视觉回归基线）
-测试覆盖：45 类 342 用例（后端 H2，`<!-- DOCS-CHECK: backend-test-classes=45 -->`）+ 53 文件 284 用例（前端 vitest，`<!-- DOCS-CHECK: frontend-test-files=53 -->`）+ 16 文件 75 用例（Playwright E2E，`<!-- DOCS-CHECK: e2e-files=16 -->`）+ 7 文件 83 用例（小程序 vitest）
+测试覆盖：45 类 352 用例（后端 H2，`<!-- DOCS-CHECK: backend-test-classes=45 -->`）+ 55 文件 289 用例（前端 vitest，`<!-- DOCS-CHECK: frontend-test-files=55 -->`）+ 16 文件 75 用例（Playwright E2E，`<!-- DOCS-CHECK: e2e-files=16 -->`）+ 8 文件 86 用例（小程序 vitest）

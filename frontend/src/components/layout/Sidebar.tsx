@@ -2,13 +2,12 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { CalendarDays, LogOut, X } from 'lucide-react'
 import { useAuthStore } from '@/core/store/authStore'
 import { moduleRegistry } from '@/core/lib/moduleRegistry'
-import { SidebarPet } from '@/modules/pet/components/SidebarPet'
 
 /**
  * 通用 Sidebar Shell：
  * - 顶部：Logo + 模块导航按钮
  * - 中部：当前活跃模块的 sidebarComponent
- * - 底部：用户信息 + 登出
+ * - 底部：模块侧栏底部插件 + 用户信息 + 登出
  */
 export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const location = useLocation()
@@ -16,6 +15,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const user = useAuthStore((s) => s.user)
   const logout = useAuthStore((s) => s.logout)
   const modules = moduleRegistry.getAll()
+  const sidebarFooters = moduleRegistry.getSidebarFooters()
 
   // 根据当前路由匹配活跃模块
   const activeModule = modules.find((m) =>
@@ -93,10 +93,11 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         )}
       </div>
 
-      {/* Footer — SidebarPet + User + Logout */}
+      {/* Footer — SidebarFooters + User + Logout */}
       <div className="mt-auto">
-        {/* 迷你宠物常驻 */}
-        <SidebarPet onNavigate={onNavigate} />
+        {sidebarFooters.map(({ moduleId, Component }) => (
+          <Component key={moduleId} onNavigate={onNavigate} />
+        ))}
 
         <div className="px-4 py-3 border-t border-border-subtle">
         <div

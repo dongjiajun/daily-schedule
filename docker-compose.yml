@@ -1,11 +1,9 @@
-version: '3.8'
-
 services:
   mysql:
     image: mysql:8.0
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-123456}
-      MYSQL_DATABASE: daily_schedule
+      MYSQL_DATABASE: ${DB_NAME:-daily_schedule}
     ports:
       - "3306:3306"
     volumes:
@@ -18,15 +16,21 @@ services:
 
   backend:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: backend/Dockerfile
     environment:
       SPRING_PROFILES_ACTIVE: prod
       SERVER_PORT: "8080"
-      DB_URL: jdbc:mysql://mysql:3306/daily_schedule?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
-      DB_USERNAME: root
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_NAME: ${DB_NAME:-daily_schedule}
+      DB_USER: ${DB_USER:-root}
       DB_PASSWORD: ${DB_PASSWORD:-123456}
       JWT_SECRET: ${JWT_SECRET:-change-me-in-production-use-a-strong-secret-key}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:*}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      WECHAT_APP_ID: ${WECHAT_APP_ID:-}
+      WECHAT_APP_SECRET: ${WECHAT_APP_SECRET:-}
     ports:
       - "8080:8080"
     healthcheck:
@@ -41,8 +45,8 @@ services:
 
   frontend:
     build:
-      context: ./frontend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: frontend/Dockerfile
     ports:
       - "5173:80"
     depends_on:

@@ -126,7 +126,7 @@ cd frontend; pnpm run verify   # lint + TypeScript 检查 + 构建 + 测试
 cd backend; mvn test            # 编译 + 单元测试（H2 内存库）
 ```
 
-CI 四道门禁：openspec-validation（OpenSpec 一致性：validate --all --strict + doctor + 主 spec 无 delta 头 + CLI 版本=AGENTS.md 声明 + 归档完整性 validate --archived + test-plan 内容门禁 + AGENTS.md 序列一致性守卫 + 需求正文 ≤500 字符 strict 规则）→ 版本一致性检查 → 后端 `mvn test` → 前端 `pnpm run lint` → `pnpm run test` → `pnpm run build`（含 SDK freshness check）；E2E（continue-on-error 软性，不阻断）
+CI 五道阻断门禁：openspec-validation（OpenSpec 一致性：validate --all --strict + doctor + 主 spec 无 delta 头 + CLI 版本=AGENTS.md 声明 + 归档完整性 validate --archived + test-plan 内容门禁 + AGENTS.md 序列一致性守卫 + 需求正文 ≤500 字符 strict 规则）→ version-check（版本 + 文档一致性）→ 后端 `mvn test` → 前端 `pnpm run lint` + `pnpm run ui:check` + `pnpm run test` + `pnpm run build`（含 SDK freshness check）→ 小程序 `pnpm --filter @daily-schedule/miniprogram run verify`；E2E（continue-on-error 软性，不阻断）
 
 ## 文档
 

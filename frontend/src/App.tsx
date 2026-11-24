@@ -10,7 +10,7 @@ import { LoginPage } from './pages/LoginPage'
 import { OnboardingGuide } from './components/layout/OnboardingGuide'
 import { useAuthStore } from './core/store/authStore'
 import { useSettingsStore } from './core/store/settingsStore'
-import { useCalendarStore } from '@/modules/calendar/store/calendarStore'
+import { useShellStore } from './core/store/shellStore'
 import { useTheme } from './core/hooks/useTheme'
 import { moduleRegistry } from './core/lib/moduleRegistry'
 import { queryClient } from './core/lib/queryClient'
@@ -31,9 +31,9 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 
 function OnboardingOverlay() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
-  const showOnboarding = useCalendarStore((s) => s.showOnboarding)
-  const openOnboarding = useCalendarStore((s) => s.openOnboarding)
-  const closeOnboarding = useCalendarStore((s) => s.closeOnboarding)
+  const showOnboarding = useShellStore((s) => s.showOnboarding)
+  const openOnboarding = useShellStore((s) => s.openOnboarding)
+  const closeOnboarding = useShellStore((s) => s.closeOnboarding)
 
   useEffect(() => {
     if (isAuthenticated && !localStorage.getItem('onboarding_done')) {

@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { CalendarView } from '@/modules/calendar/store/calendarStore'
 
+export type CalendarView = 'month' | 'week' | 'day' | 'agenda'
 export type ThemePreset = 'default' | 'warm' | 'nature' | 'dark' | 'lavender'
 export type ThemeMode = 'manual' | 'auto'
 export type EffectIntensity = 'off' | 'low' | 'full'

@@ -1,0 +1,16 @@
+.git
+**/node_modules
+.pnpm-store
+.turbo
+backend/target
+**/dist
+test-results
+playwright-report
+e2e
+openspec
+docs
+.agents
+.dsh
+.idea
+.vscode
+.env

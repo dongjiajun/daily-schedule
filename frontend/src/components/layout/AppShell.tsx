@@ -4,12 +4,13 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { Sidebar } from './Sidebar'
 import { ShortcutsDialog } from './ShortcutsDialog'
 import { ErrorBoundary } from './ErrorBoundary'
-import { useCalendarStore } from '@/modules/calendar/store/calendarStore'
-import { RoamingPet } from '@/modules/pet/components/RoamingPet'
+import { useShellStore } from '@/core/store/shellStore'
+import { moduleRegistry } from '@/core/lib/moduleRegistry'
 
 export function AppShell() {
-  const sidebarOpen = useCalendarStore((s) => s.sidebarOpen)
-  const setSidebarOpen = useCalendarStore((s) => s.setSidebarOpen)
+  const sidebarOpen = useShellStore((s) => s.sidebarOpen)
+  const setSidebarOpen = useShellStore((s) => s.setSidebarOpen)
+  const globalOverlays = moduleRegistry.getGlobalOverlays()
 
   return (
     <div className="flex h-screen relative"
@@ -67,9 +68,11 @@ export function AppShell() {
       </main>
 
       <ShortcutsDialog />
-      <ErrorBoundary silent>
-        <RoamingPet />
-      </ErrorBoundary>
+      {globalOverlays.map(({ moduleId, Component }) => (
+        <ErrorBoundary key={moduleId} silent>
+          <Component />
+        </ErrorBoundary>
+      ))}
     </div>
   )
 }

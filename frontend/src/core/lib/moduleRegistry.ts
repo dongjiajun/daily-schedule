@@ -49,6 +49,10 @@ export interface ModuleDefinition {
   petActions?: PetActionDefinition[]
   /** 侧边栏内容组件（可选）。接收 onNavigate 回调用于移动端关闭抽屉 */
   sidebarComponent?: React.ComponentType<{ onNavigate?: () => void }>
+  /** 全局浮层组件（可选，如游走宠物），由 AppShell 统一挂载 */
+  globalOverlayComponent?: React.ComponentType
+  /** 侧边栏底部固定组件（可选，如侧边栏迷你宠物），由 Sidebar 统一挂载 */
+  sidebarFooterComponent?: React.ComponentType<{ onNavigate?: () => void }>
 }
 
 // ── 模块注册中心 ─────────────────────────────────────────
@@ -96,6 +100,20 @@ export class ModuleRegistry {
   /** 收集所有模块的宠物行为声明 */
   getPetActions(): PetActionDefinition[] {
     return this.getAll().flatMap((m) => m.petActions ?? [])
+  }
+
+  /** 收集所有模块声明的全局浮层组件（按模块 order 升序） */
+  getGlobalOverlays(): Array<{ moduleId: string; Component: React.ComponentType }> {
+    return this.getAll().flatMap((m) =>
+      m.globalOverlayComponent ? [{ moduleId: m.id, Component: m.globalOverlayComponent }] : []
+    )
+  }
+
+  /** 收集所有模块声明的侧栏底部固定组件（按模块 order 升序） */
+  getSidebarFooters(): Array<{ moduleId: string; Component: React.ComponentType<{ onNavigate?: () => void }> }> {
+    return this.getAll().flatMap((m) =>
+      m.sidebarFooterComponent ? [{ moduleId: m.id, Component: m.sidebarFooterComponent }] : []
+    )
   }
 }
 

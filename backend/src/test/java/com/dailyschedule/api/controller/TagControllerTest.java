@@ -1,5 +1,6 @@
 package com.dailyschedule.api.controller;
 
+import com.dailyschedule.api.exception.BusinessException;
 import com.dailyschedule.api.exception.ResourceNotFoundException;
 import com.dailyschedule.application.tag.TagApplicationService;
 import com.dailyschedule.domain.tag.Tag;
@@ -60,6 +61,20 @@ class TagControllerTest {
             .andExpect(status().isCreated())
             .andExpect(jsonPath("$.id").value(1))
             .andExpect(jsonPath("$.name").value("重要"));
+    }
+
+    @Test
+    @DisplayName("POST /api/v1/tags -> 名称重复返回 409")
+    void createTag_duplicateName_shouldReturn409() throws Exception {
+        when(currentUserService.getCurrentUserId()).thenReturn(1L);
+        when(tagAppService.create(any()))
+            .thenThrow(new BusinessException("标签名称已存在: 重要"));
+
+        mockMvc.perform(post("/api/v1/tags")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\":\"重要\",\"color\":\"#ff0000\"}"))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.code").value(409));
     }
 
     @Test

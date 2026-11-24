@@ -109,7 +109,7 @@ function ItemList({ items, emptyText, placeholder, maxLength, pendingCreate, onC
             onChange={(e) => setNewName(e.target.value)}
             placeholder={placeholder}
             maxLength={maxLength}
-            className="h-8 text-sm bg-white"
+            className="h-8 text-sm bg-surface"
             onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
           />
           <Button size="sm" className="h-8 rounded-lg" onClick={handleCreate} disabled={pendingCreate || !newName.trim()}>

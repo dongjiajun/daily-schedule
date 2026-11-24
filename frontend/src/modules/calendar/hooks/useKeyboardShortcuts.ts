@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import dayjs from 'dayjs'
 import { useCalendarStore, type CalendarView } from '../store/calendarStore'
+import { useShellStore } from '@/core/store/shellStore'
 
 const VIEW_KEYS: Record<string, CalendarView> = {
   '1': 'month',
@@ -39,7 +40,7 @@ export function useKeyboardShortcuts() {
 
       if (e.key === '?' || (e.shiftKey && e.key === '/')) {
         e.preventDefault()
-        store.setShowShortcuts(true)
+        useShellStore.getState().setShowShortcuts(true)
         return
       }
 

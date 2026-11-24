@@ -114,4 +114,20 @@ describe('ModuleRegistry', () => {
     unregister()
     expect(onDestroy).toHaveBeenCalledTimes(1)
   })
+
+  it('should collect globalOverlayComponent and sidebarFooterComponent in order', () => {
+    const OverlayA = () => null
+    const OverlayB = () => null
+    const FooterA = () => null
+    registry.register(makeModule({ id: 'b', order: 2, globalOverlayComponent: OverlayB }))
+    registry.register(makeModule({ id: 'a', order: 1, globalOverlayComponent: OverlayA, sidebarFooterComponent: FooterA }))
+
+    expect(registry.getGlobalOverlays()).toEqual([
+      { moduleId: 'a', Component: OverlayA },
+      { moduleId: 'b', Component: OverlayB },
+    ])
+    expect(registry.getSidebarFooters()).toEqual([
+      { moduleId: 'a', Component: FooterA },
+    ])
+  })
 })

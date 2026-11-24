@@ -88,7 +88,7 @@ Token 通过注册/登录获取，access token 有效期 15 分钟，refresh tok
 错误响应示例：
 
 ```json
-{ "code": 409, "message": "该时段已有其他日程，请调整时间" }
+{ "code": 409, "message": "分类名称已存在: 工作" }
 ```
 
 **request-id 链路（v3.5 可观测性）**：所有响应携带 `X-Request-Id` 头（客户端可传入，≤64 字符，缺省由服务端生成 UUID）。错误响应的 `message` 末尾携带 `（requestId: xxx）` 后缀，用户凭响应即可在后端日志中检索对应请求的完整堆栈。

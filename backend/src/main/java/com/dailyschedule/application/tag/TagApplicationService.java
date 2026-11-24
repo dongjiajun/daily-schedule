@@ -1,5 +1,6 @@
 package com.dailyschedule.application.tag;
 
+import com.dailyschedule.api.exception.BusinessException;
 import com.dailyschedule.api.exception.ResourceNotFoundException;
 import com.dailyschedule.domain.tag.Tag;
 import com.dailyschedule.domain.tag.TagRepository;
@@ -40,7 +41,7 @@ public class TagApplicationService {
             throw new IllegalArgumentException("标签名称不能为空");
         }
         if (tagRepository.existsByName(tag.getName(), tag.getUserId())) {
-            throw new IllegalArgumentException("标签名称已存在: " + tag.getName());
+            throw new BusinessException("标签名称已存在: " + tag.getName());
         }
         return tagRepository.save(tag);
     }
@@ -51,7 +52,7 @@ public class TagApplicationService {
         Tag existing = getById(id, userId);
         if (data.getName() != null && !data.getName().equals(existing.getName())) {
             if (tagRepository.existsByNameExcludingId(data.getName(), id, userId)) {
-                throw new IllegalArgumentException("标签名称已存在: " + data.getName());
+                throw new BusinessException("标签名称已存在: " + data.getName());
             }
             existing.setName(data.getName());
         }

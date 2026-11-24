@@ -1,5 +1,5 @@
 import { Text, View } from '@tarojs/components'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import Taro, { useDidHide, useDidShow, useUnload } from '@tarojs/taro'
 import { computeNextTarget, createDefaultConfig, randomMoveDuration, randomWanderInterval, type Position } from '@daily-schedule/shared/pet'
 import { UnauthorizedError } from '../../lib/api'
@@ -121,13 +121,25 @@ export default function PetPage() {
     wanderTimerRef.current = setTimeout(() => scheduleNext(target), wait)
   }
 
-  const cleanupWander = () => {
+  const cleanupWander = useCallback(() => {
     activeRef.current = false
     if (wanderTimerRef.current) {
       clearTimeout(wanderTimerRef.current)
       wanderTimerRef.current = null
     }
-  }
+  }, [])
+
+  const cleanupAllTimers = useCallback(() => {
+    cleanupWander()
+    if (bounceTimerRef.current) {
+      clearTimeout(bounceTimerRef.current)
+      bounceTimerRef.current = null
+    }
+    if (feedbackTimerRef.current) {
+      clearTimeout(feedbackTimerRef.current)
+      feedbackTimerRef.current = null
+    }
+  }, [cleanupWander])
 
   // 游走启动/重建：随宠物登场（创建成功或加载成功）启动，卸载清理。
   // 不从 effect 重置位置（初始值已惰性计算；重建时从当前位置继续）
@@ -140,7 +152,9 @@ export default function PetPage() {
     return cleanupWander
   }, [pet?.id, roamH]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  useDidHide(cleanupWander)
+  useEffect(() => cleanupAllTimers, [cleanupAllTimers])
+
+  useDidHide(cleanupAllTimers)
   useDidShow(() => {
     // 恢复循环：clearStoredSession 后 active 守卫已被 cleanup 置 false，此处重新激活
     if (petRef.current) {
@@ -148,7 +162,7 @@ export default function PetPage() {
       scheduleNext(positionRef.current)
     }
   })
-  useUnload(cleanupWander)
+  useUnload(cleanupAllTimers)
 
   // ---------- 创建与互动 ----------
 

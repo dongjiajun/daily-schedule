@@ -1,5 +1,6 @@
 package com.dailyschedule.application.category;
 
+import com.dailyschedule.api.exception.BusinessException;
 import com.dailyschedule.api.exception.ResourceNotFoundException;
 import com.dailyschedule.domain.category.Category;
 import com.dailyschedule.domain.category.CategoryRepository;
@@ -40,7 +41,7 @@ public class CategoryApplicationService {
             throw new IllegalArgumentException("分类名称不能为空");
         }
         if (categoryRepository.existsByName(category.getName(), category.getUserId())) {
-            throw new IllegalArgumentException("分类名称已存在: " + category.getName());
+            throw new BusinessException("分类名称已存在: " + category.getName());
         }
         return categoryRepository.save(category);
     }
@@ -51,7 +52,7 @@ public class CategoryApplicationService {
         Category existing = getById(id, userId);
         if (data.getName() != null && !data.getName().equals(existing.getName())) {
             if (categoryRepository.existsByNameExcludingId(data.getName(), id, userId)) {
-                throw new IllegalArgumentException("分类名称已存在: " + data.getName());
+                throw new BusinessException("分类名称已存在: " + data.getName());
             }
             existing.setName(data.getName());
         }

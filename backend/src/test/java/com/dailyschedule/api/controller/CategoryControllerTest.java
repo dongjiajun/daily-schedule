@@ -1,5 +1,6 @@
 package com.dailyschedule.api.controller;
 
+import com.dailyschedule.api.exception.BusinessException;
 import com.dailyschedule.application.category.CategoryApplicationService;
 import com.dailyschedule.domain.category.Category;
 import com.dailyschedule.infrastructure.security.CurrentUserService;
@@ -59,6 +60,20 @@ class CategoryControllerTest {
             .andExpect(status().isCreated())
             .andExpect(jsonPath("$.id").value(1))
             .andExpect(jsonPath("$.name").value("工作"));
+    }
+
+    @Test
+    @DisplayName("POST /api/v1/categories → 名称重复返回 409")
+    void createCategory_duplicateName_shouldReturn409() throws Exception {
+        when(currentUserService.getCurrentUserId()).thenReturn(1L);
+        when(categoryAppService.create(any()))
+            .thenThrow(new BusinessException("分类名称已存在: 工作"));
+
+        mockMvc.perform(post("/api/v1/categories")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\":\"工作\",\"color\":\"#1890ff\"}"))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.code").value(409));
     }
 
     @Test

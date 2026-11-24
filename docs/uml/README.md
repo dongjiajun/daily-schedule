@@ -28,7 +28,7 @@
 │ + passwordHash: String                           │
 │ + displayName: String                            │
 │ + avatarUrl: String                              │
-│ + status: UserStatus (ACTIVE/INACTIVE)           │
+│ + status: UserStatus (ACTIVE/DISABLED/DELETED/SYSTEM) │
 │ + lastLoginAt: LocalDateTime                     │
 │ + createdAt: LocalDateTime                       │
 │ + updatedAt: LocalDateTime                       │

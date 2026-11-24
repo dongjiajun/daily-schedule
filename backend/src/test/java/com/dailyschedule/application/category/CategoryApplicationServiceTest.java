@@ -1,5 +1,6 @@
 package com.dailyschedule.application.category;
 
+import com.dailyschedule.api.exception.BusinessException;
 import com.dailyschedule.api.exception.ResourceNotFoundException;
 import com.dailyschedule.domain.category.Category;
 import com.dailyschedule.domain.category.CategoryRepository;
@@ -67,14 +68,32 @@ class CategoryApplicationServiceTest {
     }
 
     @Test
-    @DisplayName("create → 名称已存在抛出 IllegalArgumentException")
+    @DisplayName("create → 名称已存在抛出 BusinessException（409）")
     void create_duplicateName_shouldThrow() {
         Category dup = new Category("工作", "#1890ff");
         dup.setUserId(1L);
         when(categoryRepository.existsByName(eq("工作"), anyLong())).thenReturn(true);
 
         assertThatThrownBy(() -> appService.create(dup))
-            .isInstanceOf(IllegalArgumentException.class)
+            .isInstanceOf(BusinessException.class)
+            .hasMessageContaining("已存在");
+        verify(categoryRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("update → 名称冲突抛出 BusinessException（409）")
+    void update_duplicateName_shouldThrow() {
+        Category existing = new Category("工作", "#1890ff");
+        existing.setId(1L);
+        existing.setUserId(1L);
+        when(categoryRepository.findById(1L)).thenReturn(Optional.of(existing));
+        when(categoryRepository.existsByNameExcludingId("学习", 1L, 1L)).thenReturn(true);
+
+        Category patch = new Category();
+        patch.setName("学习");
+
+        assertThatThrownBy(() -> appService.update(1L, patch, 1L))
+            .isInstanceOf(BusinessException.class)
             .hasMessageContaining("已存在");
         verify(categoryRepository, never()).save(any());
     }

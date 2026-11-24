@@ -151,7 +151,7 @@ Scheduler (30s fixedDelay, Clock-injected)
 - **request-id 全链路**: `RequestIdFilter`（Security 链之前）解析/生成 `X-Request-Id` → MDC → 响应头回写 → finally 清理；`GlobalExceptionHandler` 错误响应 message 携带 `（requestId: xxx）` 后缀，凭响应可检索日志
 - **入口与安全日志**: 7 个 Controller 入口 INFO 日志（敏感字段不入日志）；认证失败 WARN（请求路径）
 - **探活**: Actuator 仅暴露 `health` 端点（`SecurityConfig` 显式放行 `/actuator/health`）；docker-compose backend healthcheck 周期探测
-- **调度线程池**: `ScheduleConfig` 的 `TaskScheduler`（pool 2，`scheduler-` 前缀）——提醒扫描与宠物衰减独立线程互不阻塞
+- **调度线程池**: `ScheduleConfig` 的 `TaskScheduler`（pool 3，`scheduler-` 前缀）——提醒扫描、宠物衰减与 SSE 心跳独立线程互不阻塞
 
 ## 项目结构（Monorepo）
 
@@ -167,8 +167,8 @@ daily-schedule/
 ├── frontend/                 # React 19 Web 前端（Vite）
 │   └── src/
 │       ├── core/             # 核心基础设施（稳定、精简）
-│       │   ├── lib/          # utils, unwrap, authInterceptor, eventBus, moduleRegistry
-│       │   ├── store/        # authStore, settingsStore
+│       │   ├── lib/          # utils, unwrap, authInterceptor, eventBus, moduleRegistry, zoneRegistry
+│       │   ├── store/        # authStore, settingsStore, shellStore
 │       │   ├── components/
 │       │   │   ├── ui/       # shadcn/ui 基础组件 + 设计系统原语 (card/badge/segmented/empty-state/skeleton/tooltip/kbd/progress)
 │       │   │   └── layout/   # 通用布局容器 (TabbedDialog)
@@ -222,8 +222,8 @@ daily-schedule/
 
 - **SystemEvent**: 10 种事件类型（日程/任务/习惯/专注/用户）
 - **EventBus**: 同步派发，定义在 shared 包中，frontend 创建单例 `core/lib/eventBus.ts`
-- **ModuleRegistry**: 模块注册/注销/路由收集/petActions 收集，`core/lib/moduleRegistry.ts`
-- **模块隔离**: 模块间不直接 import store/组件，只通过事件总线通信
+- **ModuleRegistry**: 模块注册/注销/路由收集/petActions 与 Shell 扩展槽位收集，`core/lib/moduleRegistry.ts`
+- **模块隔离**: `core/`、`components/layout/`、`modules/` 间不直接相互 import（`moduleBoundary.test.ts` 守卫），仅通过事件总线与核心槽位通信
 
 ## 后端模块结构（DDD 四层）
 
@@ -232,11 +232,11 @@ daily-schedule/
 | API | `api/controller/`, `api/assembler/`, `api/exception/` | REST 端点、DTO 转换、全局异常处理（7 个 Controller） |
 | 应用 | `application/event/`, `application/category/`, `application/tag/`, `application/pet/`, `application/todo/`, `application/auth/` | 用例编排、重名校验、缓存注解 |
 | 领域 | `domain/event/`, `domain/category/`, `domain/tag/`, `domain/user/`, `domain/pet/`, `domain/task/`, `domain/notification/` | 业务实体与规则（35 个文件，`<!-- DOCS-CHECK: domain-files=35 -->`）、仓储接口 |
-| 基础设施 | `infrastructure/persistence/`, `infrastructure/security/`, `infrastructure/config/`, `infrastructure/scheduled/`, `infrastructure/notification/` | 持久化、JWT/认证、缓存配置、调度、SSE |
+| 基础设施 | `infrastructure/persistence/`, `infrastructure/security/`, `infrastructure/config/`, `infrastructure/scheduled/`, `infrastructure/notification/`, `infrastructure/wechat/` | 持久化、JWT/认证、缓存配置、调度、SSE、微信 API 客户端 |
 
 ## 前端模块架构（core + modules）
 
-- **core/** — 稳定基础设施：authStore、settingsStore、EventBus、ModuleRegistry、UI 组件、共享 hooks、节日特效
+- **core/** — 稳定基础设施：authStore、settingsStore、shellStore、EventBus、ModuleRegistry、zoneRegistry、UI 组件、共享 hooks、节日特效
 - **modules/calendar/** — 日历模块：日历视图、事件管理、筛选、ICS 导出
 - **modules/pet/** — 宠物模块（核心差异化）：自由游走、昼夜节律（夜间回窝/早晨唤醒/午后小憩/深夜提示）、SVG 插画、情绪状态机、动作动画层（eat 进食/小动作 stretch/yawn/scratch/look/情绪眨眼过渡）、粒子特效、事件总线联动
 - **modules/todo/** — 任务看板模块：三列看板 + 列表视图、拖拽排序、标签筛选
@@ -250,18 +250,20 @@ daily-schedule/
 ModuleDefinition {
   id: string; name: string; icon: ComponentType;
   order: number; routes: RouteObject[];
-  sidebarComponent?: ComponentType;  // 模块专属侧边栏
-  petActions?: PetActionDefinition[];  // 宠物行为声明
+  sidebarComponent?: ComponentType;        // 模块专属侧边栏
+  globalOverlayComponent?: ComponentType;  // 全局浮层（AppShell 挂载）
+  sidebarFooterComponent?: ComponentType;  // 侧栏底部常驻组件
+  petActions?: PetActionDefinition[];      // 宠物行为声明
 }
 ```
 
 ## 测试
 
-- **后端**: 45 个测试类，342 个用例，0 失败。H2 内存数据库（MySQL 兼容模式）。`<!-- DOCS-CHECK: backend-test-classes=45 -->`
-- **前端**: 53 个测试文件，284 个用例，0 失败。vitest + jsdom。`<!-- DOCS-CHECK: frontend-test-files=53 -->`
-- **小程序**: 7 个测试文件，83 个用例（vitest 纯逻辑——shared 跨端复用回归 + wechat-auth 登录响应解析 + miniprogram-calendar 日期纯函数/数据层/请求封装 + miniprogram-todo 任务数据层分组/校验/四函数请求路径 + miniprogram-pet 宠物数据层校验/换算纯函数/三函数请求路径与 404 业务态）。Taro 组件渲染级测试待业务变更引入
+- **后端**: 45 个测试类，352 个用例，0 失败。H2 内存数据库（MySQL 兼容模式）。`<!-- DOCS-CHECK: backend-test-classes=45 -->`
+- **前端**: 55 个测试文件，289 个用例，0 失败。vitest + jsdom。`<!-- DOCS-CHECK: frontend-test-files=55 -->`
+- **小程序**: 8 个测试文件，86 个用例（vitest 纯逻辑——shared 跨端复用回归 + wechat-auth 登录响应解析 + miniprogram-calendar 日期纯函数/数据层/请求封装 + miniprogram-todo 任务数据层分组/校验/四函数请求路径 + miniprogram-pet 宠物数据层校验/换算纯函数/三函数请求路径与 404 业务态 + 页面配置断言）。Taro 组件渲染级测试待业务变更引入
 - **E2E**: 16 个 spec 文件，75 条 Playwright 用例（auth/calendar/task/pet/theme/primitives + 5 条 `@visual` 截图基线），CI 集成。webServer 复用后台启动的后端 + 自动启动前端 Vite；视觉基线本地执行（跨 OS 渲染差异）。`<!-- DOCS-CHECK: e2e-files=16 -->`
-- **CI**: GitHub Actions — version-check（版本 + 文档一致性）→ openspec-validation（OpenSpec 十检：validate --all --strict + doctor + 主 spec 无 delta 头 + CLI 版本单源（安装版本 = 根 `package.json` 锁定 = AGENTS.md 声明）+ 归档完整性 validate --archived + test-plan 内容门禁（模式 A 场景↔命名测试 / 模式 B 场景↔等价机械验证 / 归档无残留 🔴）+ AGENTS.md 序列一致性守卫 + 机制层完整性（`.agents/skills` `generatedBy`=`package.json`、`openspec update --dry-run` 无变更、`.dsh` 不被跟踪）+ 模板单源同步（`scripts/sync-schema-templates.mjs --check`）+ 指令配置预算（context/rules/operations guidance，第 10 检）+ 需求正文 ≤500 字符（1.14.1+ strict））→ backend mvn test → frontend lint → ui:check（设计 token 门禁：契约完整性/对比度/裸色值/未知 token/CSS 死 token/几何与动效）→ test → build（含 SDK freshness）四道阻断门禁 + E2E（`continue-on-error` 软性，不阻断）
+- **CI**: GitHub Actions — version-check（版本 + 文档一致性）→ openspec-validation（OpenSpec 十检：validate --all --strict + doctor + 主 spec 无 delta 头 + CLI 版本单源（安装版本 = 根 `package.json` 锁定 = AGENTS.md 声明）+ 归档完整性 validate --archived + test-plan 内容门禁（模式 A 场景↔命名测试 / 模式 B 场景↔等价机械验证 / 归档无残留 🔴）+ AGENTS.md 序列一致性守卫 + 机制层完整性（`.agents/skills` `generatedBy`=`package.json`、`openspec update --dry-run` 无变更、`.dsh` 不被跟踪）+ 模板单源同步（`scripts/sync-schema-templates.mjs --check`）+ 指令配置预算（context/rules/operations guidance，第 10 检）+ 需求正文 ≤500 字符（1.14.1+ strict））→ backend mvn test → frontend lint + `ui:check` + test + build（含 SDK freshness）→ miniprogram（shared build + verify）五道阻断门禁 + E2E（`continue-on-error` 软性，不阻断）
 - **运行**: `cd backend && mvn test` / `cd frontend && pnpm run test`
 
 ## 容器化部署

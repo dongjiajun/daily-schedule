@@ -5,23 +5,14 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import React from 'react'
 import App from '../App'
 import { useAuthStore } from '../core/store/authStore'
-
-vi.mock('../modules/calendar/store/calendarStore', () => ({
-  useCalendarStore: vi.fn((selector?: (s: unknown) => unknown) => {
-    const state = {
-      showOnboarding: false,
-      openOnboarding: vi.fn(),
-      closeOnboarding: vi.fn(),
-      selectedEventId: null,
-      view: 'month',
-    }
-    return selector ? selector(state) : state
-  }),
-}))
+import { useShellStore } from '../core/store/shellStore'
 
 vi.mock('../core/lib/moduleRegistry', () => ({
   moduleRegistry: {
+    getAll: () => [],
     getRoutes: () => [],
+    getGlobalOverlays: () => [],
+    getSidebarFooters: () => [],
   },
 }))
 
@@ -34,6 +25,11 @@ describe('App', () => {
     useAuthStore.setState({
       accessToken: null,
       isAuthenticated: false,
+    })
+    useShellStore.setState({
+      showOnboarding: false,
+      showShortcuts: false,
+      sidebarOpen: false,
     })
   })
 

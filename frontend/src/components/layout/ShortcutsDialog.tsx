@@ -1,6 +1,6 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/core/components/ui/dialog'
 import { Kbd } from '@/core/components/ui/kbd'
-import { useCalendarStore } from '@/modules/calendar/store/calendarStore'
+import { useShellStore } from '@/core/store/shellStore'
 
 const SHORTCUTS: Array<{ keys: string[]; desc: string }> = [
   { keys: ['N'], desc: '新建日程' },
@@ -13,8 +13,8 @@ const SHORTCUTS: Array<{ keys: string[]; desc: string }> = [
 ]
 
 export function ShortcutsDialog() {
-  const showShortcuts = useCalendarStore((s) => s.showShortcuts)
-  const setShowShortcuts = useCalendarStore((s) => s.setShowShortcuts)
+  const showShortcuts = useShellStore((s) => s.showShortcuts)
+  const setShowShortcuts = useShellStore((s) => s.setShowShortcuts)
 
   return (
     <Dialog open={showShortcuts} onOpenChange={setShowShortcuts}>

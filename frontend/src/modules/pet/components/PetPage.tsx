@@ -39,19 +39,19 @@ export default function PetPage() {
             </button>
 
             {/* 喂食区 */}
-            <section className="w-full bg-white rounded-xl border p-4">
+            <section className="w-full bg-surface rounded-xl border border-border-subtle p-4">
               <h2 className="font-semibold mb-2 text-sm">喂食区 🍖</h2>
               <FoodActionList mode="feed" />
             </section>
 
             {/* 商店区 */}
-            <section className="w-full bg-white rounded-xl border p-4">
+            <section className="w-full bg-surface rounded-xl border border-border-subtle p-4">
               <h2 className="font-semibold mb-2 text-sm">商店 🛒</h2>
               <FoodActionList mode="shop" />
             </section>
 
             {/* 宠物信息 */}
-            <section className="w-full bg-white rounded-xl border p-4">
+            <section className="w-full bg-surface rounded-xl border border-border-subtle p-4">
               <h2 className="font-semibold mb-2 text-sm">宠物信息</h2>
               <dl className="grid grid-cols-2 gap-2 text-sm">
                 <dt className="text-foreground-muted">名称</dt>
@@ -66,7 +66,7 @@ export default function PetPage() {
             </section>
 
             {/* 当前配饰 */}
-            <section className="w-full bg-white rounded-xl border p-4">
+            <section className="w-full bg-surface rounded-xl border border-border-subtle p-4">
               <h2 className="font-semibold mb-2 text-sm">当前配饰 🎀</h2>
               {accessoryName ? (
                 <div className="flex items-center justify-between gap-2">

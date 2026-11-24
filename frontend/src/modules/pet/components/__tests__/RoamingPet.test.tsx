@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, fireEvent, act, screen } from '@testing-library/react'
-import { clearZones, getZones, registerZone } from '../../lib/zoneRegistry'
+import { clearZones, getZones, registerZone } from '@/core/lib/zoneRegistry'
 import { usePetStore } from '../../store/petStore'
 
 // 模块级常量 pet：引用稳定（贴近 React Query structural sharing——数据未变时 data 引用不变）

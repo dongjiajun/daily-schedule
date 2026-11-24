@@ -84,7 +84,7 @@ public class PetApplicationService {
         ShopItem item = null;
         if (type == InteractionType.FEED) {
             if (itemId == null) {
-                // 默认使用第一个可用食物（最便宜的）
+                // 默认使用第一个 FOOD 物品（小鱼干，按 id 升序）
                 List<ShopItem> foods = accessoryRepository.findAllShopItems()
                     .stream()
                     .filter(a -> "FOOD".equals(a.getType()))

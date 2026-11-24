@@ -1,13 +1,18 @@
 package com.dailyschedule.domain.pet;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 @Component
 public class PetDomainService {
+
+    private final Clock clock;
 
     /** 心情每小时衰减量（配置化，默认 1.0/小时） */
     @Value("${pet.decay.moodPerHour:1.0}")
@@ -16,6 +21,15 @@ public class PetDomainService {
     /** 饱腹每小时衰减量（配置化，默认 1.5/小时） */
     @Value("${pet.decay.hungerPerHour:1.5}")
     private double hungerPerHour = 1.5;
+
+    @Autowired
+    public PetDomainService(Clock clock) {
+        this.clock = clock;
+    }
+
+    public PetDomainService() {
+        this(Clock.system(ZoneId.of("Asia/Shanghai")));
+    }
 
     /**
      * 执行互动操作并返回结果。
@@ -84,7 +98,7 @@ public class PetDomainService {
      * mood/hunger 按配置的小时速率衰减（默认 1.0/1.5 每小时），均不得低于 0。
      */
     public void decay(Pet pet) {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(clock);
         LocalDateTime last = pet.getLastInteractedAt();
         if (last == null) return;
 

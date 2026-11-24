@@ -8,6 +8,10 @@ spring:
     type: caffeine
     caffeine:
       spec: expireAfterWrite=5m
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
 
 # CORS 允许源（逗号分隔 origin patterns；prod 由 CORS_ORIGINS 环境变量注入）
 cors:
@@ -34,11 +38,6 @@ mybatis-plus:
   global-config:
     db-config:
       id-type: auto
-
-flyway:
-  enabled: true
-  locations: classpath:db/migration
-  baseline-on-migrate: true
 
 springdoc:
   api-docs:

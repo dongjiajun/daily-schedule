@@ -9,12 +9,16 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -48,7 +52,7 @@ class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("POST /api/v1/auth/login -> 登录成功返回 200")
+    @DisplayName("POST /api/v1/auth/login -> 登录成功返回 200 且仅一条 Set-Cookie")
     void login_shouldReturn200() throws Exception {
         when(authAppService.login(anyString(), anyString())).thenReturn(createTokens());
 
@@ -57,11 +61,18 @@ class AuthControllerTest {
                 .content("{\"usernameOrEmail\":\"testuser\",\"password\":\"password123\"}"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.accessToken").value("access-token"))
-            .andExpect(jsonPath("$.user.username").value("testuser"));
+            .andExpect(jsonPath("$.user.username").value("testuser"))
+            .andExpect(res -> assertThat(res.getResponse().getHeaders(HttpHeaders.SET_COOKIE)).hasSize(1))
+            .andExpect(header().string(HttpHeaders.SET_COOKIE, allOf(
+                containsString("dsa_sse_session=access-token"),
+                containsString("Path=/api/v1/sse"),
+                containsString("HttpOnly"),
+                containsString("SameSite=Lax")
+            )));
     }
 
     @Test
-    @DisplayName("POST /api/v1/auth/register -> 注册成功返回 201")
+    @DisplayName("POST /api/v1/auth/register -> 注册成功返回 201 且仅一条 Set-Cookie")
     void register_shouldReturn201() throws Exception {
         when(authAppService.register(any())).thenReturn(createTokens());
 
@@ -70,11 +81,12 @@ class AuthControllerTest {
                 .content("{\"username\":\"newuser\",\"email\":\"new@example.com\",\"password\":\"password123\"}"))
             .andExpect(status().isCreated())
             .andExpect(jsonPath("$.accessToken").value("access-token"))
-            .andExpect(jsonPath("$.user.username").value("testuser"));
+            .andExpect(jsonPath("$.user.username").value("testuser"))
+            .andExpect(res -> assertThat(res.getResponse().getHeaders(HttpHeaders.SET_COOKIE)).hasSize(1));
     }
 
     @Test
-    @DisplayName("POST /api/v1/auth/wechat-login -> 登录成功返回 200")
+    @DisplayName("POST /api/v1/auth/wechat-login -> 登录成功返回 200 且不下发 Set-Cookie")
     void wechatLogin_shouldReturn200() throws Exception {
         when(authAppService.wechatLogin(any())).thenReturn(createTokens());
 
@@ -83,11 +95,12 @@ class AuthControllerTest {
                 .content("{\"code\":\"wx-login-code\"}"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.accessToken").value("access-token"))
-            .andExpect(jsonPath("$.user.username").value("testuser"));
+            .andExpect(jsonPath("$.user.username").value("testuser"))
+            .andExpect(header().doesNotExist(HttpHeaders.SET_COOKIE));
     }
 
     @Test
-    @DisplayName("POST /api/v1/auth/refresh -> 续签成功返回 200")
+    @DisplayName("POST /api/v1/auth/refresh -> 续签成功返回 200 且仅一条 Set-Cookie")
     void refreshToken_shouldReturn200() throws Exception {
         when(authAppService.refresh(anyString())).thenReturn(createTokens());
 
@@ -95,14 +108,22 @@ class AuthControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"refreshToken\":\"valid-refresh-token\"}"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.accessToken").value("access-token"));
+            .andExpect(jsonPath("$.accessToken").value("access-token"))
+            .andExpect(res -> assertThat(res.getResponse().getHeaders(HttpHeaders.SET_COOKIE)).hasSize(1));
     }
 
     @Test
-    @DisplayName("POST /api/v1/auth/logout -> 注销成功返回 204")
+    @DisplayName("POST /api/v1/auth/logout -> 注销成功返回 204 且仅一条清除 Set-Cookie")
     void logout_shouldReturn204() throws Exception {
         mockMvc.perform(post("/api/v1/auth/logout"))
-            .andExpect(status().isNoContent());
+            .andExpect(status().isNoContent())
+            .andExpect(res -> assertThat(res.getResponse().getHeaders(HttpHeaders.SET_COOKIE)).hasSize(1))
+            .andExpect(header().string(HttpHeaders.SET_COOKIE, allOf(
+                containsString("dsa_sse_session="),
+                containsString("Max-Age=0"),
+                containsString("Path=/api/v1/sse"),
+                containsString("SameSite=Lax")
+            )));
     }
 
     @Test

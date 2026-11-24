@@ -33,7 +33,7 @@ import {
   randomRange,
 } from '@daily-schedule/shared/pet'
 import type { RoamingConfig, AvoidZone, Zone, CalendarCellPayload, Position, CellClingPoint, CellStyle } from '@daily-schedule/shared/pet'
-import { registerZone, getZones } from '../lib/zoneRegistry'
+import { registerZone, getZones } from '@/core/lib/zoneRegistry'
 
 /** 匀速移动一步（dt 毫秒），不超过目标 */
 function moveToward(current: Position, target: Position, speed: number, dt: number): Position {

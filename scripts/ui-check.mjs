@@ -120,6 +120,7 @@ function checkContrast(themeNames, themes, failures) {
 const HEX_COLOR = /#[0-9a-fA-F]{3,8}\b/g
 const PALETTE_CLASS =
   /(?:^|[\s"'`:])(?:text|bg|border|ring|outline|fill|stroke|from|via|to|divide|decoration|shadow|placeholder)-(?:gray|slate|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-\d{2,3}(?:\/\d{1,3})?/g
+const RAW_BG_NEUTRAL = /(?:^|[\s"'`:])bg-(?:white|black)(?:\/\d{1,3})?(?=[\s"'`}]|$)/g
 
 /** 纯函数：扫描一段源码中的十六进制色值与调色板类，返回命中描述 */
 function scanRawColors(content) {
@@ -132,6 +133,9 @@ function scanRawColors(content) {
     }
     for (const match of line.matchAll(PALETTE_CLASS)) {
       hits.push(`:${index + 1} 调色板类 ${match[0].trim()}`)
+    }
+    for (const match of line.matchAll(RAW_BG_NEUTRAL)) {
+      hits.push(`:${index + 1} 硬编码背景类 ${match[0].replace(/^[\s"'`:]+/, '')}`)
     }
   })
   return hits
@@ -328,7 +332,10 @@ function selfTest() {
   assert(scanRawColors('className="text-red-500"').length === 1, 'text-red-500 应被裸色值检查命中')
   assert(scanRawColors('className="hover:bg-red-50"').length === 1, 'hover:bg-red-50 应被命中')
   assert(scanRawColors('className="w-[#FFFFFF]"').length === 1, '十六进制色值应被命中')
+  assert(scanRawColors('className="bg-white"').length === 1, 'bg-white 应被裸色值检查命中')
+  assert(scanRawColors('className="hover:bg-black/40"').length === 1, 'hover:bg-black/40 应被裸色值检查命中')
   assert(scanRawColors('className="text-error-fg bg-success"').length === 0, '语义 utility 不应被误报')
+  assert(scanRawColors('className="text-white bg-surface"').length === 0, 'text-white 与 bg-surface 不应被误报')
 
   // 失败路径 4：CSS 中未注册的自定义属性必须被判为死 token
   const deadThemes = readThemes()

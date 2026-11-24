@@ -22,13 +22,13 @@ public class ScheduleConfig {
     }
 
     /**
-     * @Scheduled 专用线程池：提醒扫描（30s）与宠物衰减（10min）独立线程运行，
+     * @Scheduled 专用线程池：提醒扫描（30s）、宠物衰减（10min）与 SSE 心跳（30s）独立线程运行，
      * 一个调度任务阻塞不拖住另一个。
      */
     @Bean
     public ThreadPoolTaskScheduler taskScheduler() {
         ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
-        scheduler.setPoolSize(2);
+        scheduler.setPoolSize(3);
         scheduler.setThreadNamePrefix("scheduler-");
         scheduler.initialize();
         return scheduler;

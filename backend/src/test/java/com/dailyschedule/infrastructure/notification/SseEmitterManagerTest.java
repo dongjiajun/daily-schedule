@@ -73,6 +73,75 @@ class SseEmitterManagerTest {
     }
 
     @Test
+    @DisplayName("register：成功返回 SseEmitter 且推送 connect 握手事件")
+    void register_sendsConnectEvent() throws Exception {
+        SseEmitter mockEmitter = mock(SseEmitter.class);
+        SseEmitterManager customManager = new SseEmitterManager() {
+            @Override
+            SseEmitter createEmitter() {
+                return mockEmitter;
+            }
+        };
+
+        SseEmitter emitter = customManager.register(1L);
+
+        assertThat(emitter).isSameAs(mockEmitter);
+        assertThat(customManager.getActiveCount()).isEqualTo(1);
+        verify(mockEmitter).send(org.mockito.ArgumentMatchers.any(SseEmitter.SseEventBuilder.class));
+    }
+
+    @Test
+    @DisplayName("register：握手发送 IOException 时移除失效连接")
+    void register_connectFailed_removesEmitter() throws Exception {
+        SseEmitter badEmitter = mock(SseEmitter.class);
+        doThrow(new IOException("disconnected"))
+            .when(badEmitter)
+            .send(org.mockito.ArgumentMatchers.any(SseEmitter.SseEventBuilder.class));
+        SseEmitterManager customManager = new SseEmitterManager() {
+            @Override
+            SseEmitter createEmitter() {
+                return badEmitter;
+            }
+        };
+
+        customManager.register(1L);
+
+        assertThat(customManager.getActiveCount()).isZero();
+    }
+
+    @Test
+    @DisplayName("sendHeartbeat：向所有用户的活跃连接推送心跳")
+    void sendHeartbeat_broadcastsToAllActiveEmitters() throws Exception {
+        SseEmitter a = mock(SseEmitter.class);
+        SseEmitter b = mock(SseEmitter.class);
+        injectEmitters(manager, 1L, List.of(a));
+        injectEmitters(manager, 2L, List.of(b));
+
+        manager.sendHeartbeat();
+
+        verify(a).send(org.mockito.ArgumentMatchers.any(SseEmitter.SseEventBuilder.class));
+        verify(b).send(org.mockito.ArgumentMatchers.any(SseEmitter.SseEventBuilder.class));
+        assertThat(manager.getActiveCount()).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("sendHeartbeat：IOException 的连接被移除且清理空用户桶")
+    void sendHeartbeat_failedEmitter_isRemoved() throws Exception {
+        SseEmitter ok = mock(SseEmitter.class);
+        SseEmitter bad = mock(SseEmitter.class);
+        doThrow(new IOException("broken pipe"))
+            .when(bad)
+            .send(org.mockito.ArgumentMatchers.any(SseEmitter.SseEventBuilder.class));
+        injectEmitters(manager, 1L, List.of(ok));
+        injectEmitters(manager, 2L, List.of(bad));
+
+        manager.sendHeartbeat();
+
+        verify(ok).send(org.mockito.ArgumentMatchers.any(SseEmitter.SseEventBuilder.class));
+        assertThat(manager.getActiveCount()).isEqualTo(1);
+    }
+
+    @Test
     @DisplayName("sendToUser：目标用户无连接时静默不抛")
     void sendToUser_noEmitters_doesNotThrow() {
         manager.sendToUser(999L, "payload");

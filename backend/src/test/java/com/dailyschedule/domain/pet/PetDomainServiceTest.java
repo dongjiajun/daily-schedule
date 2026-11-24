@@ -5,7 +5,10 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -126,6 +129,23 @@ class PetDomainServiceTest {
         domainService.decay(pet);
         assertThat(pet.getMood()).isEqualTo(80);
         assertThat(pet.getHunger()).isEqualTo(80);
+    }
+
+    @Test
+    @DisplayName("衰减 → 注入固定 Clock 确定性计算")
+    void decay_withFixedClock_isDeterministic() {
+        Clock fixedClock = Clock.fixed(Instant.parse("2026-08-15T10:00:00Z"), ZoneId.of("Asia/Shanghai"));
+        PetDomainService fixedService = new PetDomainService(fixedClock);
+
+        Pet pet = new Pet();
+        pet.setMood(100);
+        pet.setHunger(100);
+        // 2026-08-15T10:00:00Z = 18:00+08:00，距离 14:00 相差 4 小时 → mood-4, hunger-6
+        pet.setLastInteractedAt(LocalDateTime.of(2026, 8, 15, 14, 0));
+
+        fixedService.decay(pet);
+        assertThat(pet.getMood()).isEqualTo(96);
+        assertThat(pet.getHunger()).isEqualTo(94);
     }
 
     @Test

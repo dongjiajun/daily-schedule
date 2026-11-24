@@ -15,7 +15,6 @@ describe('calendarStore', () => {
       searchKeyword: '',
       defaultStart: null,
       defaultEnd: null,
-      showShortcuts: false,
       showManage: false,
       manageTab: 'categories',
     })
@@ -94,11 +93,5 @@ describe('calendarStore', () => {
     useCalendarStore.getState().openManage()
     useCalendarStore.getState().closeManage()
     expect(useCalendarStore.getState().showManage).toBe(false)
-  })
-
-  it('closeOnboarding 设置 localStorage', () => {
-    useCalendarStore.getState().closeOnboarding()
-    expect(localStorage.getItem('onboarding_done')).toBe('1')
-    expect(useCalendarStore.getState().showOnboarding).toBe(false)
   })
 })
