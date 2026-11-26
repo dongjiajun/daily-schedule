@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import type { TaskProfile } from '@/api/types.gen'
 import { useTasks } from '../hooks/useTasks'
 import { useTodoStore } from '../store/todoStore'
+import { useTodoKeyboardShortcuts } from '../hooks/useTodoKeyboardShortcuts'
 import { TaskToolbar } from './TaskToolbar'
 import { BoardView } from './BoardView'
 import { ListView } from './ListView'
@@ -14,6 +15,10 @@ export default function TodoPage() {
   const { data: tasks = [], isLoading, isError } = useTasks()
   const [editTask, setEditTask] = useState<TaskProfile | null>(null)
   const [showNewForm, setShowNewForm] = useState(false)
+  const handleNewTask = useCallback(() => setShowNewForm(true), [])
+
+  // 放在早期 return 之前保证 Hooks 调用顺序稳定
+  useTodoKeyboardShortcuts({ onNewTask: handleNewTask })
 
   if (isLoading) {
     return (

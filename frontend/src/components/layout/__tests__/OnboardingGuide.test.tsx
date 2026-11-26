@@ -59,4 +59,12 @@ describe('OnboardingGuide', () => {
     fireEvent.click(screen.getByText('下一步'))
     expect(screen.queryByText('跳过')).toBeNull()
   })
+
+  it('以 Radix Dialog 渲染并支持 Escape 关闭', () => {
+    const onClose = vi.fn()
+    render(<OnboardingGuide onClose={onClose} />)
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(onClose).toHaveBeenCalledTimes(1)
+  })
 })

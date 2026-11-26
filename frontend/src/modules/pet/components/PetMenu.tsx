@@ -3,32 +3,13 @@ import { Popover, PopoverContent } from '@/core/components/ui/popover'
 import { Button } from '@/core/components/ui/button'
 import { useMyPet, useInteract } from '../hooks/usePet'
 import { usePetStore } from '../store/petStore'
-import type { FeedbackItem } from '../store/petStore'
 import type { InteractionResult } from '@/api/types.gen'
 import { FoodActionList } from './FoodActionList'
+import { toFeedback } from '../lib/feedback'
 
 interface PetMenuProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-}
-
-/** 将互动结果转为浮动数值项（变化量非零项） */
-function toFeedback(
-  mood: number | undefined,
-  hunger: number | undefined,
-  exp: number | undefined,
-  coins: number | undefined
-): FeedbackItem[] {
-  const items: FeedbackItem[] = []
-  const push = (delta: number | undefined, label: string) => {
-    if (!delta || delta === 0) return
-    items.push({ text: delta > 0 ? `+${delta} ${label}` : `${delta} ${label}`, tone: delta > 0 ? 'good' : 'bad' })
-  }
-  push(mood, '心情')
-  push(hunger, '饱腹')
-  push(exp, '经验')
-  push(coins, '金币')
-  return items
 }
 
 /**

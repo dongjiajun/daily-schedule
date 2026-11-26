@@ -129,4 +129,16 @@ describe('SvgAvatar', () => {
     expect(ANIMATION_CSS).toContain('rotate(-7deg)')
     expect(ANIMATION_CSS).toContain('rotate(-3deg)')
   })
+
+  it('size=200 与 size=40 无 transform scale 二次缩放', () => {
+    for (const size of [200, 40]) {
+      const { container } = render(
+        <SvgAvatar species="ORANGE_CAT" emotion="idle" size={size} />
+      )
+      const svg = container.querySelector('svg')!
+      expect(svg.getAttribute('width')).toBe(String(size))
+      expect(svg.getAttribute('height')).toBe(String(size))
+      expect(svg.style.transform).toBe('')
+    }
+  })
 })

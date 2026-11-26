@@ -6,8 +6,12 @@ import { ShortcutsDialog } from './ShortcutsDialog'
 import { ErrorBoundary } from './ErrorBoundary'
 import { useShellStore } from '@/core/store/shellStore'
 import { moduleRegistry } from '@/core/lib/moduleRegistry'
+import { useSseNotifications } from '@/core/hooks/useSseNotifications'
+import { useGlobalShortcuts } from '@/core/hooks/useGlobalShortcuts'
 
 export function AppShell() {
+  useSseNotifications()
+  useGlobalShortcuts()
   const sidebarOpen = useShellStore((s) => s.sidebarOpen)
   const setSidebarOpen = useShellStore((s) => s.setSidebarOpen)
   const globalOverlays = moduleRegistry.getGlobalOverlays()
@@ -57,6 +61,7 @@ export function AppShell() {
         <div className="h-full bg-surface/90 backdrop-blur rounded-2xl shadow-float border border-border-subtle overflow-hidden relative">
           {/* 移动端打开侧边栏按钮 */}
           <button
+            data-pet-avoid="mobile-menu"
             onClick={() => setSidebarOpen(true)}
             className="md:hidden absolute left-3 bottom-3 z-20 w-11 h-11 rounded-full bg-accent text-accent-fg shadow-float flex items-center justify-center"
             aria-label="打开侧边栏"

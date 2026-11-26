@@ -8,8 +8,8 @@ ErrorBoundary（最外层错误捕获）
     └── BrowserRouter
         └── useRoutes (动态路由，从 moduleRegistry.getRoutes() 装配)
             └── /* → AuthGuard（未认证内联渲染 LoginPage）
-                └── AppShell
-                    ├── Sidebar（通用 Shell）
+                └── AppShell（全站挂载 useSseNotifications + useGlobalShortcuts「?」；移动端菜单按钮 data-pet-avoid）
+                    ├── Sidebar（通用 Shell，data-pet-avoid 宠物硬避让区）
                     │   ├── Logo + 应用标题
                     │   ├── ModuleNav（从 moduleRegistry.getAll() 动态渲染）
                     │   ├── ActiveModuleSidebar（当前活跃模块的 sidebarComponent）
@@ -23,7 +23,7 @@ ErrorBoundary（最外层错误捕获）
                         ├── WeekStats（今日/本周/完成率）
                         ├── 设置 / 导出 ICS / 快捷键 / 指南
                         └── ManagePanel（分类 · 标签 · 偏好设置 · 主题配色）
-    └── OnboardingOverlay → OnboardingGuide（引导教程，App 层）
+    └── OnboardingOverlay → OnboardingGuide（引导教程，App 层；Radix Dialog：Portal + 焦点捕获 + Esc 关闭）
     └── Toaster（sonner Toast 通知）
 ```
 
@@ -48,7 +48,8 @@ frontend/src/
 │   ├── hooks/               # 跨模块共享 hooks
 │   │   ├── useTheme.ts
 │   │   ├── useNotification.ts
-│   │   └── useSseNotifications.ts
+│   │   ├── useSseNotifications.ts   # AppShell 全站挂载（/todo、/pet 也保持 SSE）
+│   │   └── useGlobalShortcuts.ts    # 全局「?」快捷键 + isShortcutBlocked 输入/弹窗守卫
 │   ├── lib/                 # 核心工具库
 │   │   ├── authInterceptor.ts
 │   │   ├── eventBus.ts      # EventBus 单例
@@ -91,12 +92,14 @@ frontend/src/
 │       │                     #   SidebarPet/PetPage
 │       ├── hooks/usePet.ts
 │       ├── lib/statusColor.ts    # 状态三段色共享函数
+│       ├── lib/feedback.ts       # 互动/购买结果 → 浮动数值反馈（PetMenu/FoodActionList/PetPage 共享）
 │       └── store/petStore.ts     # 含浮动数值反馈（feedbackTrigger）+ 动作维度（action）
 │                                 #   + persist 持久化（v3.5.1：位置/朝向/休息态/稳定情绪白名单）
 │   └── todo/                 # 任务看板模块
 │       ├── components/       # TodoPage/TaskToolbar/BoardView/TaskColumn/
 │       │                     #   TaskCard/ListView/TaskRow/TaskForm
 │       ├── hooks/useTasks.ts
+│       ├── hooks/useTodoKeyboardShortcuts.ts # /todo 快捷键：N 新建、1/2 看板/列表
 │       ├── lib/taskEvents.ts # 任务事件定义（task:completed/created）
 │       └── store/todoStore.ts
 │
@@ -199,7 +202,7 @@ apps/miniprogram/
 
 ### 任务看板模块 (`modules/todo/`)
 
-- **TodoPage** — 任务主页面，组合 TaskToolbar + BoardView/ListView
+- **TodoPage** — 任务主页面，组合 TaskToolbar + BoardView/ListView；经 `useTodoKeyboardShortcuts` 支持 `N` 新建任务、`1`/`2` 切换看板/列表（输入框/弹窗内不触发）
 - **BoardView** — 三列看板（TODO | IN_PROGRESS | DONE），HTML5 Drag & Drop 跨列移动（同列拖拽保持原位不甩尾），响应式列宽（`flex-1`）
 - **TaskColumn** — 单列容器：lucide 图标标题 + 数量 Badge + 卡片列表 + 内联快速创建 + drop 区域高亮，CSS 变量主题色
 - **TaskCard** — 任务卡片：lucide 图标（截止日期/逾期）+ 优先级 Badge（纯文本色块）+ 标签 chips + 拖拽手柄 + shadcn/ui Select 状态切换（触摸设备可用）+ shadcn/ui Button 编辑/删除（常驻可见；删除走 sonner 撤销 toast）
@@ -210,21 +213,21 @@ apps/miniprogram/
 
 ### 宠物模块 (`modules/pet/`)
 
-- **RoamingPet** (`modules/pet/components/RoamingPet.tsx`) — v2 游走宠物：以独立角色精灵在页面自由漫步，`pointer-events:none` 穿透，点击摸头/双击玩耍（jump 动作），hover 状态浮窗（含"互动"按钮打开 PetMenu 与"回窝"按钮）；朝向翻转（scaleX）仅作用于宠物身体，气泡/hover 浮窗文字保持正读；鼠标停留/点击/输入触发兴趣区域（Zone）吸引；渲染浮动数值反馈（FloatingText）；**action 接线**：移动→walk、进窝→sleep（蜷缩+Zzz）、双击→jump、移动结束 `onAnimationComplete` 回 idle/sleep；**空闲小动作调度器**：8-18s 随机选 stretch/yawn/scratch/look 播放一次（守卫：仅平静 idle 且非休息非格内非行走）；**昼夜节律**（`determineMode` 输出 period：night/morning/afternoon/daytime）：夜间（≥23）立即走向小窝进窝睡觉（不等 2 分钟）、早晨（7-9）睡眠中唤醒 + "早上好"气泡（每日一次）、午后（12-14）低概率小憩 rest 90s 原地打盹、深夜未睡低概率打哈欠提示（10min 冷却）；**格内物理状态机**（rAF 帧循环，替换旧左右横移）：进格→落向最近底边吸附点（重力落地+落定弹跳）→沿四边连续绕行（14 吸附点含四角转角，每段移动都在边上不斜穿），接近目标加速滑入+精确吸附落定，到达点概率分流（40% 跳跃/30% 短暂停留/30% 直接续走），完成度决定风格（快=绕圈+跳跃+happy / 慢=绕四边+idle_variant），绕 2 圈自然退出（45s 兜底防卡死）或离开格子强制退出恢复游走；贴左/右壁时形象横过来（rotate ±90° + 0.15s 过渡）
+- **RoamingPet** (`modules/pet/components/RoamingPet.tsx`) — v2 游走宠物：以独立角色精灵在页面自由漫步，`pointer-events:none` 穿透，点击摸头/双击玩耍（jump 动作），hover 状态浮窗（含"互动"按钮打开 PetMenu 与"回窝"按钮）；朝向翻转（scaleX）仅作用于宠物身体，气泡/hover 浮窗文字保持正读；鼠标停留/点击/输入触发兴趣区域（Zone）吸引；渲染浮动数值反馈（FloatingText）；**action 接线**：移动→walk、进窝→sleep（蜷缩+Zzz）、双击→jump、移动结束 `onAnimationComplete` 回 idle/sleep；**空闲小动作调度器**：8-18s 随机选 stretch/yawn/scratch/look 播放一次（守卫：仅平静 idle 且非休息非格内非行走）；**昼夜节律**（`determineMode` 输出 period：night/morning/afternoon/daytime）：夜间（≥23）立即走向小窝进窝睡觉（不等 2 分钟）、早晨（7-9）睡眠中唤醒 + "早上好"气泡（每日一次）、午后（12-14）低概率小憩 rest 90s 原地打盹、深夜未睡低概率打哈欠提示（10min 冷却）；**格内物理状态机**（rAF 帧循环，替换旧左右横移）：进格→落向最近底边吸附点（重力落地+落定弹跳）→沿四边连续绕行（14 吸附点含四角转角，每段移动都在边上不斜穿），接近目标加速滑入+精确吸附落定，到达点概率分流（40% 跳跃/30% 短暂停留/30% 直接续走），完成度决定风格（快=绕圈+跳跃+happy / 慢=绕四边+idle_variant），绕 2 圈自然退出（45s 兜底防卡死）或离开格子强制退出恢复游走；贴左/右壁时形象横过来（rotate ±90° + 0.15s 过渡）；**避让与去分身**：游走时将 `[data-pet-avoid]`（Sidebar、移动端菜单按钮）按精灵尺寸与视口贴边外扩登记为 `hard` 避让区，回窝休息时仅对渲染坐标偏移至侧栏右侧紧邻小窝处（不遮挡侧栏宠物名/等级/快捷键/登出且不越出视口底边，`petStore.position` 不变），点击唤醒时若位于避让区内则推出至主画布，靠底边时 hover 浮窗自动向上展开，`/pet` 路由隐藏浮层精灵；**领养弹窗编排**：等待 `showOnboarding===false` 后单次弹出全局 `PetSelection`，用户关闭后本会话 `selectionDismissed` 不再打扰
 - **ZoneRegistry** (`core/lib/zoneRegistry.ts`) — 区域注册表：Zone 生命周期管理（注册/更新/移除/decay 自动衰减），类型化区域（user-interaction/pet-spot/calendar-cell）供跨模块区域感知消费
 - **PetAvatar** (`modules/pet/components/PetAvatar.tsx`) — 宠物形象渲染器：SVG 插画（SvgAvatar）+ 地面阴影椭圆（jump 时缩小变淡）；从 petStore 读 emotionState + action 双维；v3.5 起经 `useEquippedAccessoryName` 解析当前配饰并传入 SvgAvatar
 - **SvgAvatar** (`modules/pet/components/SvgAvatar.tsx`) — SVG 插画引擎：根据 species + emotionState + action 选择对应插画（橘猫/柴犬 × 8 种情绪 × 11 种动作）；`data-action` 属性驱动 CSS 动画层（呼吸/眨眼/步伐/蜷缩/Zzz/跳跃/进食咀嚼/伸懒腰/打哈欠/挠耳/张望）；**情绪切换眨眼过渡**：emotion 变化先闭眼（data-blink 驱动 50ms 一次性动画）再换表情参数睁开，消除换脸感；**装扮层（v3.5）**：`accessory` prop 相对容器包裹——皮肤类对基础插画应用 CSS filter，其余经 `AccessoryOverlay` 同 viewBox 叠放
 - **AccessoryOverlay** (`modules/pet/components/AccessoryOverlay.tsx`) — 配饰叠加层（v3.5 新增）：帽子（巫师帽/新年帽/火鸡帽/绿帽子）/角（麋鹿角）/耳（兔耳朵）/发饰（樱花）/背包（粽子）五类 SVG 叠放；皮肤类返回 null（filter 由 SvgAvatar 应用）；未知名称静默回退
 - **accessoryRenderMap** (`modules/pet/lib/accessoryRenderMap.ts`) — 配饰名称 → 渲染方式单一映射（v3.5 新增）：11 个名称与 `themeMapping.petAccessory`/数据库种子对齐；皮肤 filter 参数（年兽=红调/玉兔=白亮/印度象=灰调）
 - **PetBubble** (`modules/pet/components/PetBubble.tsx`) — 宠物对话气泡，毛玻璃主题风格
-- **PetStatus** (`modules/pet/components/PetStatus.tsx`) — 宠物状态展示：心情/饱食度进度条（三段色 statusColor：≥60 绿 / 30-59 黄 / <30 红）+ 代币/等级
-- **PetSelection** (`modules/pet/components/PetSelection.tsx`) — 宠物创建选择 Dialog：物种选择 + 命名
+- **PetStatus** (`modules/pet/components/PetStatus.tsx`) — 宠物状态展示：心情/饱食度 `Progress` 原语（三段色 statusColor：≥60 绿 / 30-59 黄 / <30 红）+ 代币/等级
+- **PetSelection** (`modules/pet/components/PetSelection.tsx`) — 宠物创建选择 Dialog：物种选择 + 命名；全局单实例（由 RoamingPet 编排），关闭即 `dismissSelection()`
 - **ParticleBurst** (`modules/pet/components/ParticleBurst.tsx`) — 粒子爆发特效：hearts/stars/coins/sparkles/food，从指定坐标发射+扩散+淡出
 - **FloatingText** (`modules/pet/components/FloatingText.tsx`) — 浮动数值反馈：互动/购买结果（+N 心情/饱腹/经验/金币）从宠物位置向上飘散+淡出，good 绿 / bad 红
 - **PetMenu** (`modules/pet/components/PetMenu.tsx`) — 互动菜单 Popover：玩耍（免费）/ 喂食 / 商店 tab（食物列表复用 FoodActionList）；金币不足禁用+tooltip；成功 → 浮动数值 + 粒子 + toast
-- **FoodActionList** (`modules/pet/components/FoodActionList.tsx`) — 食物/商品操作列表（PetMenu 与 PetPage 共享）：mode=feed 走 `interact FEED`、mode=shop 走 `purchase`；v3.5 起按类型分流——FOOD 即时消费（成功触发 `setAction('eat', 1500)` 低头咀嚼反馈），ACCESSORY 显示「装备」按钮 + 已装备标记（成功触发 happy 情绪 + toast「已装备」）
-- **SidebarPet** (`modules/pet/components/SidebarPet.tsx`) — 侧边栏迷你宠物：40-50px 精灵 + 心情/饱食度指示点（三段色 statusColor），点击跳转 /pet；挂载时注册 `pet-spot` Zone（id `pet-home-spot`）作为宠物小窝，scroll/resize 事件驱动 rect 更新，卸载注销；v3.5 起迷你精灵同样渲染配饰装扮
-- **PetPage** (`modules/pet/components/PetPage.tsx`) — /pet 完整宠物面板：大头像 + PetStatus + 互动按钮（PetMenu）+ 喂食区 + 商店区 + 宠物信息卡；v3.5 起新增「当前配饰」区（配饰名称 + 「取下」按钮，走 `useUnequip`）
+- **FoodActionList** (`modules/pet/components/FoodActionList.tsx`) — 食物/商品操作列表（PetMenu 与 PetPage 共享）：mode=feed 仅列 FOOD 走 `interact FEED`、mode=accessory 仅列 ACCESSORY、mode=shop 完整商店走 `purchase`；v3.5 起按类型分流——FOOD 即时消费（成功触发 `setAction('eat', 1500)` 低头咀嚼反馈），ACCESSORY 显示「装备」按钮 + 已装备标记（成功触发 happy 情绪 + toast「已装备」）
+- **SidebarPet** (`modules/pet/components/SidebarPet.tsx`) — 侧边栏迷你宠物：40-50px 精灵 + 心情/饱食度指示点（三段色 statusColor），点击跳转 /pet；挂载时注册 `pet-spot` Zone（id `pet-home-spot`）作为宠物小窝，scroll/resize 事件驱动 rect 更新，卸载注销；v3.5 起迷你精灵同样渲染配饰装扮；休息态（非 `/pet` 且 `isResting`）切换为 `💤` 小窝指示（`aria-label="小窝休息中"`，消除双精灵重叠）；无宠物时展示「领养一只伙伴」入口
+- **PetPage** (`modules/pet/components/PetPage.tsx`) — /pet 完整宠物面板：`h-full overflow-y-auto` 纵向滚动 + 设计系统原语收口（Card/Skeleton/EmptyState/Progress/Button/Input）；主卡大头像 + 物种中文（橘猫/柴犬）+ 内联改名（1–30 字，`PUT /pets/me`）+ 直接「玩耍（免费）」按钮（本地粒子/飘字反馈）；「喂食区 🍖」仅食物，「装扮区 🎀」配饰购买穿戴 + 当前配饰「取下」（`useUnequip`）
 - **petEventBridge** (`modules/pet/lib/petEventBridge.ts`) — 事件桥接（v3.4 扩展）：监听 calendar（event:completed/created/cancelled）、todo（task:completed/created）、habit（habit:checked）、focus（focus:completed）、user（user:dailyCheckin）五类事件；任务/日程完成时 invalidate 宠物查询缓存（即时刷新后端发放的专注币）；habit/focus/checkin 事件调用奖励 API（幂等）→ granted=true 时刷新宠物数据 + 金币粒子 + 「+N 专注币」气泡，失败静默
 
 - **游走引擎** (`packages/shared/src/pet/roaming.ts`) — 纯逻辑游走算法：随机漫步（含逃逸机制，防边缘排斥困角）/Zone 区域吸引/边界避让/休息点选择，Web 与小程序共享
@@ -242,11 +245,11 @@ apps/miniprogram/
 
 ### 布局模块
 
-- **AppShell** (`components/layout/AppShell.tsx`) — 侧边栏 + 内容区；`md` 以下侧栏变为抽屉（浮动按钮唤起）
-- **Sidebar** (`components/layout/Sidebar.tsx`) — 通用 Shell：模块导航 + 活跃模块侧边栏内容 + 用户信息/登出
-- **ShortcutsDialog** (`components/layout/ShortcutsDialog.tsx`) — 快捷键速查（? 唤起）
+- **AppShell** (`components/layout/AppShell.tsx`) — 侧边栏 + 内容区；`md` 以下侧栏变为抽屉（浮动按钮唤起，`data-pet-avoid="mobile-menu"`）；全站挂载 `useSseNotifications` 与 `useGlobalShortcuts`
+- **Sidebar** (`components/layout/Sidebar.tsx`) — 通用 Shell：模块导航 + 活跃模块侧边栏内容 + 用户信息/登出；`data-pet-avoid="sidebar"`
+- **ShortcutsDialog** (`components/layout/ShortcutsDialog.tsx`) — 快捷键速查（? 唤起），按「全局 / 日历视图 / 任务看板」分组
 - **ErrorBoundary** (`components/layout/ErrorBoundary.tsx`) — React 错误边界，fallback UI + 重载按钮
-- **OnboardingGuide** (`components/layout/OnboardingGuide.tsx`) — 3 步引导教程，可通过侧边栏重新打开
+- **OnboardingGuide** (`components/layout/OnboardingGuide.tsx`) — 3 步引导教程（Radix Dialog：Portal + 焦点捕获 + Esc 关闭），可通过侧边栏重新打开
 
 ### UI 基础（shadcn/ui, `core/components/ui/`）
 
@@ -264,9 +267,11 @@ apps/miniprogram/
 | useEvents | modules/calendar/hooks/ | 事件查询（分类/标签/关键词过滤）+ CRUD + useToggleEventStatus 一键完成 |
 | useCategories | modules/calendar/hooks/ | 分类 CRUD（React Query） |
 | useTags | modules/calendar/hooks/ | 标签 CRUD（React Query） |
-| useKeyboardShortcuts | modules/calendar/hooks/ | 全局快捷键：N/T/←→/1-4//?/Esc |
+| useKeyboardShortcuts | modules/calendar/hooks/ | 日历视图快捷键：N/T/←→/1-4// （复用 isShortcutBlocked） |
+| useTodoKeyboardShortcuts | modules/todo/hooks/ | 任务看板快捷键：N 新建、1/2 看板/列表 |
+| useGlobalShortcuts | core/hooks/ | 全局快捷键 `?`（AppShell 挂载）+ `isShortcutBlocked` 守卫 |
 | useNotification | core/hooks/ | 浏览器 Notification API |
-| useSseNotifications | core/hooks/ | SSE 实时通知订阅 |
+| useSseNotifications | core/hooks/ | SSE 实时通知订阅（AppShell 全站挂载；无 EventSource 环境跳过） |
 | useTheme | core/hooks/ | 读取 settingsStore.theme → 设置 `document.documentElement.dataset.theme` |
 
 ## 模块注册中心

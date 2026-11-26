@@ -20,6 +20,7 @@ export function useSseNotifications() {
 
   useEffect(() => {
     if (!accessToken) return
+    if (typeof EventSource === 'undefined') return
 
     function connect(): EventSource {
       const es = new EventSource('/api/v1/sse/notifications', {

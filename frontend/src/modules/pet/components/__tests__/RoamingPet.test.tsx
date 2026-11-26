@@ -2,11 +2,18 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, fireEvent, act, screen } from '@testing-library/react'
 import { clearZones, getZones, registerZone } from '@/core/lib/zoneRegistry'
 import { usePetStore } from '../../store/petStore'
+import { useShellStore } from '@/core/store/shellStore'
+
+let mockPathname = '/'
+vi.mock('react-router-dom', () => ({
+  useLocation: () => ({ pathname: mockPathname }),
+}))
 
 // 模块级常量 pet：引用稳定（贴近 React Query structural sharing——数据未变时 data 引用不变）
 const MOCK_PET = { id: 1, name: '豆豆', mood: 'happy', energy: 80 }
+let mockMyPetResult: Record<string, unknown> = { data: MOCK_PET, isLoading: false, isError: false, isFetching: false }
 vi.mock('../../hooks/usePet', () => ({
-  useMyPet: () => ({ data: MOCK_PET, isLoading: false }),
+  useMyPet: () => mockMyPetResult,
   useInteract: () => ({ mutate: vi.fn(), isPending: false }),
   useShopItems: () => ({ data: [], isLoading: false }),
   usePurchase: () => ({ mutate: vi.fn(), isPending: false }),
@@ -23,7 +30,7 @@ vi.mock('framer-motion', () => ({
 }))
 
 vi.mock('../PetSelection', () => ({
-  PetSelection: () => null,
+  PetSelection: () => <div data-testid="pet-selection-mock" />,
 }))
 
 import { RoamingPet } from '../RoamingPet'
@@ -31,6 +38,9 @@ import { RoamingPet } from '../RoamingPet'
 const PET_ROOT = '[data-pet="roaming"]'
 
 beforeEach(() => {
+  mockPathname = '/'
+  mockMyPetResult = { data: MOCK_PET, isLoading: false, isError: false, isFetching: false }
+  useShellStore.setState({ showOnboarding: false, showShortcuts: false, sidebarOpen: false })
   clearZones()
   // 重置模块级 petStore（用例间共享，游走 tick 会修改 position）
   usePetStore.getState().reset()
@@ -663,5 +673,97 @@ describe('RoamingPet', () => {
       vi.advanceTimersByTime(10_000)
     })
     expect(usePetStore.getState().position).toEqual(restingAt)
+  })
+
+  it('等待 Onboarding 结束后才自动弹出 PetSelection，且已有宠物或关闭免打扰时不弹', () => {
+    mockMyPetResult = { data: undefined, isLoading: false, isError: true, isFetching: false }
+    useShellStore.setState({ showOnboarding: true })
+
+    const { rerender } = render(<RoamingPet />)
+    expect(usePetStore.getState().selectionOpen).toBe(false)
+
+    act(() => {
+      useShellStore.setState({ showOnboarding: false })
+    })
+    rerender(<RoamingPet />)
+    expect(usePetStore.getState().selectionOpen).toBe(true)
+
+    act(() => {
+      usePetStore.getState().dismissSelection()
+    })
+    rerender(<RoamingPet />)
+    expect(usePetStore.getState().selectionOpen).toBe(false)
+
+    usePetStore.getState().reset()
+    mockMyPetResult = { data: MOCK_PET, isLoading: false, isError: false, isFetching: false }
+    rerender(<RoamingPet />)
+    expect(usePetStore.getState().selectionOpen).toBe(false)
+  })
+
+  it('/pet 路由下隐藏游走精灵并保留选择弹窗', () => {
+    mockPathname = '/pet'
+    render(<RoamingPet />)
+    expect(document.querySelector(PET_ROOT)).toBeNull()
+    expect(screen.getByTestId('pet-selection-mock')).toBeInTheDocument()
+  })
+
+  it('注册 data-pet-avoid 为 hard 避让区，游走目标被推出避让范围', () => {
+    const sidebar = document.createElement('aside')
+    sidebar.setAttribute('data-pet-avoid', 'sidebar')
+    sidebar.getBoundingClientRect = () => ({
+      left: 0, top: 0, right: 240, bottom: 1000, width: 240, height: 1000, x: 0, y: 0, toJSON: () => ({}),
+    })
+    document.body.appendChild(sidebar)
+    try {
+      // daytime 时段排除午后小憩干扰；即使采样到紧贴左边缘，视口贴边避让也会推向侧栏右侧而非 -10
+      vi.setSystemTime(new Date('2026-08-09T16:00:00'))
+      vi.spyOn(Math, 'random').mockReturnValue(0.02)
+      render(<RoamingPet />)
+      act(() => {
+        vi.advanceTimersByTime(10_500)
+      })
+      expect(usePetStore.getState().position.x).toBeGreaterThanOrEqual(252)
+    } finally {
+      sidebar.remove()
+    }
+  })
+
+  it('回窝休息停靠在侧栏小窝外侧（不遮挡侧栏）、点击唤醒自动推出、底边悬停浮窗向上展开', () => {
+    const origHeight = window.innerHeight
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 800 })
+    const sidebar = document.createElement('aside')
+    sidebar.setAttribute('data-pet-avoid', 'sidebar')
+    sidebar.getBoundingClientRect = () => ({
+      left: 0, top: 0, right: 240, bottom: 800, width: 240, height: 800, x: 0, y: 0, toJSON: () => ({}),
+    })
+    document.body.appendChild(sidebar)
+    registerZone({
+      id: 'pet-home-spot',
+      type: 'pet-spot',
+      rect: { left: 0, top: 700, right: 240, bottom: 760 },
+      weight: 1,
+    })
+    try {
+      act(() => {
+        usePetStore.getState().setPosition({ x: 120, y: 730 })
+        usePetStore.getState().startResting()
+      })
+      render(<RoamingPet />)
+
+      const root = document.querySelector(PET_ROOT)!
+      // motion mock 将 animate 透传为属性或 style：验证未回退到侧栏内且悬停向上翻转
+      fireEvent.mouseEnter(root.firstElementChild!)
+      const hoverBtn = screen.getByText('😴 回窝')
+      const hoverCard = hoverBtn.closest('div[data-mock-motion]') as HTMLElement
+      expect(hoverCard.className).toContain('bottom-full')
+
+      // 点击唤醒处于小窝（侧栏硬避让区）的宠物 → 推出到侧栏右侧画布
+      fireEvent.click(screen.getByTitle('点击摸头 | 双击玩耍'))
+      expect(usePetStore.getState().isResting).toBe(false)
+      expect(usePetStore.getState().position.x).toBeGreaterThanOrEqual(252)
+    } finally {
+      Object.defineProperty(window, 'innerHeight', { configurable: true, value: origHeight })
+      sidebar.remove()
+    }
   })
 })

@@ -1,12 +1,10 @@
 import { CalendarView } from './CalendarView'
 import { EventModal } from './EventModal'
 import { useCalendarStore } from '../store/calendarStore'
-import { useSseNotifications } from '@/core/hooks/useSseNotifications'
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
 
 export function HomePage() {
   const { modalOpen, closeModal, editingEventId } = useCalendarStore()
-  useSseNotifications()
   useKeyboardShortcuts()
 
   return (

@@ -18,7 +18,6 @@ interface Props {
 }
 
 export function ShibaInu({ emotion, size = 100, className, action = 'idle', blinkNow = false }: Props) {
-  const scale = size / 100
   // sleep 动作覆盖为 sleepy 表情参数（闭眼/蜷嘴/尾巴低垂），无需外部 setEmotion
   const displayEmotion = action === 'sleep' ? 'sleepy' : emotion
 
@@ -74,7 +73,6 @@ export function ShibaInu({ emotion, size = 100, className, action = 'idle', blin
         className={className}
         data-action={action}
         data-blink={blinkNow ? '1' : '0'}
-        style={{ transform: `scale(${scale})`, transformOrigin: 'top left' }}
         aria-label={`柴犬 — ${emotion}`}
       >
         {/* 跳跃位移层（jump 时整体离地） */}

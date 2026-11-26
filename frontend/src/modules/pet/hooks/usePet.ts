@@ -13,7 +13,7 @@ export function useMyPet() {
       if (error.message?.includes('404') || error.message?.includes('请先创建宠物')) return false
       return failureCount < 2
     },
-    refetchInterval: 30_000, // 30 秒轮询
+    refetchInterval: (query) => (query.state.status === 'error' ? false : 30_000), // 无宠物/错误态停止 30s 轮询
   })
 }
 

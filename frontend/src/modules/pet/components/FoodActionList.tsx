@@ -4,29 +4,11 @@ import { useMyPet, useInteract, useShopItems, usePurchase } from '../hooks/usePe
 import { usePetStore } from '../store/petStore'
 import type { FeedbackItem, ParticleType } from '../store/petStore'
 import type { InteractionResult, PurchaseResult } from '@/api/types.gen'
+import { toFeedback } from '../lib/feedback'
 
 interface FoodActionListProps {
-  /** feed: 喂食（interact FEED）/ shop: 购买（purchase） */
-  mode: 'feed' | 'shop'
-}
-
-/** 将互动结果转为浮动数值项（变化量非零项） */
-function toFeedback(
-  mood: number | undefined,
-  hunger: number | undefined,
-  exp: number | undefined,
-  coins: number | undefined
-): FeedbackItem[] {
-  const items: FeedbackItem[] = []
-  const push = (delta: number | undefined, label: string) => {
-    if (!delta || delta === 0) return
-    items.push({ text: delta > 0 ? `+${delta} ${label}` : `${delta} ${label}`, tone: delta > 0 ? 'good' : 'bad' })
-  }
-  push(mood, '心情')
-  push(hunger, '饱腹')
-  push(exp, '经验')
-  push(coins, '金币')
-  return items
+  /** feed: 喂食（仅 FOOD）/ accessory: 装扮（仅 ACCESSORY）/ shop: 完整商店 */
+  mode: 'feed' | 'shop' | 'accessory'
 }
 
 /**
@@ -82,12 +64,21 @@ export function FoodActionList({ mode }: FoodActionListProps) {
     )
   }
 
+  const visibleItems =
+    mode === 'feed'
+      ? items.filter((item) => item.type !== 'ACCESSORY')
+      : mode === 'accessory'
+        ? items.filter((item) => item.type === 'ACCESSORY')
+        : items
+
   return (
     <div className="flex flex-col gap-1.5">
-      {items.length === 0 && (
-        <p className="text-xs text-foreground-secondary text-center py-3">商店空空如也</p>
+      {visibleItems.length === 0 && (
+        <p className="text-xs text-foreground-secondary text-center py-3">
+          {mode === 'feed' ? '暂无可用食物' : mode === 'accessory' ? '暂无可装备配饰' : '商店空空如也'}
+        </p>
       )}
-      {items.map((item) => {
+      {visibleItems.map((item) => {
         const isAccessory = item.type === 'ACCESSORY'
         const equipped = isAccessory && currentAccessory != null && currentAccessory === item.id
         const affordable = coins >= (item.price ?? 0)

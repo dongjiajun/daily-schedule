@@ -54,6 +54,8 @@ interface PetStore {
 
   // ── 选择 ──
   selectionOpen: boolean
+  /** 本会话主动关闭领养弹窗后置 true，免打扰不再自动重弹 */
+  selectionDismissed: boolean
 
   // ── 游走 ──
   position: Position
@@ -89,6 +91,7 @@ interface PetStore {
 
   // ── 选择 Actions ──
   setSelectionOpen: (open: boolean) => void
+  dismissSelection: () => void
 
   // ── 游走 Actions ──
   setPosition: (pos: Position) => void
@@ -122,6 +125,7 @@ export const usePetStore = create<PetStore>()(
 
   bubbleMessage: null,
   selectionOpen: false,
+  selectionDismissed: false,
 
   position: { x: 100, y: 100 },
   targetPosition: null,
@@ -208,6 +212,7 @@ export const usePetStore = create<PetStore>()(
 
   // ── 选择 ──
   setSelectionOpen: (open) => set({ selectionOpen: open }),
+  dismissSelection: () => set({ selectionOpen: false, selectionDismissed: true }),
 
   // ── 游走 ──
   setPosition: (pos) => set({ position: pos }),
@@ -239,6 +244,7 @@ export const usePetStore = create<PetStore>()(
       actionTimer: null,
       bubbleMessage: null,
       selectionOpen: false,
+      selectionDismissed: false,
       position: { x: 100, y: 100 },
       targetPosition: null,
       facing: 'right',

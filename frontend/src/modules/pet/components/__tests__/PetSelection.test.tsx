@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { PetSelection } from '../PetSelection'
 import { usePetStore } from '../../store/petStore'
@@ -20,7 +20,8 @@ vi.mock('lucide-react', async () => {
 
 describe('PetSelection', () => {
   beforeEach(() => {
-    usePetStore.setState({ selectionOpen: true, animationState: 'idle', bubbleMessage: null, menuOpen: false })
+    usePetStore.getState().reset()
+    usePetStore.setState({ selectionOpen: true, selectionDismissed: false })
   })
 
   it('渲染两种物种选择', () => {
@@ -39,5 +40,12 @@ describe('PetSelection', () => {
     const input = screen.getByPlaceholderText(/起个名字/)
     await userEvent.type(input, '大橘')
     expect(screen.getByRole('button', { name: /确认选择/ })).not.toBeDisabled()
+  })
+
+  it('主动关闭弹窗设置 selectionDismissed=true（本会话免打扰）', () => {
+    render(<PetSelection />)
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(usePetStore.getState().selectionOpen).toBe(false)
+    expect(usePetStore.getState().selectionDismissed).toBe(true)
   })
 })

@@ -122,4 +122,19 @@ describe('FoodActionList', () => {
     expect(equipBtn).toHaveTextContent('已装备')
     expect(screen.getByText('已装备', { selector: 'span' })).toBeTruthy()
   })
+
+  it('feed 模式过滤 ACCESSORY，accessory 模式仅显示 ACCESSORY', () => {
+    vi.mocked(useShopItems).mockReturnValue({
+      data: [SHOP_ITEM, ACCESSORY_ITEM],
+      isLoading: false,
+    } as ReturnType<typeof useShopItems>)
+
+    const { rerender } = render(<FoodActionList mode="feed" />, { wrapper })
+    expect(screen.getByRole('button', { name: '喂食-小鱼干' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /巫师帽/ })).toBeNull()
+
+    rerender(<FoodActionList mode="accessory" />)
+    expect(screen.getByRole('button', { name: '装备-巫师帽' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /小鱼干/ })).toBeNull()
+  })
 })

@@ -29,7 +29,10 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const ActiveSidebarComponent = activeModule?.sidebarComponent
 
   return (
-    <aside className="w-60 h-full bg-gradient-to-b from-surface via-surface to-sidebar-muted border-r border-border-subtle flex flex-col relative z-10">
+    <aside
+      data-pet-avoid="sidebar"
+      className="w-60 h-full bg-gradient-to-b from-surface via-surface to-sidebar-muted border-r border-border-subtle flex flex-col relative z-10"
+    >
       {/* Header */}
       <div className="px-5 py-4 border-b border-border-subtle flex items-center justify-between">
         <h1 className="text-base font-bold text-foreground flex items-center gap-2.5 tracking-tight">

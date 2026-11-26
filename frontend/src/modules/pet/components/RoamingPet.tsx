@@ -1,5 +1,7 @@
 import { useEffect, useRef, useCallback, useMemo, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useShellStore } from '@/core/store/shellStore'
 import { useMyPet } from '../hooks/usePet'
 import { usePetStore } from '../store/petStore'
 import type { PetAction } from '../store/petStore'
@@ -14,6 +16,8 @@ import {
   determineMode,
   computeNextTarget,
   computeFacing,
+  avoidZones,
+  clampToViewport,
   randomWanderInterval,
   randomMoveDuration,
   createDefaultConfig,
@@ -75,6 +79,15 @@ function toPetBox(pos: CellClingPoint, edge: CellClingPoint['edge']): CellClingP
   }
 }
 
+/** 若坐标落入硬避让区（如侧栏小窝），立刻推出至主画布安全位置 */
+function stepOutAvoidZones(pos: Position, config: RoamingConfig): Position | null {
+  const inHard = config.avoidZones.some(
+    (z) => z.strength === 'hard' && isInsideRect(pos, z.rect)
+  )
+  if (!inHard) return null
+  return clampToViewport(avoidZones(pos, config.avoidZones), config)
+}
+
 /**
  * 游走宠物 — 替代 PetPanel 的 v2 角色式宠物。
  * - 以独立精灵在页面自由漫步
@@ -83,6 +96,10 @@ function toPetBox(pos: CellClingPoint, edge: CellClingPoint['edge']): CellClingP
  * - Hover 显示迷你状态浮窗
  */
 export function RoamingPet() {
+  const location = useLocation()
+  const isPetRoute = location.pathname === '/pet' || location.pathname.startsWith('/pet/')
+  const showOnboarding = useShellStore((s) => s.showOnboarding)
+  const selectionDismissed = usePetStore((s) => s.selectionDismissed)
   const { data: pet, isLoading, isError, isFetching } = useMyPet()
   const setSelectionOpen = usePetStore((s) => s.setSelectionOpen)
 
@@ -161,6 +178,24 @@ export function RoamingPet() {
         strength: 'soft',
       })
     }
+    const vw = window.innerWidth
+    const vh = window.innerHeight
+    document.querySelectorAll<HTMLElement>('[data-pet-avoid]').forEach((el) => {
+      const rect = el.getBoundingClientRect()
+      if (rect.width > 0 && rect.height > 0) {
+        zones.push({
+          rect: {
+            // 贴视口边沿的避让区向内扩展极大负偏移，确保 avoidZones 优先推向画布内侧而非滑出屏幕边缘；
+            // 同时按 90px 精灵尺寸留出外扩边距，防止机身与避让元素重叠。
+            left: rect.left <= 20 ? -99999 : rect.left - 90,
+            top: rect.top <= 20 ? -99999 : rect.top - 90,
+            right: rect.right >= vw - 20 ? 99999 : rect.right + 12,
+            bottom: rect.bottom >= vh - 20 ? 99999 : rect.bottom + 12,
+          },
+          strength: 'hard',
+        })
+      }
+    })
     configRef.current = { ...configRef.current, avoidZones: zones }
   }, [])
 
@@ -182,7 +217,7 @@ export function RoamingPet() {
       window.removeEventListener('scroll', refresh, true)
       window.removeEventListener('resize', refresh)
     }
-  }, [updateAvoidZones])
+  }, [updateAvoidZones, location.pathname])
 
   // ── 兴趣区域接线（spec: Interest Point Attraction 的 UI 层实现） ──
   // 鼠标停留 > 3s → 50% 概率创建兴趣区域；点击/输入 → 30% 概率
@@ -438,7 +473,7 @@ export function RoamingPet() {
       // 每次循环取最新状态与 Zone 列表（移除后立即失效）
       const { position, lastInteractionTime, isResting } = usePetStore.getState()
       const activeZones = getZones().filter(z => z.type === 'user-interaction')
-      const homeZone = getZones().find(z => z.type === 'pet-spot') ?? null
+      const homeZone = getZones().find(z => z.type === 'pet-spot' && z.rect.right - z.rect.left > 0) ?? null
       const inHome = homeZone ? isInsideRect(position, homeZone.rect) : false
       const { mode, period } = determineMode({
         lastInteractionAt: lastInteractionTime,
@@ -572,12 +607,12 @@ export function RoamingPet() {
   })
 
   useEffect(() => {
-    if (pet) scheduleWander()
+    if (pet && !isPetRoute) scheduleWander()
     return () => {
       // 渲染重跑时只清游走 timer；往返 timer 由独立卸载 effect 清理（避免渲染重跑中断往返）
       if (wanderTimerRef.current) clearTimeout(wanderTimerRef.current)
     }
-  }, [pet, scheduleWander])
+  }, [pet, isPetRoute, scheduleWander])
 
   // 组件卸载时清理格内帧循环
   useEffect(() => {
@@ -620,15 +655,17 @@ export function RoamingPet() {
   // ── 无宠物自动弹出选择框 ──
   // isFetching 守卫：创建宠物成功后的 refetch 窗口期（isError 仍为旧值）不再重开 Dialog
   useEffect(() => {
-    if (isError && !isLoading && !isFetching) {
+    if (isError && !isLoading && !isFetching && !showOnboarding && !selectionDismissed) {
       setSelectionOpen(true)
     }
-  }, [isError, isLoading, isFetching, setSelectionOpen])
+  }, [isError, isLoading, isFetching, showOnboarding, selectionDismissed, setSelectionOpen])
 
   // ── 交互处理 ──
   const handleClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation()
     wakeUp()
+    const stepped = stepOutAvoidZones(usePetStore.getState().position, configRef.current)
+    if (stepped) setPosition(stepped)
     setEmotion('happy', 3000)
     showBubble('好舒服~ ฅ^•ﻌ•^ฅ')
     clearParticleTrigger() // 清除旧触发
@@ -636,19 +673,21 @@ export function RoamingPet() {
     setTimeout(() => {
       usePetStore.getState().triggerParticle('hearts')
     }, 0)
-  }, [wakeUp, setEmotion, showBubble, clearParticleTrigger])
+  }, [wakeUp, setPosition, setEmotion, showBubble, clearParticleTrigger])
 
   const handleDoubleClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation()
     wakeUp()
+    const stepped = stepOutAvoidZones(usePetStore.getState().position, configRef.current)
+    if (stepped) setPosition(stepped)
     setEmotion('excited', 4000)
     setAction('jump', 600) // 跳起 + 影子缩小变淡
     showBubble('一起玩！🎾')
-  }, [wakeUp, setEmotion, setAction, showBubble])
+  }, [wakeUp, setPosition, setEmotion, setAction, showBubble])
 
   /** 回窝睡觉：立即回到小窝（蜷缩 + Zzz）；格内互动中先退出 */
   const handleReturnHome = useCallback(() => {
-    const homeZone = getZones().find((z) => z.type === 'pet-spot')
+    const homeZone = getZones().find((z) => z.type === 'pet-spot' && z.rect.right - z.rect.left > 0)
     if (!homeZone) {
       showBubble('还没有小窝…')
       return
@@ -683,18 +722,44 @@ export function RoamingPet() {
     return randomMoveDuration(1)
   }, [isResting, pacingCellId])
 
+  // 视觉停靠偏移：休息且在真实小窝内时停靠至小窝外侧（侧栏右侧紧邻小窝处），
+  // 既保留睡眠伴随感，又不遮挡侧栏宠物名/Lv/快捷键/登出且不溢出视口底边
+  const displayPosition = (() => {
+    if (!isResting) return position
+    const homeZone = getZones().find((z) => z.type === 'pet-spot' && z.rect.right - z.rect.left > 0)
+    if (homeZone && isInsideRect(position, homeZone.rect)) {
+      const vw = typeof window !== 'undefined' ? window.innerWidth : homeZone.rect.right + 120
+      const vh = typeof window !== 'undefined' ? window.innerHeight : homeZone.rect.top + 120
+      return {
+        x: Math.min(homeZone.rect.right + 12, Math.max(0, vw - 104)),
+        y: Math.min(Math.max(16, homeZone.rect.top - 16), Math.max(16, vh - 104)),
+      }
+    }
+    return position
+  })()
+
+  const vw = typeof window !== 'undefined' ? window.innerWidth : 1280
+  const vh = typeof window !== 'undefined' ? window.innerHeight : 800
+  const showHoverAbove = displayPosition.y > vh - 240
+  const hoverHorizontalClass =
+    displayPosition.x < 48
+      ? 'left-0'
+      : displayPosition.x > vw - 138
+        ? 'right-0'
+        : 'left-1/2 -translate-x-1/2'
+
   return (
     <>
       <PetSelection />
 
-      {pet && (
+      {pet && !isPetRoute && (
         <>
           {/* 粒子爆发 — 由事件总线或手动交互触发 */}
           <AnimatePresence>
             {particleTrigger && (
               <ParticleBurst
                 key={particleTrigger.timestamp}
-                origin={{ x: position.x, y: position.y }}
+                origin={{ x: displayPosition.x, y: displayPosition.y }}
                 type={particleTrigger.type}
                 count={8}
                 onDone={() => clearParticleTrigger()}
@@ -707,7 +772,7 @@ export function RoamingPet() {
             {feedbackTrigger && (
               <FloatingText
                 key={feedbackTrigger.timestamp}
-                origin={{ x: position.x, y: position.y - 50 }}
+                origin={{ x: displayPosition.x, y: displayPosition.y - 50 }}
                 items={feedbackTrigger.items}
                 onDone={() => clearFeedback()}
               />
@@ -720,7 +785,7 @@ export function RoamingPet() {
           {/* 宠物本体 */}
           <motion.div
             data-pet="roaming"
-            animate={{ x: position.x, y: position.y }}
+            animate={{ x: displayPosition.x, y: displayPosition.y }}
             transition={{ duration: moveDuration / 1000, ease: 'easeInOut' }}
             onAnimationComplete={() => {
               // 格内互动中：action 由 rAF 状态机驱动（pace/walk/jump），不被动画完成重置
@@ -777,10 +842,10 @@ export function RoamingPet() {
               <AnimatePresence>
                 {hovered && (
                   <motion.div
-                    initial={{ opacity: 0, y: 5 }}
+                    initial={{ opacity: 0, y: showHoverAbove ? -5 : 5 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 5 }}
-                    className="absolute top-full left-1/2 -translate-x-1/2 mt-2 bg-surface/95 backdrop-blur rounded-xl shadow-float border border-border-subtle p-2 min-w-[120px]"
+                    exit={{ opacity: 0, y: showHoverAbove ? -5 : 5 }}
+                    className={`absolute ${showHoverAbove ? 'bottom-full mb-2' : 'top-full mt-2'} ${hoverHorizontalClass} bg-surface/95 backdrop-blur rounded-xl shadow-float border border-border-subtle p-2 min-w-[120px]`}
                     style={{ pointerEvents: 'none' }}
                   >
                     <PetStatus pet={pet} isLoading={false} />

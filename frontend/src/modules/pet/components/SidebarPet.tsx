@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useMyPet, useEquippedAccessoryName } from '../hooks/usePet'
 import { usePetStore } from '../store/petStore'
@@ -18,12 +18,15 @@ export const PET_HOME_ZONE_ID = 'pet-home-spot'
  * 该区域注册为 `pet-spot` Zone（宠物小窝）——游走宠物进入即自动进窝休息。
  */
 export function SidebarPet({ onNavigate }: { onNavigate?: () => void }) {
+  const location = useLocation()
   const navigate = useNavigate()
   const { data: pet, isLoading } = useMyPet()
   const emotionState = usePetStore((s) => s.emotionState)
+  const isResting = usePetStore((s) => s.isResting)
   const accessoryName = useEquippedAccessoryName()
   const setSelectionOpen = usePetStore((s) => s.setSelectionOpen)
   const homeRef = useRef<HTMLDivElement>(null)
+  const isPetRoute = location.pathname === '/pet' || location.pathname.startsWith('/pet/')
 
   const handleClick = () => {
     if (pet) {
@@ -76,6 +79,13 @@ export function SidebarPet({ onNavigate }: { onNavigate?: () => void }) {
         <div className="w-10 h-10 flex-shrink-0 flex items-center justify-center">
           {isLoading ? (
             <div className="w-8 h-8 bg-hover rounded-full animate-pulse" />
+          ) : pet && isResting && !isPetRoute ? (
+            <div
+              className="w-9 h-9 rounded-full bg-accent/10 border border-border-subtle flex items-center justify-center text-xs text-foreground-muted"
+              aria-label="小窝休息中"
+            >
+              💤
+            </div>
           ) : pet ? (
             <motion.div
               animate={{ y: [0, -2, 0] }}

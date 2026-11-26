@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import dayjs from 'dayjs'
 import { useCalendarStore, type CalendarView } from '../store/calendarStore'
-import { useShellStore } from '@/core/store/shellStore'
+import { isShortcutBlocked } from '@/core/hooks/useGlobalShortcuts'
 
 const VIEW_KEYS: Record<string, CalendarView> = {
   '1': 'month',
@@ -17,32 +17,17 @@ const NAV_UNIT: Record<CalendarView, dayjs.ManipulateType> = {
   agenda: 'month',
 }
 
-function isTypingTarget(target: EventTarget | null): boolean {
-  if (!(target instanceof HTMLElement)) return false
-  const tag = target.tagName
-  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target.isContentEditable
-}
-
 /**
- * 全局键盘快捷键：
- * N 新建 · T 今天 · ←/→ 前后翻页 · 1/2/3/4 切换视图 · / 聚焦搜索 · ? 快捷键帮助
+ * 日历模块键盘快捷键（全局 ? 由 AppShell 托管）：
+ * N 新建 · T 今天 · ←/→ 前后翻页 · 1/2/3/4 切换视图 · / 聚焦搜索
  * 输入框聚焦或有弹窗打开时不响应（Esc 关弹窗由 Radix Dialog 处理）。
  */
 export function useKeyboardShortcuts() {
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey) return
-      if (isTypingTarget(e.target)) return
-      // 任意弹窗（事件编辑、管理、引导等）打开时不响应全局键
-      if (document.querySelector('[role="dialog"]')) return
+      if (isShortcutBlocked(e)) return
 
       const store = useCalendarStore.getState()
-
-      if (e.key === '?' || (e.shiftKey && e.key === '/')) {
-        e.preventDefault()
-        useShellStore.getState().setShowShortcuts(true)
-        return
-      }
 
       switch (e.key) {
         case 'n':

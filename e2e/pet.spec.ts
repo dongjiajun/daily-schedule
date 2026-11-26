@@ -1,12 +1,14 @@
 import { test, expect } from '@playwright/test'
 
-const USER = { username: `pet_${Date.now()}`, email: `pet_${Date.now()}@test.com`, password: 'test123456' }
+let userSeq = 0
 
 async function ensureLoggedIn(page: Parameters<Parameters<typeof test>[1]>[0]['page']) {
+  const suffix = `${Date.now()}_${++userSeq}_${Math.random().toString(36).slice(2, 6)}`
+  const user = { username: `pet_${suffix}`, email: `pet_${suffix}@test.com`, password: 'test123456' }
   await page.goto('/')
   await page.evaluate(() => localStorage.setItem('onboarding_done', '1'))
   const regResp = await page.request.post('/api/v1/auth/register', {
-    data: { username: USER.username, email: USER.email, password: USER.password }
+    data: { username: user.username, email: user.email, password: user.password }
   })
   if (regResp.status() === 201) {
     const data = await regResp.json()
@@ -15,11 +17,10 @@ async function ensureLoggedIn(page: Parameters<Parameters<typeof test>[1]>[0]['p
       headers: { Authorization: `Bearer ${data.accessToken}` }
     })
   }
-  await page.fill('input[placeholder="输入用户名或邮箱"]', USER.username)
-  await page.fill('input[placeholder="输入密码"]', USER.password)
+  await page.fill('input[placeholder="输入用户名或邮箱"]', user.username)
+  await page.fill('input[placeholder="输入密码"]', user.password)
   await page.click('text=登录')
-  await page.waitForURL('**/')
-  await page.waitForTimeout(2000)
+  await expect(page.getByRole('button', { name: '宠物' })).toBeVisible({ timeout: 15_000 })
 }
 
 test.describe('Pet', () => {
@@ -60,15 +61,13 @@ test.describe('Pet', () => {
     await page.goto('/pet')
     await expect(page.getByText(/🪙\s*100/)).toBeVisible()
 
-    // 喂食小鱼干（10 金币）→ 专注币 100 → 90
+    // 喂食小鱼干（10 金币）→ 立即校验 1.5s eat 动作，再校对 toast 与 🪙 90
     await page.getByRole('button', { name: '喂食-小鱼干' }).click()
+    await expect(page.locator('svg[data-action="eat"]').first()).toBeVisible({ timeout: 5000 })
     await expect(page.getByText(/心情 \+5/)).toBeVisible()
     await expect(page.getByText(/🪙\s*90/)).toBeVisible()
-
-    // eat 动作：喂食成功 → 低头张嘴咀嚼（data-action="eat" 即时出现）
-    await expect(page.locator('svg[data-action="eat"]').first()).toBeVisible({ timeout: 3000 })
     // 1.5s 后 actionTimer 自动回 idle
-    await expect(page.locator('svg[data-action="eat"]').first()).toHaveCount(0, { timeout: 3000 })
+    await expect(page.locator('svg[data-action="eat"]').first()).toHaveCount(0, { timeout: 5000 })
   })
 
   test('金币不足时喂食按钮禁用', async ({ page }) => {

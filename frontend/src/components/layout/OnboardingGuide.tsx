@@ -1,6 +1,13 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Plus, Calendar, Search, X } from 'lucide-react'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from '@/core/components/ui/dialog'
+import { Button } from '@/core/components/ui/button'
 
 const STEPS = [
   {
@@ -23,7 +30,7 @@ const STEPS = [
   },
 ]
 
-export function OnboardingGuide({ onClose }: { onClose: () => void }) {
+export function OnboardingGuide({ open = true, onClose }: { open?: boolean; onClose: () => void }) {
   const [step, setStep] = useState(0)
   const isLast = step >= STEPS.length - 1
 
@@ -38,22 +45,12 @@ export function OnboardingGuide({ onClose }: { onClose: () => void }) {
   const current = STEPS[step]
 
   return (
-    <motion.div
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-overlay backdrop-blur-sm"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-    >
-      <motion.div
-        className="bg-surface rounded-2xl shadow-overlay p-10 max-w-md mx-4 text-center relative"
-        initial={{ opacity: 0, scale: 0.9, y: 24 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{ type: 'spring', duration: 0.4 }}
-      >
+    <Dialog open={open} onOpenChange={(next) => { if (!next) onClose() }}>
+      <DialogContent showClose={false} className="max-w-md p-10 text-center">
         {/* 关闭按钮 */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-1.5 rounded-full hover:bg-hover text-foreground-muted hover:text-foreground-secondary transition-colors"
+          className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-hover text-foreground-muted hover:text-foreground-secondary transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-focus"
           aria-label="关闭引导"
         >
           <X className="w-4 h-4" />
@@ -66,18 +63,18 @@ export function OnboardingGuide({ onClose }: { onClose: () => void }) {
           transition={{ duration: 0.25 }}
         >
           <div
-            className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-6"
-            style={{ backgroundColor: current.color + '15', color: current.color }}
+            className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-6 bg-hover"
+            style={{ color: current.color }}
           >
             <current.icon className="w-8 h-8" />
           </div>
 
-          <h2 className="text-xl font-bold text-foreground mb-2 tracking-tight">
+          <DialogTitle className="text-xl font-bold text-foreground mb-2 tracking-tight">
             {current.title}
-          </h2>
-          <p className="text-sm text-foreground-secondary leading-relaxed mb-8">
+          </DialogTitle>
+          <DialogDescription className="text-sm text-foreground-secondary leading-relaxed mb-8">
             {current.desc}
-          </p>
+          </DialogDescription>
         </motion.div>
 
         {/* 步骤点 */}
@@ -99,22 +96,16 @@ export function OnboardingGuide({ onClose }: { onClose: () => void }) {
         <div className="flex gap-3">
           {/* 跳过按钮 */}
           {!isLast && (
-            <button
-              onClick={onClose}
-              className="flex-1 py-3 rounded-xl border border-border text-sm text-foreground-secondary hover:bg-hover transition-colors"
-            >
+            <Button variant="outline" className="flex-1" onClick={onClose}>
               跳过
-            </button>
+            </Button>
           )}
           {/* 下一步/开始按钮 */}
-          <button
-            onClick={handleNext}
-            className="flex-1 py-3 rounded-xl bg-accent text-accent-fg text-sm font-semibold hover:bg-accent-hover transition-colors shadow-card"
-          >
+          <Button className="flex-1 shadow-card" onClick={handleNext}>
             {isLast ? '开始使用' : '下一步'}
-          </button>
+          </Button>
         </div>
-      </motion.div>
-    </motion.div>
+      </DialogContent>
+    </Dialog>
   )
 }

@@ -16,6 +16,7 @@ const SPECIES_OPTIONS = [
 export function PetSelection() {
   const open = usePetStore((s) => s.selectionOpen)
   const setOpen = usePetStore((s) => s.setSelectionOpen)
+  const dismissSelection = usePetStore((s) => s.dismissSelection)
   const [species, setSpecies] = useState<CreatePetRequest['species']>('ORANGE_CAT')
   const [name, setName] = useState('')
   const createPet = useCreatePet()
@@ -25,12 +26,15 @@ export function PetSelection() {
   const handleSubmit = () => {
     if (!isValid) return
     createPet.mutate({ species, name: name.trim() }, {
-      onSuccess: () => setOpen(false),
+      onSuccess: () => {
+        setOpen(false)
+        setName('')
+      },
     })
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(next) => (next ? setOpen(true) : dismissSelection())}>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
           <DialogTitle>选择你的伙伴</DialogTitle>

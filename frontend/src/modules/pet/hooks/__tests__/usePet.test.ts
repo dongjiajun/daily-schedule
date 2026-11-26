@@ -1,4 +1,7 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
+import { renderHook, act } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import React from 'react'
 
 // Mock SDK
 vi.mock('@/api/sdk.gen', () => ({
@@ -65,4 +68,39 @@ describe('usePet hooks', () => {
     const mod = await import('../usePet')
     expect(typeof mod.usePurchase).toBe('function')
   })
+
+  it('useMyPet 在 error 态停止 30s 轮询（不反复发 404），正常态保留轮询', async () => {
+    vi.useFakeTimers()
+    const sdk = await import('@/api/sdk.gen')
+    vi.mocked(sdk.getMyPet).mockClear()
+    vi.mocked(sdk.getMyPet).mockResolvedValueOnce({
+      data: undefined,
+      error: { message: '请先创建宠物' },
+      response: new Response(JSON.stringify({ code: 404, message: '请先创建宠物' }), { status: 404 }),
+    } as never)
+
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    const wrapper = ({ children }: { children: React.ReactNode }) =>
+      React.createElement(QueryClientProvider, { client: qc }, children)
+
+    const { useMyPet } = await import('../usePet')
+    renderHook(() => useMyPet(), { wrapper })
+
+    // 首次请求触发并落入 error 态
+    await act(async () => {
+      await Promise.resolve()
+    })
+    expect(sdk.getMyPet).toHaveBeenCalledTimes(1)
+
+    // 推进 90 秒：error 态下 refetchInterval=false，不再发出额外请求
+    await act(async () => {
+      vi.advanceTimersByTime(90_000)
+    })
+    expect(sdk.getMyPet).toHaveBeenCalledTimes(1)
+    vi.useRealTimers()
+  })
+})
+
+afterEach(() => {
+  vi.useRealTimers()
 })

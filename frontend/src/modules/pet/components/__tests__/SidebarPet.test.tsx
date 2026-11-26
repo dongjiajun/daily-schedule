@@ -1,8 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, act } from '@testing-library/react'
+import { render, act, screen } from '@testing-library/react'
 import { getZones } from '@/core/lib/zoneRegistry'
+import { usePetStore } from '../../store/petStore'
 
 vi.mock('react-router-dom', () => ({
+  useLocation: () => ({ pathname: '/' }),
   useNavigate: () => vi.fn(),
 }))
 
@@ -28,6 +30,7 @@ const HOME_ZONE_ID = 'pet-home-spot'
 
 beforeEach(() => {
   vi.useRealTimers()
+  usePetStore.getState().reset()
 })
 
 afterEach(() => {
@@ -89,5 +92,12 @@ describe('SidebarPet', () => {
     } finally {
       Element.prototype.getBoundingClientRect = original
     }
+  })
+
+  it('休息中（isResting=true）且非 /pet 路由时显示小窝休眠占位，不重复渲染 SvgAvatar', () => {
+    usePetStore.getState().startResting()
+    const { container } = render(<SidebarPet />)
+    expect(screen.getByLabelText('小窝休息中')).toBeInTheDocument()
+    expect(container.querySelector('svg')).toBeNull()
   })
 })
