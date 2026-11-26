@@ -8,7 +8,7 @@ ErrorBoundary（最外层错误捕获）
     └── BrowserRouter
         └── useRoutes (动态路由，从 moduleRegistry.getRoutes() 装配)
             └── /* → AuthGuard（未认证内联渲染 LoginPage）
-                └── AppShell（全站挂载 useSseNotifications + useGlobalShortcuts「?」；移动端菜单按钮 data-pet-avoid）
+                └── AppShell（全站挂载 useSseNotifications + useGlobalShortcuts「?」；ErrorBoundary key={pathname} + Suspense 骨架占位包裹 Outlet；移动端菜单按钮 data-pet-avoid）
                     ├── Sidebar（通用 Shell，data-pet-avoid 宠物硬避让区）
                     │   ├── Logo + 应用标题
                     │   ├── ModuleNav（从 moduleRegistry.getAll() 动态渲染）
@@ -65,10 +65,10 @@ frontend/src/
 │       ├── themes.css       # 5 套主题定义（<!-- DOCS-CHECK: theme-sets=5 -->）
 │       └── holiday-themes.css # 18 套节日主题（<!-- DOCS-CHECK: holiday-themes=18 -->）
 │
-├── modules/                 # 可插拔功能模块
+├── modules/                 # 可插拔功能模块（routes.tsx 统一 React.lazy() 代码分割）
 │   └── calendar/
 │       ├── index.ts         # ModuleDefinition 导出
-│       ├── routes.tsx        # 静态路由定义
+│       ├── routes.tsx        # React.lazy() 懒加载路由定义
 │       ├── components/
 │       │   ├── HomePage.tsx
 │       │   ├── CalendarView.tsx
@@ -183,7 +183,7 @@ apps/miniprogram/
 
 ### 特效组件 (core/components/effects/)
 
-- **EffectLayer** (`core/components/effects/EffectLayer.tsx`) — 特效渲染容器，根据当前节日 `effectType` 激活对应特效（6 种：烟花/雪花/花瓣/灯笼/落叶/爱心）；`effectType` 由共享包 `getThemeForHoliday()` 解析（唯一真相源）；自动检测移动端降级和 `prefers-reduced-motion`
+- **EffectLayer** (`core/components/effects/EffectLayer.tsx`) — 特效渲染容器，根据当前节日 `effectType` 激活对应视觉特效（6 种：烟花/雪花/花瓣/灯笼/落叶/爱心）；`FireworkEffect`/`LanternFallEffect` 通过 `React.lazy()` 按需加载并由局部静默错误边界 + `Suspense fallback={null}` 包裹（常规/CSS 特效日不加载 `tsparticles`，异常静默降级）；`effectType` 由共享包 `getThemeForHoliday()` 解析（唯一真相源）；自动检测移动端降级和 `prefers-reduced-motion`
 - **SnowfallEffect** (`core/components/effects/SnowfallEffect.tsx`) — 纯 CSS 雪花飘落，零 JS 开销
 - **PetalFallEffect** (`core/components/effects/PetalFallEffect.tsx`) — 纯 CSS 花瓣飘落
 - **FireworkEffect** (`core/components/effects/FireworkEffect.tsx`) — tsParticles 烟花粒子
@@ -245,10 +245,10 @@ apps/miniprogram/
 
 ### 布局模块
 
-- **AppShell** (`components/layout/AppShell.tsx`) — 侧边栏 + 内容区；`md` 以下侧栏变为抽屉（浮动按钮唤起，`data-pet-avoid="mobile-menu"`）；全站挂载 `useSseNotifications` 与 `useGlobalShortcuts`
+- **AppShell** (`components/layout/AppShell.tsx`) — 侧边栏 + 内容区（`<ErrorBoundary key={pathname}><Suspense fallback={<RouteFallback />}><Outlet /></Suspense></ErrorBoundary>`，`RouteFallback` 使用设计系统 `Skeleton` 原语）；`md` 以下侧栏变为抽屉（浮动按钮唤起，`data-pet-avoid="mobile-menu"`）；全站挂载 `useSseNotifications` 与 `useGlobalShortcuts`
 - **Sidebar** (`components/layout/Sidebar.tsx`) — 通用 Shell：模块导航 + 活跃模块侧边栏内容 + 用户信息/登出；`data-pet-avoid="sidebar"`
 - **ShortcutsDialog** (`components/layout/ShortcutsDialog.tsx`) — 快捷键速查（? 唤起），按「全局 / 日历视图 / 任务看板」分组
-- **ErrorBoundary** (`components/layout/ErrorBoundary.tsx`) — React 错误边界，fallback UI + 重载按钮
+- **ErrorBoundary** (`components/layout/ErrorBoundary.tsx`) — React 错误边界（`h-full min-h-48` 自适应内容区），支持静默模式、fallback UI 与重载按钮
 - **OnboardingGuide** (`components/layout/OnboardingGuide.tsx`) — 3 步引导教程（Radix Dialog：Portal + 焦点捕获 + Esc 关闭），可通过侧边栏重新打开
 
 ### UI 基础（shadcn/ui, `core/components/ui/`）

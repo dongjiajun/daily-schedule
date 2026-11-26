@@ -240,7 +240,8 @@ daily-schedule/
 - **modules/calendar/** — 日历模块：日历视图、事件管理、筛选、ICS 导出
 - **modules/pet/** — 宠物模块（核心差异化）：自由游走、昼夜节律（夜间回窝/早晨唤醒/午后小憩/深夜提示）、SVG 插画、情绪状态机、动作动画层（eat 进食/小动作 stretch/yawn/scratch/look/情绪眨眼过渡）、粒子特效、事件总线联动
 - **modules/todo/** — 任务看板模块：三列看板 + 列表视图、拖拽排序、标签筛选
-- **ModuleRegistry** — 模块注册/注销/路由收集，`main.tsx` 启动时注册
+- **ModuleRegistry** — 模块注册/注销/路由收集，`main.tsx` 启动时注册；模块路由页（`HomePage`/`TodoPage`/`PetPage`）与重型节日粒子特效（`FireworkEffect`/`LanternFallEffect`）采用 `React.lazy()` 按需代码分割
+- **打包分片与 PWA（Vite 8 Rolldown + `vite-plugin-pwa`）** — `output.codeSplitting.groups` 拆分 `vendor-react`/`vendor-state`/`vendor-radix`/`vendor-motion`/`vendor-calendar`/`vendor-tsparticles`；`workbox.globIgnores` 排除粒子引擎分片出首次安装 SW 预缓存，触发时经运行时 `CacheFirst` 按需缓存
 - **EventBus** — 同步事件总线，类型安全的 `SystemEvent` 联合类型（定义在 `@daily-schedule/shared`）
 - **模块通信** — 模块间不直接 import store/组件，只通过事件总线通信
 
@@ -260,7 +261,7 @@ ModuleDefinition {
 ## 测试
 
 - **后端**: 45 个测试类，354 个用例，0 失败。H2 内存数据库（MySQL 兼容模式）。`<!-- DOCS-CHECK: backend-test-classes=45 -->`
-- **前端**: 58 个测试文件，307 个用例，0 失败。vitest + jsdom。`<!-- DOCS-CHECK: frontend-test-files=58 -->`
+- **前端**: 59 个测试文件，314 个用例，0 失败。vitest + jsdom。`<!-- DOCS-CHECK: frontend-test-files=59 -->`
 - **小程序**: 8 个测试文件，86 个用例（vitest 纯逻辑——shared 跨端复用回归 + wechat-auth 登录响应解析 + miniprogram-calendar 日期纯函数/数据层/请求封装 + miniprogram-todo 任务数据层分组/校验/四函数请求路径 + miniprogram-pet 宠物数据层校验/换算纯函数/三函数请求路径与 404 业务态 + 页面配置断言）。Taro 组件渲染级测试待业务变更引入
 - **E2E**: 16 个 spec 文件，75 条 Playwright 用例（auth/calendar/task/pet/theme/primitives + 5 条 `@visual` 截图基线），CI 集成。webServer 复用后台启动的后端 + 自动启动前端 Vite；视觉基线本地执行（跨 OS 渲染差异）。`<!-- DOCS-CHECK: e2e-files=16 -->`
 - **CI**: GitHub Actions — version-check（版本 + 文档一致性）→ openspec-validation（OpenSpec 十检：validate --all --strict + doctor + 主 spec 无 delta 头 + CLI 版本单源（安装版本 = 根 `package.json` 锁定 = AGENTS.md 声明）+ 归档完整性 validate --archived + test-plan 内容门禁（模式 A 场景↔命名测试 / 模式 B 场景↔等价机械验证 / 归档无残留 🔴）+ AGENTS.md 序列一致性守卫 + 机制层完整性（`.agents/skills` `generatedBy`=`package.json`、`openspec update --dry-run` 无变更、`.dsh` 不被跟踪）+ 模板单源同步（`scripts/sync-schema-templates.mjs --check`）+ 指令配置预算（context/rules/operations guidance，第 10 检）+ 需求正文 ≤500 字符（1.14.1+ strict））→ backend mvn test → frontend lint + `ui:check` + test + build（含 SDK freshness）→ miniprogram（shared build + verify）五道阻断门禁 + E2E（`continue-on-error` 软性，不阻断）

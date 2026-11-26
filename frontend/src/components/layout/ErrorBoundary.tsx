@@ -27,7 +27,7 @@ export class ErrorBoundary extends Component<Props, State> {
       if (this.props.silent) return null
       return (
         this.props.fallback ?? (
-          <div className="flex flex-col items-center justify-center h-screen gap-4">
+          <div className="flex flex-col items-center justify-center h-full min-h-48 gap-4 p-6">
             <div className="text-lg font-semibold text-foreground-secondary">页面出现错误</div>
             <p className="text-sm text-foreground-muted">{this.state.error?.message}</p>
             <button

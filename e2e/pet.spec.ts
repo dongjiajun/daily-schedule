@@ -46,6 +46,8 @@ test.describe('Pet', () => {
 
   test('月视图渲染时宠物正常（calendar-cell Zones 共存不崩溃）', async ({ page }) => {
     await ensureLoggedIn(page)
+    // HomePage 为 React.lazy 异步分片：等待日历主体挂载（注册 n 快捷键）后再按键
+    await expect(page.locator('.rbc-calendar')).toBeVisible({ timeout: 15_000 })
     // 创建日程让月视图有内容（calendar-cell Zones 批量注册）
     await page.keyboard.press('n')
     await page.waitForTimeout(300)

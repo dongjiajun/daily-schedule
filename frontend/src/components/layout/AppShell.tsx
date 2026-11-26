@@ -1,17 +1,35 @@
-import { Outlet } from 'react-router-dom'
+import { Suspense } from 'react'
+import { Outlet, useLocation } from 'react-router-dom'
 import { Menu } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Sidebar } from './Sidebar'
 import { ShortcutsDialog } from './ShortcutsDialog'
 import { ErrorBoundary } from './ErrorBoundary'
+import { Skeleton } from '@/core/components/ui/skeleton'
 import { useShellStore } from '@/core/store/shellStore'
 import { moduleRegistry } from '@/core/lib/moduleRegistry'
 import { useSseNotifications } from '@/core/hooks/useSseNotifications'
 import { useGlobalShortcuts } from '@/core/hooks/useGlobalShortcuts'
 
+function RouteFallback() {
+  return (
+    <div
+      role="status"
+      aria-label="页面加载中"
+      aria-busy="true"
+      className="flex flex-col gap-4 p-6 h-full"
+    >
+      <Skeleton className="h-9 w-56" />
+      <Skeleton className="h-32 w-full" />
+      <Skeleton className="flex-1 w-full" />
+    </div>
+  )
+}
+
 export function AppShell() {
   useSseNotifications()
   useGlobalShortcuts()
+  const { pathname } = useLocation()
   const sidebarOpen = useShellStore((s) => s.sidebarOpen)
   const setSidebarOpen = useShellStore((s) => s.setSidebarOpen)
   const globalOverlays = moduleRegistry.getGlobalOverlays()
@@ -68,7 +86,11 @@ export function AppShell() {
           >
             <Menu className="w-5 h-5" />
           </button>
-          <Outlet />
+          <ErrorBoundary key={pathname}>
+            <Suspense fallback={<RouteFallback />}>
+              <Outlet />
+            </Suspense>
+          </ErrorBoundary>
         </div>
       </main>
 

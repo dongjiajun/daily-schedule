@@ -19,4 +19,11 @@ export default defineConfig([
       globals: globals.browser,
     },
   },
+  {
+    files: ['src/modules/**/routes.tsx'],
+    rules: {
+      // 路由配置文件导出 RouteObject[] 并伴随 lazy() 页面声明，不参与 React Fast Refresh 组件热替换边界
+      'react-refresh/only-export-components': 'off',
+    },
+  },
 ])

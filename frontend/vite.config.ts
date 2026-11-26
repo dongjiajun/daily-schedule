@@ -25,6 +25,15 @@ export default defineConfig({
         ],
       },
       workbox: {
+        // 保留 Workbox 默认忽略规则，排除低频粒子引擎与粒子特效分片（触发时由 runtime CacheFirst 按需缓存）
+        globIgnores: [
+          '**/node_modules/**/*',
+          'sw.js',
+          'workbox-*.js',
+          'assets/vendor-tsparticles-*.js',
+          'assets/FireworkEffect-*.js',
+          'assets/LanternFallEffect-*.js',
+        ],
         runtimeCaching: [
           {
             urlPattern: /\.(?:js|css|woff2?|png|svg|ico)$/,
@@ -41,6 +50,46 @@ export default defineConfig({
       },
     }),
   ],
+  build: {
+    rolldownOptions: {
+      output: {
+        codeSplitting: {
+          groups: [
+            {
+              name: 'vendor-react',
+              test: /[\\/]node_modules[\\/](?:react|react-dom|scheduler|react-router|react-router-dom)[\\/]/,
+              priority: 60,
+            },
+            {
+              name: 'vendor-state',
+              test: /[\\/]node_modules[\\/](?:@tanstack[\\/]react-query|@tanstack[\\/]query-core|zustand)[\\/]/,
+              priority: 50,
+            },
+            {
+              name: 'vendor-radix',
+              test: /[\\/]node_modules[\\/](?:@radix-ui|clsx|class-variance-authority|tailwind-merge)[\\/]/,
+              priority: 40,
+            },
+            {
+              name: 'vendor-motion',
+              test: /[\\/]node_modules[\\/](?:framer-motion|motion-dom|motion-utils)[\\/]/,
+              priority: 30,
+            },
+            {
+              name: 'vendor-calendar',
+              test: /[\\/]node_modules[\\/](?:react-big-calendar|react-dnd|react-dnd-html5-backend|dnd-core)[\\/]/,
+              priority: 25,
+            },
+            {
+              name: 'vendor-tsparticles',
+              test: /[\\/]node_modules[\\/](?:@tsparticles|tsparticles)[\\/]/,
+              priority: 20,
+            },
+          ],
+        },
+      },
+    },
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

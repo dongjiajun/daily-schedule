@@ -1,11 +1,31 @@
+import { Component, Suspense, lazy, type ReactNode } from 'react'
 import { useSettingsStore } from '@/core/store/settingsStore'
 import { getThemeForHoliday } from '@daily-schedule/shared/holiday'
-import { FireworkEffect } from './FireworkEffect'
 import { SnowfallEffect } from './SnowfallEffect'
 import { PetalFallEffect } from './PetalFallEffect'
-import { LanternFallEffect } from './LanternFallEffect'
 import { LeafFallEffect } from './LeafFallEffect'
 import { HeartFallEffect } from './HeartFallEffect'
+
+const FireworkEffect = lazy(() =>
+  import('./FireworkEffect').then((m) => ({ default: m.FireworkEffect }))
+)
+const LanternFallEffect = lazy(() =>
+  import('./LanternFallEffect').then((m) => ({ default: m.LanternFallEffect }))
+)
+
+/** 粒子分片加载或渲染异常时静默降级，避免影响主页面交互 */
+class SilentEffectBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+  state = { hasError: false }
+
+  static getDerivedStateFromError() {
+    return { hasError: true }
+  }
+
+  render() {
+    if (this.state.hasError) return null
+    return this.props.children
+  }
+}
 
 /**
  * 特效渲染容器 — 根据当前节日和用户设置激活对应视觉效果。
@@ -40,10 +60,16 @@ export function EffectLayer() {
       style={{ zIndex: 1, pointerEvents: 'none' }}
       aria-hidden="true"
     >
-      {effectType === 'firework' && <FireworkEffect intensity={intensity} />}
+      {(effectType === 'firework' || effectType === 'lantern') && (
+        <SilentEffectBoundary key={effectType}>
+          <Suspense fallback={null}>
+            {effectType === 'firework' && <FireworkEffect intensity={intensity} />}
+            {effectType === 'lantern' && <LanternFallEffect intensity={intensity} />}
+          </Suspense>
+        </SilentEffectBoundary>
+      )}
       {effectType === 'snow' && <SnowfallEffect intensity={intensity} />}
       {effectType === 'petal' && <PetalFallEffect intensity={intensity} />}
-      {effectType === 'lantern' && <LanternFallEffect intensity={intensity} />}
       {effectType === 'leaf' && <LeafFallEffect intensity={intensity} />}
       {effectType === 'heart' && <HeartFallEffect intensity={intensity} />}
     </div>
