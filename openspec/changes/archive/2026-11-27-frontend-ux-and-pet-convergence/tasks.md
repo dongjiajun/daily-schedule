@@ -47,6 +47,6 @@
 - [x] 9.4 Smoke test & 门禁终检 — 浏览器实测 `OnboardingGuide` 指南打开/`Escape`、领养弹窗关闭免打扰、`/` `?` 分组快捷键、`/todo` `N`/`1`/`2` 快捷键、`/pet` 无双猫与内联改名/喂食装扮分区、`RoamingPet` 侧栏避让/小窝右侧停靠/底边悬停上翻/唤醒推出及 0 控制台报错（`OnboardingGuide`->`PetSelection` 首次注册串行触发由 Vitest `RoamingPet.test.tsx` 覆盖，因浏览器沙箱共享 Profile 已存 `onboarding_done`），并复跑 `pnpm run openspec:check`
 
 ## Workflow follow-up
-- `/opsx:verify` — 真实前端源码变更，归档前执行并确认无 CRITICAL
-- `/opsx:archive` — 待用户确认后归档与同步主 specs
-- 归档后复跑门禁：`pnpm run openspec:check` + `openspec validate --archived` + `pnpm run docs:check`
+- `/opsx:verify` — 已执行并确认无 CRITICAL（23/23 任务完成、`test-plan.md` 13 项场景全 🟢）
+- `/opsx:archive` — 已同步 5 份主规格并归档至 `openspec/changes/archive/2026-11-27-frontend-ux-and-pet-convergence/`
+- 归档后门禁复跑：`pnpm run openspec:check`（全绿）+ `pnpm exec openspec validate --archived --strict --no-interactive`（81/81 通过）+ `pnpm run docs:check`（通过）+ `./scripts/sync-version.sh --check`（3.5.1）
