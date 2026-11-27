@@ -1,14 +1,17 @@
+import { useState } from 'react'
 import type { TaskProfile } from '@/api/types.gen'
 import { useDeleteTaskWithUndo, useMoveTaskWithPetEvent } from '../hooks/useTasks'
+import { cn } from '@/core/lib/utils'
+import { Badge } from '@/core/components/ui/badge'
 import { Button } from '@/core/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/core/components/ui/select'
 import { AlertTriangle, Calendar, Pencil, Trash2, ClipboardList, CircleDot, CheckCircle2 } from 'lucide-react'
 
-const priorityColors: Record<string, string> = {
-  URGENT: 'bg-error text-white',
-  HIGH: 'bg-warning text-white',
-  MEDIUM: 'bg-info text-white',
-  LOW: 'bg-hover text-foreground-secondary',
+const priorityTones: Record<string, 'error' | 'warning' | 'info' | 'neutral'> = {
+  URGENT: 'error',
+  HIGH: 'warning',
+  MEDIUM: 'info',
+  LOW: 'neutral',
 }
 
 const priorityLabels: Record<string, string> = {
@@ -26,10 +29,13 @@ interface TaskCardProps {
 export function TaskCard({ task, onEdit }: TaskCardProps) {
   const { deleteWithUndo } = useDeleteTaskWithUndo()
   const moveWithPetEvent = useMoveTaskWithPetEvent()
+  const [isDragging, setIsDragging] = useState(false)
   const isOverdue =
     task.dueDate && task.status !== 'DONE' && new Date(task.dueDate) < new Date()
+  const isDone = task.status === 'DONE'
 
   const handleDragStart = (e: React.DragEvent) => {
+    setIsDragging(true)
     e.dataTransfer.setData('text/plain', String(task.id))
     e.dataTransfer.effectAllowed = 'move'
   }
@@ -38,23 +44,35 @@ export function TaskCard({ task, onEdit }: TaskCardProps) {
     <div
       draggable
       onDragStart={handleDragStart}
-      className="bg-surface rounded-xl shadow-card border border-border p-[var(--density-card-pad)] cursor-grab active:cursor-grabbing hover:shadow-card transition-shadow group"
+      onDragEnd={() => setIsDragging(false)}
+      className={cn(
+        'bg-surface rounded-xl shadow-card border border-border-subtle p-[var(--density-card-pad)] cursor-grab active:cursor-grabbing hover:shadow-float hover:border-border hover:-translate-y-0.5 transition-all duration-fast group',
+        isDragging && 'opacity-50 scale-[0.98]'
+      )}
     >
       {/* Title + priority */}
-      <div className="flex items-start justify-between gap-2 mb-1">
-        <span className="text-sm font-medium text-foreground flex-1 truncate">
+      <div className="flex items-start justify-between gap-2 mb-1.5">
+        <span
+          className={cn(
+            'text-sm font-medium flex-1 truncate',
+            isDone ? 'line-through text-foreground-muted' : 'text-foreground'
+          )}
+        >
           {task.title}
         </span>
-        <span
-          className={`text-xs px-1.5 py-0.5 rounded ${priorityColors[task.priority ?? 'MEDIUM'] ?? priorityColors.MEDIUM}`}
-        >
+        <Badge tone={priorityTones[task.priority ?? 'MEDIUM'] ?? 'info'}>
           {priorityLabels[task.priority ?? 'MEDIUM'] ?? task.priority}
-        </span>
+        </Badge>
       </div>
 
       {/* Due date */}
       {task.dueDate && (
-        <div className={`flex items-center gap-1 text-xs mb-1 ${isOverdue ? 'text-error-fg font-semibold' : 'text-foreground-muted'}`}>
+        <div
+          className={cn(
+            'flex items-center gap-1 text-xs mb-1.5 tabular-nums',
+            isOverdue ? 'text-error-fg font-semibold' : 'text-foreground-muted'
+          )}
+        >
           {isOverdue && <AlertTriangle className="size-3" />}
           <Calendar className="size-3" />
           {task.dueDate}
@@ -64,15 +82,25 @@ export function TaskCard({ task, onEdit }: TaskCardProps) {
       {/* Tags */}
       {task.tags && task.tags.length > 0 && (
         <div className="flex flex-wrap gap-1 mt-1">
-          {task.tags.map((tag) => (
-            <span
-              key={tag.id}
-              className="text-xs px-1.5 py-0.5 rounded-full text-white"
-              style={{ backgroundColor: tag.color ?? 'var(--color-foreground-muted)' }}
-            >
-              {tag.name}
-            </span>
-          ))}
+          {task.tags.map((tag) => {
+            const tagColor = tag.color ?? 'var(--color-info)'
+            return (
+              <span
+                key={tag.id}
+                className="inline-flex items-center gap-1 text-2xs px-2 py-0.5 rounded-full border text-foreground-secondary"
+                style={{
+                  backgroundColor: `color-mix(in srgb, ${tagColor} 14%, transparent)`,
+                  borderColor: `color-mix(in srgb, ${tagColor} 35%, transparent)`,
+                }}
+              >
+                <span
+                  className="w-1.5 h-1.5 rounded-full shrink-0"
+                  style={{ backgroundColor: tagColor }}
+                />
+                {tag.name}
+              </span>
+            )
+          })}
         </div>
       )}
 

@@ -7,11 +7,15 @@ import { useState } from 'react'
 import { ClipboardList, CircleDot, CheckCircle2, Plus } from 'lucide-react'
 import { Badge } from '@/core/components/ui/badge'
 import { EmptyState } from '@/core/components/ui/empty-state'
+import { Input } from '@/core/components/ui/input'
 
-const columnConfig: Record<string, { title: string; Icon: React.ComponentType<{ className?: string }>; color: string }> = {
-  TODO: { title: '待办', Icon: ClipboardList, color: 'border-info/40' },
-  IN_PROGRESS: { title: '进行中', Icon: CircleDot, color: 'border-warning/40' },
-  DONE: { title: '已完成', Icon: CheckCircle2, color: 'border-success/40' },
+const columnConfig: Record<
+  string,
+  { title: string; Icon: React.ComponentType<{ className?: string }>; color: string; iconColor: string }
+> = {
+  TODO: { title: '待办', Icon: ClipboardList, color: 'border-info/40', iconColor: 'text-info-fg' },
+  IN_PROGRESS: { title: '进行中', Icon: CircleDot, color: 'border-warning/40', iconColor: 'text-warning-fg' },
+  DONE: { title: '已完成', Icon: CheckCircle2, color: 'border-success/40', iconColor: 'text-success-fg' },
 }
 
 interface TaskColumnProps {
@@ -65,23 +69,23 @@ export function TaskColumn({ status, tasks, onEdit }: TaskColumnProps) {
   return (
     <div
       className={cn(
-        'flex flex-col flex-1 min-w-[280px] basis-0 bg-surface-elevated rounded-xl border-2 transition-colors border-transparent',
-        isDragOver && `${config.color} border-dashed`
+        'flex flex-col flex-1 min-w-[280px] basis-0 bg-surface-elevated rounded-xl border border-border-subtle transition-colors duration-fast',
+        isDragOver && `border-2 border-dashed bg-hover/50 ${config.color}`
       )}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
       {/* Column header */}
-      <div className="flex items-center justify-between px-3 py-2 border-b border-border">
+      <div className="flex items-center justify-between px-3.5 py-2.5 border-b border-border-subtle">
         <h3 className="font-semibold text-sm text-foreground flex items-center gap-1.5">
-          <Icon className="size-4" />
+          <Icon className={cn('size-4', config.iconColor)} />
           {config.title}
           <Badge tone="neutral" className="ml-2 tabular-nums">{tasks.length}</Badge>
         </h3>
         <button
           onClick={() => setIsAdding(!isAdding)}
-          className="text-xs text-foreground-muted hover:text-foreground-secondary flex items-center gap-1"
+          className="text-xs text-foreground-muted hover:text-foreground-secondary flex items-center gap-1 rounded-md px-1.5 py-0.5 hover:bg-hover transition-colors duration-fast"
         >
           <Plus className="size-3" />
           新建
@@ -91,7 +95,7 @@ export function TaskColumn({ status, tasks, onEdit }: TaskColumnProps) {
       {/* Quick add input */}
       {isAdding && (
         <div className="px-3 py-2">
-          <input
+          <Input
             type="text"
             value={newTitle}
             onChange={(e) => setNewTitle(e.target.value)}
@@ -100,7 +104,7 @@ export function TaskColumn({ status, tasks, onEdit }: TaskColumnProps) {
               if (e.key === 'Escape') setIsAdding(false)
             }}
             placeholder="输入任务标题，回车创建…"
-            className="w-full text-sm px-2 py-1 border border-border rounded bg-surface focus:outline-none focus:ring-1 focus:ring-focus"
+            className="h-8 text-sm bg-surface"
             autoFocus
           />
         </div>

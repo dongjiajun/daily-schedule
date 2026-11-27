@@ -9,6 +9,8 @@ import { toFeedback } from '../lib/feedback'
 interface FoodActionListProps {
   /** feed: 喂食（仅 FOOD）/ accessory: 装扮（仅 ACCESSORY）/ shop: 完整商店 */
   mode: 'feed' | 'shop' | 'accessory'
+  /** list: 窄浮层单列 / grid: 专页桌面双列卡片网格 */
+  layout?: 'list' | 'grid'
 }
 
 /**
@@ -16,7 +18,7 @@ interface FoodActionListProps {
  * mode=feed: 点击喂食（interact FEED）；mode=shop: 点击购买（purchase）。
  * 成功 → 浮动数值 + 对应粒子（food/coins）+ toast + 状态刷新。
  */
-export function FoodActionList({ mode }: FoodActionListProps) {
+export function FoodActionList({ mode, layout = 'list' }: FoodActionListProps) {
   const { data: pet } = useMyPet()
   const { data: items = [] } = useShopItems()
   const interact = useInteract()
@@ -72,9 +74,9 @@ export function FoodActionList({ mode }: FoodActionListProps) {
         : items
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className={layout === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 gap-2.5' : 'flex flex-col gap-1.5'}>
       {visibleItems.length === 0 && (
-        <p className="text-xs text-foreground-secondary text-center py-3">
+        <p className="text-xs text-foreground-secondary text-center py-3 sm:col-span-2">
           {mode === 'feed' ? '暂无可用食物' : mode === 'accessory' ? '暂无可装备配饰' : '商店空空如也'}
         </p>
       )}
@@ -85,16 +87,21 @@ export function FoodActionList({ mode }: FoodActionListProps) {
         const pending = interact.isPending || purchase.isPending
         const isFeed = mode === 'feed'
         return (
-          <div key={item.id} className="flex items-center gap-2 rounded-lg border border-border-subtle px-2.5 py-2">
-            <span className="text-base">{isFeed ? '🍖' : isAccessory ? '🎀' : '🛒'}</span>
+          <div
+            key={item.id}
+            className="flex items-center gap-2.5 rounded-xl border border-border-subtle bg-surface-elevated p-2.5 hover:border-border transition-colors duration-fast"
+          >
+            <span className="w-9 h-9 rounded-lg bg-hover flex items-center justify-center text-base shrink-0">
+              {isFeed ? '🍖' : isAccessory ? '🎀' : '🛒'}
+            </span>
             <div className="flex-1 min-w-0">
-              <p className="text-sm leading-tight truncate">
+              <p className="text-sm leading-tight truncate text-foreground">
                 {item.name}
                 {equipped && (
                   <Badge tone="accent" className="ml-1.5">已装备</Badge>
                 )}
               </p>
-              <p className="text-2xs text-foreground-secondary leading-tight">
+              <p className="text-2xs text-foreground-secondary leading-tight tabular-nums">
                 {item.price ?? 0}🪙
                 {isAccessory ? ' · 纯外观' : ` · +${item.effectHunger ?? 0}饱腹 +${item.effectMood ?? 0}心情`}
               </p>

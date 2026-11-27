@@ -15,14 +15,14 @@
   --color-foreground-muted: #9aa6b4;
   --color-accent-fg: #0f172a;
   --color-border: color-mix(in srgb, var(--color-accent) 30%, transparent);
-  --color-border-subtle: color-mix(in srgb, var(--color-accent) 16%, transparent);
+  --color-border-subtle: color-mix(in srgb, var(--color-accent) 18%, var(--color-surface));
   --color-border-strong: #8b93a1;
   --color-accent-hover: color-mix(in srgb, var(--color-accent) 82%, #ffffff);
   --color-hover: color-mix(in srgb, var(--color-accent) 16%, transparent);
   --color-overlay: rgba(0, 0, 0, 0.6);
   --color-focus: var(--color-accent);
   --color-focus-strong: #ffffff;
-  --color-surface-elevated: var(--color-surface);
+  --color-surface-elevated: color-mix(in srgb, var(--color-accent) 7%, var(--color-surface));
   --color-sidebar: var(--color-surface);
   --color-sidebar-muted: var(--color-bg);
   --color-cal-bg: var(--color-surface);

@@ -71,13 +71,19 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                     }
                     onNavigate?.()
                   }}
-                  className={`flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-sm transition-all duration-fast ${
+                  className={`relative flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-sm transition-all duration-fast ${
                     isActive
-                      ? 'bg-accent/10 text-foreground font-medium'
+                      ? 'bg-surface text-foreground font-medium shadow-card ring-1 ring-border-subtle pl-3.5'
                       : 'text-foreground-muted hover:bg-hover hover:text-foreground-secondary'
                   }`}
                   title={m.name}
                 >
+                  {isActive && (
+                    <span
+                      aria-hidden="true"
+                      className="absolute left-1.5 top-1/2 -translate-y-1/2 w-1 h-4 rounded-full bg-accent"
+                    />
+                  )}
                   <Icon className="w-4 h-4 shrink-0" />
                   <span>{m.name}</span>
                 </button>

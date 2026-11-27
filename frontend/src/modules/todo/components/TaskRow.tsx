@@ -1,8 +1,10 @@
 import type { TaskProfile } from '@/api/types.gen'
 import { useDeleteTaskWithUndo, useMoveTaskWithPetEvent } from '../hooks/useTasks'
+import { cn } from '@/core/lib/utils'
+import { Badge } from '@/core/components/ui/badge'
 import { Button } from '@/core/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/core/components/ui/select'
-import { Pencil, Trash2, ClipboardList, CircleDot, CheckCircle2 } from 'lucide-react'
+import { AlertTriangle, Pencil, Trash2, ClipboardList, CircleDot, CheckCircle2 } from 'lucide-react'
 
 const priorityLabels: Record<string, string> = {
   URGENT: '紧急',
@@ -11,17 +13,23 @@ const priorityLabels: Record<string, string> = {
   LOW: '低',
 }
 
-const priorityTextColors: Record<string, string> = {
-  URGENT: 'text-error-fg',
-  HIGH: 'text-warning-fg',
-  MEDIUM: 'text-info-fg',
-  LOW: 'text-foreground-muted',
+const priorityTones: Record<string, 'error' | 'warning' | 'info' | 'neutral'> = {
+  URGENT: 'error',
+  HIGH: 'warning',
+  MEDIUM: 'info',
+  LOW: 'neutral',
 }
 
 const statusIcon: Record<string, React.ComponentType<{ className?: string }>> = {
   TODO: ClipboardList,
   IN_PROGRESS: CircleDot,
   DONE: CheckCircle2,
+}
+
+const statusIconColors: Record<string, string> = {
+  TODO: 'text-info-fg',
+  IN_PROGRESS: 'text-warning-fg',
+  DONE: 'text-success-fg',
 }
 
 interface TaskRowProps {
@@ -32,13 +40,15 @@ interface TaskRowProps {
 export function TaskRow({ task, onEdit }: TaskRowProps) {
   const { deleteWithUndo } = useDeleteTaskWithUndo()
   const moveWithPetEvent = useMoveTaskWithPetEvent()
+  const isDone = task.status === 'DONE'
   const isOverdue =
-    task.dueDate && task.status !== 'DONE' && new Date(task.dueDate) < new Date()
+    task.dueDate && !isDone && new Date(task.dueDate) < new Date()
 
   const StatusIcon = statusIcon[task.status ?? 'TODO'] ?? ClipboardList
+  const iconColor = statusIconColors[task.status ?? 'TODO'] ?? 'text-foreground-muted'
 
   return (
-    <div className="flex items-center gap-3 px-4 py-[var(--density-row-py)] bg-surface border-b border-border hover:bg-hover transition-colors">
+    <div className="flex items-center gap-3 px-5 py-[var(--density-row-py)] bg-surface border-b border-border-subtle hover:bg-hover/60 transition-colors duration-fast">
       {/* Status dropdown */}
       <Select
         value={task.status ?? 'TODO'}
@@ -70,32 +80,55 @@ export function TaskRow({ task, onEdit }: TaskRowProps) {
       </Select>
 
       {/* Title */}
-      <span className="flex-1 text-sm text-foreground truncate flex items-center gap-1.5">
-        <StatusIcon className="size-3.5 flex-shrink-0" />
+      <span
+        className={cn(
+          'flex-1 text-sm truncate flex items-center gap-2',
+          isDone ? 'line-through text-foreground-muted' : 'text-foreground'
+        )}
+      >
+        <StatusIcon className={cn('size-3.5 flex-shrink-0', iconColor)} />
         {task.title}
       </span>
 
       {/* Priority */}
-      <span className={`text-xs min-w-[40px] ${priorityTextColors[task.priority ?? 'MEDIUM']}`}>
-        {priorityLabels[task.priority ?? 'MEDIUM']}
-      </span>
+      <div className="min-w-[48px] flex items-center">
+        <Badge tone={priorityTones[task.priority ?? 'MEDIUM'] ?? 'info'}>
+          {priorityLabels[task.priority ?? 'MEDIUM']}
+        </Badge>
+      </div>
 
       {/* Due date */}
-      <span className={`text-xs min-w-[90px] ${isOverdue ? 'text-error-fg font-semibold' : 'text-foreground-muted'}`}>
+      <span
+        className={cn(
+          'inline-flex items-center gap-1 text-xs min-w-[96px] tabular-nums',
+          isOverdue ? 'text-error-fg font-semibold' : 'text-foreground-muted'
+        )}
+      >
+        {isOverdue && <AlertTriangle className="size-3.5 shrink-0" />}
         {task.dueDate ? task.dueDate : '—'}
       </span>
 
       {/* Tags */}
       <div className="flex gap-1 min-w-[80px]">
-        {task.tags?.map((tag) => (
-          <span
-            key={tag.id}
-            className="text-xs px-1.5 py-0.5 rounded-full text-white"
-            style={{ backgroundColor: tag.color ?? 'var(--color-foreground-muted)' }}
-          >
-            {tag.name}
-          </span>
-        ))}
+        {task.tags?.map((tag) => {
+          const tagColor = tag.color ?? 'var(--color-info)'
+          return (
+            <span
+              key={tag.id}
+              className="inline-flex items-center gap-1 text-2xs px-2 py-0.5 rounded-full border text-foreground-secondary"
+              style={{
+                backgroundColor: `color-mix(in srgb, ${tagColor} 14%, transparent)`,
+                borderColor: `color-mix(in srgb, ${tagColor} 35%, transparent)`,
+              }}
+            >
+              <span
+                className="w-1.5 h-1.5 rounded-full shrink-0"
+                style={{ backgroundColor: tagColor }}
+              />
+              {tag.name}
+            </span>
+          )
+        })}
       </div>
 
       {/* Actions */}

@@ -57,7 +57,7 @@ export function ListView({ tasks, onEdit }: ListViewProps) {
   return (
     <div className="flex flex-col h-full">
       {/* Sort controls */}
-      <div className="flex items-center gap-2 px-4 py-2 bg-surface-elevated border-b border-border">
+      <div className="flex items-center gap-2 px-5 py-2.5 bg-surface-elevated border-b border-border-subtle">
         <span className="text-xs text-foreground-muted">排序：</span>
         <Segmented ariaLabel="排序方式" value={sortMode} onChange={setSortMode} options={SORT_OPTIONS} size="sm" />
         <span className="text-xs text-foreground-muted ml-auto tabular-nums">{sorted.length} 个任务</span>

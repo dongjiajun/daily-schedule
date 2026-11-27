@@ -194,22 +194,22 @@ apps/miniprogram/
 ### 日历模块 (`modules/calendar/`)
 
 - **HomePage** — 日历主页面，组合 CalendarView + EventModal
-- **CalendarView** — react-big-calendar + `withDragAndDrop`，支持月/周/日/议程视图、拖拽改期/拉伸时长、已完成置灰删除线、悬停一键完成
+- **CalendarView** — react-big-calendar + `withDragAndDrop`，支持月/周/日/议程视图、拖拽改期/拉伸时长、已完成置灰删除线、悬停一键完成；中文星期表头自然字距，当月/非当月格微框分层，日程条内描边与等宽时间前缀
 - **EventModal** — 创建/编辑弹窗，含标记完成/恢复计划、删除确认、已完成徽标
 - **EventForm** — 事件表单；新建时智能默认（下一个整/半点 + 偏好时长 + 偏好提醒）
-- **CalendarSidebar** — 日历模块专属侧边栏：新建按钮、搜索、分类/标签筛选、周统计、操作按钮、ManagePanel
+- **CalendarSidebar** — 日历模块专属侧边栏：新建按钮、搜索（`/` 快捷键提示 `<Kbd>`）、分类/标签筛选、周统计、操作按钮、ManagePanel
 - **ManagePanel** — 管理面板，使用 TabbedDialog 提供分类/标签/偏好设置三个标签页
 
 ### 任务看板模块 (`modules/todo/`)
 
 - **TodoPage** — 任务主页面，组合 TaskToolbar + BoardView/ListView；经 `useTodoKeyboardShortcuts` 支持 `N` 新建任务、`1`/`2` 切换看板/列表（输入框/弹窗内不触发）
 - **BoardView** — 三列看板（TODO | IN_PROGRESS | DONE），HTML5 Drag & Drop 跨列移动（同列拖拽保持原位不甩尾），响应式列宽（`flex-1`）
-- **TaskColumn** — 单列容器：lucide 图标标题 + 数量 Badge + 卡片列表 + 内联快速创建 + drop 区域高亮，CSS 变量主题色
-- **TaskCard** — 任务卡片：lucide 图标（截止日期/逾期）+ 优先级 Badge（纯文本色块）+ 标签 chips + 拖拽手柄 + shadcn/ui Select 状态切换（触摸设备可用）+ shadcn/ui Button 编辑/删除（常驻可见；删除走 sonner 撤销 toast）
-- **ListView** — 列表视图：shadcn/ui Button 排序控件（默认/优先级/截止日期/创建时间）+ 任务行
-- **TaskRow** — 列表行：shadcn/ui Select 状态切换 + lucide 图标 + shadcn/ui Button 编辑/删除（删除走 sonner 撤销 toast）
-- **TaskForm** — shadcn/ui Dialog 创建/编辑弹窗（含 backdrop-blur + 入场动画）：标题/描述/优先级/截止日期
-- **TaskToolbar** — 顶部工具栏：shadcn/ui Button 看板/列表视图切换（lucide Columns2/List 图标）+ 新建任务按钮（Plus 图标），CSS 变量主题色
+- **TaskColumn** — 单列容器：语义着色 lucide 图标标题 + 数量 Badge + 卡片列表 + `Input` 内联快速创建 + drop 区域高亮，CSS 变量主题色
+- **TaskCard** — 任务卡片：lucide 图标（截止日期/逾期）+ 优先级 `Badge` + 柔和标签 chips + 拖拽状态反馈 + 悬停抬升 + shadcn/ui Select 状态切换（触摸设备可用）+ shadcn/ui Button 编辑/删除（常驻可见；删除走 sonner 撤销 toast；已完成标题删除线）
+- **ListView** — 列表视图：`Segmented` 排序控件（默认/优先级/截止日期/创建时间）+ 任务行
+- **TaskRow** — 列表行：shadcn/ui Select 状态切换 + 语义着色 lucide 图标 + `Badge` 优先级 + 等宽截止日期 + 柔和标签 chips + shadcn/ui Button 编辑/删除（已完成标题删除线；删除走 sonner 撤销 toast）
+- **TaskForm** — shadcn/ui Dialog 创建/编辑弹窗（含 backdrop-blur + 入场动画）：全量使用 `Label` / `Input` / `Textarea` / Radix `Select` 表单原语（标题/描述/优先级/截止日期）
+- **TaskToolbar** — 顶部工具栏：毛玻璃顶栏 + `Segmented` 看板/列表视图切换（lucide Columns2/List 图标）+ 新建任务按钮（Plus 图标），CSS 变量主题色
 
 ### 宠物模块 (`modules/pet/`)
 
@@ -220,14 +220,14 @@ apps/miniprogram/
 - **AccessoryOverlay** (`modules/pet/components/AccessoryOverlay.tsx`) — 配饰叠加层（v3.5 新增）：帽子（巫师帽/新年帽/火鸡帽/绿帽子）/角（麋鹿角）/耳（兔耳朵）/发饰（樱花）/背包（粽子）五类 SVG 叠放；皮肤类返回 null（filter 由 SvgAvatar 应用）；未知名称静默回退
 - **accessoryRenderMap** (`modules/pet/lib/accessoryRenderMap.ts`) — 配饰名称 → 渲染方式单一映射（v3.5 新增）：11 个名称与 `themeMapping.petAccessory`/数据库种子对齐；皮肤 filter 参数（年兽=红调/玉兔=白亮/印度象=灰调）
 - **PetBubble** (`modules/pet/components/PetBubble.tsx`) — 宠物对话气泡，毛玻璃主题风格
-- **PetStatus** (`modules/pet/components/PetStatus.tsx`) — 宠物状态展示：心情/饱食度 `Progress` 原语（三段色 statusColor：≥60 绿 / 30-59 黄 / <30 红）+ 代币/等级
+- **PetStatus** (`modules/pet/components/PetStatus.tsx`) — 宠物状态展示：心情/饱食度 `Progress` 原语（三段色 statusColor：≥60 绿 / 30-59 黄 / <30 红）+ 等宽对齐代币/等级
 - **PetSelection** (`modules/pet/components/PetSelection.tsx`) — 宠物创建选择 Dialog：物种选择 + 命名；全局单实例（由 RoamingPet 编排），关闭即 `dismissSelection()`
 - **ParticleBurst** (`modules/pet/components/ParticleBurst.tsx`) — 粒子爆发特效：hearts/stars/coins/sparkles/food，从指定坐标发射+扩散+淡出
 - **FloatingText** (`modules/pet/components/FloatingText.tsx`) — 浮动数值反馈：互动/购买结果（+N 心情/饱腹/经验/金币）从宠物位置向上飘散+淡出，good 绿 / bad 红
-- **PetMenu** (`modules/pet/components/PetMenu.tsx`) — 互动菜单 Popover：玩耍（免费）/ 喂食 / 商店 tab（食物列表复用 FoodActionList）；金币不足禁用+tooltip；成功 → 浮动数值 + 粒子 + toast
-- **FoodActionList** (`modules/pet/components/FoodActionList.tsx`) — 食物/商品操作列表（PetMenu 与 PetPage 共享）：mode=feed 仅列 FOOD 走 `interact FEED`、mode=accessory 仅列 ACCESSORY、mode=shop 完整商店走 `purchase`；v3.5 起按类型分流——FOOD 即时消费（成功触发 `setAction('eat', 1500)` 低头咀嚼反馈），ACCESSORY 显示「装备」按钮 + 已装备标记（成功触发 happy 情绪 + toast「已装备」）
+- **PetMenu** (`modules/pet/components/PetMenu.tsx`) — 互动菜单 Popover：玩耍（免费）/ `Segmented` 切换喂食与商店 tab（食物列表复用 FoodActionList）；金币不足禁用+tooltip；成功 → 浮动数值 + 粒子 + toast
+- **FoodActionList** (`modules/pet/components/FoodActionList.tsx`) — 食物/商品操作列表（PetMenu 与 PetPage 共享）：支持 `layout="list" | "grid"`（窄浮层单列 / 专页桌面双列）；mode=feed 仅列 FOOD 走 `interact FEED`、mode=accessory 仅列 ACCESSORY、mode=shop 完整商店走 `purchase`；v3.5 起按类型分流——FOOD 即时消费（成功触发 `setAction('eat', 1500)` 低头咀嚼反馈），ACCESSORY 显示「装备」按钮 + 已装备标记（成功触发 happy 情绪 + toast「已装备」）
 - **SidebarPet** (`modules/pet/components/SidebarPet.tsx`) — 侧边栏迷你宠物：40-50px 精灵 + 心情/饱食度指示点（三段色 statusColor），点击跳转 /pet；挂载时注册 `pet-spot` Zone（id `pet-home-spot`）作为宠物小窝，scroll/resize 事件驱动 rect 更新，卸载注销；v3.5 起迷你精灵同样渲染配饰装扮；休息态（非 `/pet` 且 `isResting`）切换为 `💤` 小窝指示（`aria-label="小窝休息中"`，消除双精灵重叠）；无宠物时展示「领养一只伙伴」入口
-- **PetPage** (`modules/pet/components/PetPage.tsx`) — /pet 完整宠物面板：`h-full overflow-y-auto` 纵向滚动 + 设计系统原语收口（Card/Skeleton/EmptyState/Progress/Button/Input）；主卡大头像 + 物种中文（橘猫/柴犬）+ 内联改名（1–30 字，`PUT /pets/me`）+ 直接「玩耍（免费）」按钮（本地粒子/飘字反馈）；「喂食区 🍖」仅食物，「装扮区 🎀」配饰购买穿戴 + 当前配饰「取下」（`useUnequip`）
+- **PetPage** (`modules/pet/components/PetPage.tsx`) — /pet 完整宠物面板：`h-full overflow-y-auto` 纵向滚动 + 设计系统原语收口（Card/Skeleton/EmptyState/Progress/Button/Input）；主卡带主题径向光晕与地面投影陈列台 + 物种中文（橘猫/柴犬）+ 内联改名（1–30 字，`PUT /pets/me`）+ 直接「玩耍（免费）」按钮（本地粒子/飘字反馈）；「喂食区 🍖」与「装扮区 🎀」采用双列道具卡片网格 + 当前配饰「取下」（`useUnequip`）
 - **petEventBridge** (`modules/pet/lib/petEventBridge.ts`) — 事件桥接（v3.4 扩展）：监听 calendar（event:completed/created/cancelled）、todo（task:completed/created）、habit（habit:checked）、focus（focus:completed）、user（user:dailyCheckin）五类事件；任务/日程完成时 invalidate 宠物查询缓存（即时刷新后端发放的专注币）；habit/focus/checkin 事件调用奖励 API（幂等）→ granted=true 时刷新宠物数据 + 金币粒子 + 「+N 专注币」气泡，失败静默
 
 - **游走引擎** (`packages/shared/src/pet/roaming.ts`) — 纯逻辑游走算法：随机漫步（含逃逸机制，防边缘排斥困角）/Zone 区域吸引/边界避让/休息点选择，Web 与小程序共享
@@ -246,15 +246,15 @@ apps/miniprogram/
 ### 布局模块
 
 - **AppShell** (`components/layout/AppShell.tsx`) — 侧边栏 + 内容区（`<ErrorBoundary key={pathname}><Suspense fallback={<RouteFallback />}><Outlet /></Suspense></ErrorBoundary>`，`RouteFallback` 使用设计系统 `Skeleton` 原语）；`md` 以下侧栏变为抽屉（浮动按钮唤起，`data-pet-avoid="mobile-menu"`）；全站挂载 `useSseNotifications` 与 `useGlobalShortcuts`
-- **Sidebar** (`components/layout/Sidebar.tsx`) — 通用 Shell：模块导航 + 活跃模块侧边栏内容 + 用户信息/登出；`data-pet-avoid="sidebar"`
+- **Sidebar** (`components/layout/Sidebar.tsx`) — 通用 Shell：模块导航（含左侧指示条与抬升激活态）+ 活跃模块侧边栏内容 + 用户信息/登出；`data-pet-avoid="sidebar"`
 - **ShortcutsDialog** (`components/layout/ShortcutsDialog.tsx`) — 快捷键速查（? 唤起），按「全局 / 日历视图 / 任务看板」分组
 - **ErrorBoundary** (`components/layout/ErrorBoundary.tsx`) — React 错误边界（`h-full min-h-48` 自适应内容区），支持静默模式、fallback UI 与重载按钮
 - **OnboardingGuide** (`components/layout/OnboardingGuide.tsx`) — 3 步引导教程（Radix Dialog：Portal + 焦点捕获 + Esc 关闭），可通过侧边栏重新打开
 
 ### UI 基础（shadcn/ui, `core/components/ui/`）
 
-17 个组件 = 9 个 shadcn 基础（Button, Input, Textarea, Label, Dialog, Switch, Select, Popover, Tabs）
-+ 8 个设计系统原语（Card, Badge, Segmented, EmptyState, Skeleton, Tooltip, Kbd, Progress）。
+17 个组件 = 9 个 shadcn 基础（Button 含契约阴影与轻按微回弹, Input, Textarea, Label, Dialog 含语义细边框, Switch, Select, Popover, Tabs）
++ 8 个设计系统原语（Card, Badge, Segmented 含同实例弹性滑动指示底片, EmptyState, Skeleton, Tooltip, Kbd, Progress）。
 
 - 原语只使用设计 token 表达颜色/圆角/阴影/动效/密度；几何与动效裸值由 `pnpm run ui:check` 拦截
 - 密度模式：`<html data-density="comfortable|compact">` 驱动 `--density-*` 变量（控件高度/卡片内边距/行距/日历行高）

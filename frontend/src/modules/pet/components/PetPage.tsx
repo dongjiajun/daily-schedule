@@ -90,8 +90,8 @@ export default function PetPage() {
 
   return (
     <div className="h-full overflow-y-auto" onPointerDownCapture={refreshFxOrigin}>
-      <div className="max-w-lg mx-auto py-8 px-4 space-y-4">
-        <h1 className="text-2xl font-bold text-foreground">我的宠物</h1>
+      <div className="max-w-2xl mx-auto py-8 px-4 space-y-4">
+        <h1 className="text-2xl font-bold text-foreground tracking-tight">我的宠物</h1>
 
         {isLoading ? (
           <div className="space-y-4" aria-busy="true">
@@ -125,8 +125,23 @@ export default function PetPage() {
             </AnimatePresence>
 
             {/* 宠物主形象 + 状态 + 免费玩耍 */}
-            <Card className="flex flex-col items-center gap-4">
-              <div ref={avatarWrapRef} className="relative flex items-center justify-center">
+            <Card className="flex flex-col items-center gap-4 relative overflow-hidden">
+              <div
+                ref={avatarWrapRef}
+                className="relative flex items-center justify-center w-full py-3 rounded-xl"
+                style={{
+                  background:
+                    'radial-gradient(circle at 50% 45%, color-mix(in srgb, var(--color-accent) 10%, transparent) 0%, transparent 70%)',
+                }}
+              >
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute bottom-3 w-28 h-4 rounded-full"
+                  style={{
+                    background:
+                      'radial-gradient(ellipse at center, color-mix(in srgb, var(--color-foreground) 14%, transparent) 0%, transparent 72%)',
+                  }}
+                />
                 <PetAvatar size={200} />
               </div>
               <PetStatus pet={pet} isLoading={false} />
@@ -143,7 +158,7 @@ export default function PetPage() {
             {/* 喂食区（仅 FOOD） */}
             <Card className="space-y-3">
               <h2 className="font-semibold text-sm text-foreground">喂食区 🍖</h2>
-              <FoodActionList mode="feed" />
+              <FoodActionList mode="feed" layout="grid" />
             </Card>
 
             {/* 装扮区（当前配饰 + ACCESSORY 商店/装备） */}
@@ -166,7 +181,7 @@ export default function PetPage() {
                   <span className="text-xs text-foreground-muted">未装备任何配饰</span>
                 )}
               </div>
-              <FoodActionList mode="accessory" />
+              <FoodActionList mode="accessory" layout="grid" />
             </Card>
 
             {/* 宠物信息 + 内联改名 */}
@@ -215,9 +230,9 @@ export default function PetPage() {
                 <dt className="text-foreground-muted">物种</dt>
                 <dd className="text-foreground">{speciesLabel}</dd>
                 <dt className="text-foreground-muted">等级</dt>
-                <dd className="text-foreground">Lv.{pet.level}</dd>
+                <dd className="text-foreground tabular-nums">Lv.{pet.level}</dd>
                 <dt className="text-foreground-muted">经验</dt>
-                <dd className="text-foreground">{pet.experience}</dd>
+                <dd className="text-foreground tabular-nums">{pet.experience}</dd>
               </dl>
             </Card>
           </>

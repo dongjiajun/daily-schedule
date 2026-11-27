@@ -16,7 +16,7 @@ const VIEW_OPTIONS = [
 
 export function TaskToolbar({ viewMode, onViewModeChange, onNewTask }: TaskToolbarProps) {
   return (
-    <div className="flex items-center justify-between px-4 py-3 bg-surface border-b border-border">
+    <div className="flex items-center justify-between px-5 py-3 bg-surface/95 backdrop-blur border-b border-border-subtle">
       <Segmented
         ariaLabel="任务视图"
         value={viewMode}
@@ -26,7 +26,7 @@ export function TaskToolbar({ viewMode, onViewModeChange, onNewTask }: TaskToolb
       />
 
       {/* New task button */}
-      <Button onClick={onNewTask} size="sm">
+      <Button onClick={onNewTask} size="sm" className="shadow-card">
         <Plus className="size-4" />
         新建任务
       </Button>

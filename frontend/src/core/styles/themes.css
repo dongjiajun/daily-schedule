@@ -99,14 +99,14 @@
 :root[data-theme="dark"] {
   --color-bg: #0f172a;
   --color-surface: #1e293b;
-  --color-surface-elevated: #334155;
+  --color-surface-elevated: #243044;
   --color-sidebar: #1e293b;
   --color-sidebar-muted: #0f172a;
   --color-foreground: #f1f5f9;
   --color-foreground-secondary: #b6c2d2;
   --color-foreground-muted: #8b9bb0;
   --color-border: #334155;
-  --color-border-subtle: #1e293b;
+  --color-border-subtle: #293548;
   --color-accent: #e2e8f0;
   --color-accent-fg: #0f172a;
   --color-accent-hover: #f8fafc;

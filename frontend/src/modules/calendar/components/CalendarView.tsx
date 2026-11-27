@@ -197,13 +197,14 @@ export function CalendarView() {
     const color = event.resource.categoryColor ?? event.resource.color ?? 'var(--color-cal-today-ring)'
     const done = event.resource.status === 'COMPLETED' || event.resource.status === 'CANCELLED'
     // 用 color-mix 代替十六进制透明度拼接：对用户自定义 hex 与 CSS 变量（默认色分支）都合法
-    const tint = done ? '10%' : '13%'
+    const tint = done ? '9%' : '14%'
     const borderWidth = done ? '40%' : '100%'
     return {
       style: {
         backgroundColor: `color-mix(in srgb, ${color} ${tint}, transparent)`,
         borderRadius: '6px',
         border: 'none',
+        boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${color} ${done ? '14%' : '24%'}, transparent)`,
         borderLeft: `3px solid color-mix(in srgb, ${color} ${borderWidth}, transparent)`,
         color: done ? 'var(--color-event-done-text)' : 'var(--color-event-text)',
         fontSize: '12px',
@@ -234,10 +235,7 @@ export function CalendarView() {
     const duration = end.diff(start, 'minute')
     const isLong = duration >= 120
     const done = resource.status === 'COMPLETED'
-    let label = title
-    if (!resource.allDay && duration > 0) {
-      label = `${start.format('HH:mm')} ${label}`
-    }
+    const showTime = !resource.allDay && duration > 0
     return (
       <span className="group/event flex items-center gap-1 min-w-0">
         <Tooltip content={done ? '恢复为计划中' : '标记完成'}>
@@ -260,7 +258,8 @@ export function CalendarView() {
           </button>
         </Tooltip>
         <span className={cn('block truncate', isLong && 'font-semibold', done && 'line-through')}>
-          {label}
+          {showTime && <span className="tabular-nums opacity-80 mr-1">{start.format('HH:mm')}</span>}
+          {title}
         </span>
         {resource.status === 'CANCELLED' && (
           <RotateCcw className="w-2.5 h-2.5 flex-shrink-0 text-foreground-muted" />
@@ -341,14 +340,14 @@ export function CalendarView() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.4 }}
           >
-            <div className="text-center">
+            <div className="text-center rounded-2xl bg-surface/90 backdrop-blur-sm border border-border-subtle px-6 py-5 shadow-card">
               <motion.div
-                className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-hover mb-4"
+                className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-hover mb-3"
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ delay: 0.2, duration: 0.4 }}
               >
-                <Plus className="w-7 h-7 text-foreground-muted" />
+                <Plus className="w-6 h-6 text-foreground-muted" />
               </motion.div>
               <motion.p
                 className="text-sm text-foreground-muted font-medium"

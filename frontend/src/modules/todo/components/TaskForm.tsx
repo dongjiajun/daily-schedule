@@ -4,6 +4,10 @@ import { useCreateTask, useUpdateTask } from '../hooks/useTasks'
 import { emitTaskCreated, emitTaskCompleted } from '../lib/taskEvents'
 import { Button } from '@/core/components/ui/button'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/core/components/ui/dialog'
+import { Input } from '@/core/components/ui/input'
+import { Label } from '@/core/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/core/components/ui/select'
+import { Textarea } from '@/core/components/ui/textarea'
 
 interface TaskFormProps {
   task?: TaskProfile | null
@@ -70,59 +74,66 @@ export function TaskForm({ task, open, onClose }: TaskFormProps) {
 
         <form onSubmit={handleSubmit} className="space-y-4 px-6 py-4">
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">
+            <Label htmlFor="task-title" className="mb-1.5">
               标题 *
-            </label>
-            <input
+            </Label>
+            <Input
+              id="task-title"
+              name="title"
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
               maxLength={200}
               placeholder="输入任务标题"
-              className="w-full px-3 py-2 border border-border rounded bg-surface text-foreground focus:outline-none focus:ring-1 focus:ring-focus"
               autoFocus
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">
+            <Label htmlFor="task-desc" className="mb-1.5">
               描述
-            </label>
-            <textarea
+            </Label>
+            <Textarea
+              id="task-desc"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
-              className="w-full px-3 py-2 border border-border rounded bg-surface text-foreground focus:outline-none focus:ring-1 focus:ring-focus resize-none"
+              placeholder="添加任务描述（可选）"
+              className="resize-none"
             />
           </div>
 
           <div className="flex gap-4">
             <div className="flex-1">
-              <label className="block text-sm font-medium text-foreground mb-1">
+              <Label htmlFor="task-priority" className="mb-1.5">
                 优先级
-              </label>
-              <select
+              </Label>
+              <Select
                 value={priority}
-                onChange={(e) => setPriority(e.target.value as 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT')}
-                className="w-full px-3 py-2 border border-border rounded bg-surface text-foreground"
+                onValueChange={(value) => setPriority(value as 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT')}
               >
-                <option value="LOW">低</option>
-                <option value="MEDIUM">中</option>
-                <option value="HIGH">高</option>
-                <option value="URGENT">紧急</option>
-              </select>
+                <SelectTrigger id="task-priority">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="LOW">低</SelectItem>
+                  <SelectItem value="MEDIUM">中</SelectItem>
+                  <SelectItem value="HIGH">高</SelectItem>
+                  <SelectItem value="URGENT">紧急</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="flex-1">
-              <label className="block text-sm font-medium text-foreground mb-1">
+              <Label htmlFor="task-due-date" className="mb-1.5">
                 截止日期
-              </label>
-              <input
+              </Label>
+              <Input
+                id="task-due-date"
                 type="date"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
-                className="w-full px-3 py-2 border border-border rounded bg-surface text-foreground"
               />
             </div>
           </div>

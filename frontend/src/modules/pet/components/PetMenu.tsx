@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Popover, PopoverContent } from '@/core/components/ui/popover'
 import { Button } from '@/core/components/ui/button'
+import { Segmented } from '@/core/components/ui/segmented'
 import { useMyPet, useInteract } from '../hooks/usePet'
 import { usePetStore } from '../store/petStore'
 import type { InteractionResult } from '@/api/types.gen'
@@ -55,20 +56,17 @@ export function PetMenu({ open, onOpenChange }: PetMenuProps) {
           </Button>
 
           {/* tab 切换：喂食 / 商店 */}
-          <div className="flex rounded-lg bg-hover p-0.5 text-xs">
-            <button
-              className={`flex-1 rounded-md py-1.5 transition-colors ${tab === 'feed' ? 'bg-surface shadow-card' : 'text-foreground-secondary'}`}
-              onClick={() => setTab('feed')}
-            >
-              喂食
-            </button>
-            <button
-              className={`flex-1 rounded-md py-1.5 transition-colors ${tab === 'shop' ? 'bg-surface shadow-card' : 'text-foreground-secondary'}`}
-              onClick={() => setTab('shop')}
-            >
-              商店
-            </button>
-          </div>
+          <Segmented
+            size="sm"
+            ariaLabel="互动分类"
+            value={tab}
+            onChange={setTab}
+            options={[
+              { value: 'feed', label: '喂食' },
+              { value: 'shop', label: '商店' },
+            ]}
+            className="w-full [&>button]:flex-1"
+          />
 
           {/* 食物/商品列表（共享组件） */}
           <div className="max-h-56 overflow-y-auto">

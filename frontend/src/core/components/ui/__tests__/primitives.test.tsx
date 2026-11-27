@@ -45,7 +45,10 @@ describe('组件原语', () => {
       />
     )
     expect(screen.getByRole('radiogroup', { name: '选择视图' })).toBeInTheDocument()
-    expect(screen.getByRole('radio', { name: '月' })).toHaveAttribute('aria-checked', 'true')
+    const activeRadio = screen.getByRole('radio', { name: '月' })
+    expect(activeRadio).toHaveAttribute('aria-checked', 'true')
+    expect(activeRadio.querySelector('[aria-hidden="true"]')).not.toBeNull()
+    expect(screen.getByRole('radio', { name: '周' }).querySelector('[aria-hidden="true"]')).toBeNull()
     await user.click(screen.getByRole('radio', { name: '周' }))
     expect(onChange).toHaveBeenCalledWith('week')
   })

@@ -9,6 +9,7 @@ import { useShellStore } from '@/core/store/shellStore'
 import { downloadICS } from '../lib/ics'
 import { Button } from '@/core/components/ui/button'
 import { Card } from '@/core/components/ui/card'
+import { Kbd } from '@/core/components/ui/kbd'
 import { Progress } from '@/core/components/ui/progress'
 import { Tooltip } from '@/core/components/ui/tooltip'
 import { cn } from '@/core/lib/utils'
@@ -71,7 +72,7 @@ export function CalendarSidebar({ onNavigate }: { onNavigate?: () => void }) {
       <div className="px-4 mt-4 mb-4">
         <Button
           onClick={() => { openCreateModal(); onNavigate?.() }}
-          className="w-full rounded-xl h-10 shadow-card font-medium transition-all duration-base hover:shadow-card"
+          className="w-full rounded-xl h-10 shadow-card font-medium transition-all duration-base hover:shadow-float"
           title="新建日程（N）"
         >
           <Plus className="w-4 h-4" />
@@ -88,9 +89,12 @@ export function CalendarSidebar({ onNavigate }: { onNavigate?: () => void }) {
             type="text"
             value={searchKeyword}
             onChange={(e) => setSearchKeyword(e.target.value)}
-            placeholder="搜索日程...（/）"
-            className="w-full rounded-xl border border-border bg-sidebar-muted pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-focus-strong/10 focus:border-border focus:bg-surface transition-all duration-base placeholder:text-foreground-muted"
+            placeholder="搜索日程..."
+            className="w-full rounded-xl border border-border bg-sidebar-muted pl-9 pr-9 py-2 text-sm text-foreground placeholder:text-foreground-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-strong focus-visible:border-transparent focus:bg-surface transition-all duration-fast"
           />
+          {!searchKeyword && (
+            <Kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none">/</Kbd>
+          )}
         </div>
       </div>
 

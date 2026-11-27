@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { TaskCard } from '../TaskCard'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -95,12 +95,37 @@ describe('TaskCard', () => {
   })
 })
 
-describe('TaskCard 优先级配色', () => {
-  it('URGENT 使用 error 语义色、MEDIUM 使用 info 语义色', () => {
+describe('TaskCard 优先级配色与状态反馈', () => {
+  it('URGENT 使用 error Badge、MEDIUM 使用 info Badge', () => {
     const { rerender } = render(<TaskCard task={{ ...mockTask, priority: 'URGENT' }} onEdit={vi.fn()} />, { wrapper })
-    expect(screen.getByText('紧急').className).toContain('bg-error')
+    const urgent = screen.getByText('紧急')
+    expect(urgent.className).toContain('bg-error-bg')
+    expect(urgent.className).toContain('text-error-fg')
 
     rerender(<TaskCard task={{ ...mockTask, priority: 'MEDIUM' }} onEdit={vi.fn()} />)
-    expect(screen.getByText('中').className).toContain('bg-info')
+    const medium = screen.getByText('中')
+    expect(medium.className).toContain('bg-info-bg')
+    expect(medium.className).toContain('text-info-fg')
+  })
+
+  it('已完成任务标题显示删除线与弱化文字色', () => {
+    render(<TaskCard task={{ ...mockTask, status: 'DONE' }} onEdit={vi.fn()} />, { wrapper })
+    const title = screen.getByText('买水果')
+    expect(title.className).toContain('line-through')
+    expect(title.className).toContain('text-foreground-muted')
+  })
+
+  it('拖拽开始应用半透明反馈，结束后恢复常态', () => {
+    const { container } = render(<TaskCard task={mockTask} onEdit={vi.fn()} />, { wrapper })
+    const card = container.querySelector('[draggable="true"]') as HTMLElement
+    expect(card.className).not.toContain('opacity-50')
+
+    fireEvent.dragStart(card, {
+      dataTransfer: { setData: vi.fn(), effectAllowed: 'move' },
+    })
+    expect(card.className).toContain('opacity-50')
+
+    fireEvent.dragEnd(card)
+    expect(card.className).not.toContain('opacity-50')
   })
 })

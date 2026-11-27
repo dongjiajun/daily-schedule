@@ -137,4 +137,14 @@ describe('FoodActionList', () => {
     expect(screen.getByRole('button', { name: '装备-巫师帽' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /小鱼干/ })).toBeNull()
   })
+
+  it('layout="grid" 时使用响应式双列网格容器，默认 list 为单列堆叠', () => {
+    const { container, rerender } = render(<FoodActionList mode="feed" />, { wrapper })
+    expect((container.firstChild as HTMLElement).className).toContain('flex-col')
+
+    rerender(<FoodActionList mode="feed" layout="grid" />)
+    const grid = container.firstChild as HTMLElement
+    expect(grid.className).toContain('grid')
+    expect(grid.className).toContain('sm:grid-cols-2')
+  })
 })

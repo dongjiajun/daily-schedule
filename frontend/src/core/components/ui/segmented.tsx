@@ -1,4 +1,5 @@
 import * as React from 'react'
+import { motion } from 'framer-motion'
 import { cn } from '@/core/lib/utils'
 
 export interface SegmentedOption<T extends string> {
@@ -17,7 +18,7 @@ export interface SegmentedProps<T extends string> {
 }
 
 /**
- * 分段控件（视图切换 / 密度切换）：radiogroup 语义 + 方向键移动焦点。
+ * 分段控件（视图切换 / 密度切换）：radiogroup 语义 + 方向键移动焦点 + 同实例滑动指示底片。
  */
 export function Segmented<T extends string>({
   options,
@@ -28,6 +29,7 @@ export function Segmented<T extends string>({
   className,
 }: SegmentedProps<T>) {
   const refs = React.useRef<Array<HTMLButtonElement | null>>([])
+  const pillId = React.useId()
   const index = Math.max(
     0,
     options.findIndex((option) => option.value === value)
@@ -43,7 +45,10 @@ export function Segmented<T extends string>({
     <div
       role="radiogroup"
       aria-label={ariaLabel}
-      className={cn('inline-flex items-center gap-0.5 rounded-lg bg-hover p-0.5', className)}
+      className={cn(
+        'inline-flex items-center gap-0.5 rounded-lg border border-border-subtle bg-hover p-0.5',
+        className
+      )}
     >
       {options.map((option, i) => {
         const active = option.value === value
@@ -70,14 +75,22 @@ export function Segmented<T extends string>({
               }
             }}
             className={cn(
-              'flex items-center justify-center gap-1 rounded-md font-medium transition-colors duration-fast',
+              'relative isolate flex items-center justify-center gap-1 rounded-md font-medium transition-colors duration-fast focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus',
               size === 'md' ? 'h-[calc(var(--density-control-h)-4px)] px-3 text-sm' : 'h-7 px-2 text-2xs',
               active
-                ? 'bg-accent text-accent-fg shadow-card'
+                ? 'text-accent-fg'
                 : 'text-foreground-muted hover:text-foreground-secondary'
             )}
           >
-            {option.label}
+            {active && (
+              <motion.span
+                layoutId={pillId}
+                aria-hidden="true"
+                className="absolute inset-0 -z-10 rounded-md bg-accent shadow-card"
+                transition={{ type: 'spring', stiffness: 420, damping: 32 }}
+              />
+            )}
+            <span className="inline-flex items-center gap-1">{option.label}</span>
           </button>
         )
       })}

@@ -41,7 +41,7 @@ export function PetStatus({ pet, isLoading }: PetStatusProps) {
         <Progress value={hunger} tone={statusTone(hunger)} label="饱食度" className="flex-1 h-2" />
         <span className="w-7 text-right tabular-nums text-foreground-secondary">{pet.hunger}</span>
       </div>
-      <div className="flex items-center gap-1 text-foreground-secondary">
+      <div className="flex items-center gap-1 text-foreground-secondary tabular-nums">
         <span>🪙</span>
         <span>{pet.coins ?? 0}</span>
         <span className="ml-auto">⭐ Lv.{pet.level ?? 1}</span>

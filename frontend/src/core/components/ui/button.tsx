@@ -5,16 +5,16 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/core/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-focus disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-fast active:scale-[0.98] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-focus disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        default: "bg-accent text-accent-fg shadow hover:bg-accent-hover",
+        default: "bg-accent text-accent-fg shadow-card hover:bg-accent-hover",
         destructive: "bg-error text-white shadow-card hover:bg-error/90",
-        outline: "border border-border bg-surface shadow-card hover:bg-hover",
+        outline: "border border-border bg-surface shadow-card hover:bg-hover hover:border-border-strong/50",
         secondary: "bg-hover text-foreground shadow-card hover:bg-surface",
         ghost: "hover:bg-hover",
-        link: "text-foreground underline-offset-4 hover:underline",
+        link: "text-foreground underline-offset-4 hover:underline active:scale-100",
       },
       size: {
         default: "h-[var(--density-control-h)] px-4 py-2",
