@@ -8,8 +8,9 @@
     "dev": "taro build --type weapp --watch",
     "build": "taro build --type weapp",
     "lint": "eslint src --ext .ts,.tsx",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "verify": "pnpm run lint && tsc --noEmit && pnpm run test && pnpm run build"
+    "verify": "pnpm run lint && pnpm run typecheck && pnpm run test && pnpm run build"
   },
   "browserslist": [
     "last 3 versions",

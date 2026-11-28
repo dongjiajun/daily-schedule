@@ -8,8 +8,9 @@ export default defineConfig({
     toHaveScreenshot: { maxDiffPixelRatio: 0.02, animations: 'disabled' },
   },
   fullyParallel: true,
+  workers: process.env.CI ? undefined : 2,
   retries: process.env.CI ? 2 : 0,
-  reporter: process.env.CI ? 'github' : 'list',
+  reporter: process.env.CI ? 'github' : 'line',
   use: {
     baseURL: 'http://localhost:5173',
     trace: 'on-first-retry',

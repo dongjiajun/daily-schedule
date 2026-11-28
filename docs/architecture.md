@@ -203,8 +203,15 @@ daily-schedule/
 ```
 
 **包管理器**: pnpm（workspace 协议），强制使用（`.npmrc` `engine-strict=true`）
-**任务编排**: Turborepo — `turbo run build` 按依赖顺序构建（shared → frontend / miniprogram）；`turbo run verify` 覆盖全部包 lint + build + test
-**共享库**: `@daily-schedule/shared` — 纯 TypeScript（无 React/DOM 依赖），Web 与小程序共用（小程序侧复用 holiday/pet 引擎已由 miniprogram-foundation 验证）
+**任务编排**: Turborepo — `pnpm run build` 按依赖顺序构建（shared → frontend / miniprogram）；`pnpm run verify` 单次执行各包 lint + typecheck + build + test（`--output-logs=errors-only`），按影响面快捷入口为 `pnpm run verify:frontend` / `pnpm run verify:miniprogram`
+**共享库**: `@daily-schedule/shared` — 纯 TypeScript（无 React/DOM 依赖），通过子路径 `@daily-schedule/shared/holiday`（HolidayEngine）与 `@daily-schedule/shared/pet`（roam engine）独立导出避免 barrel 级联加载
+
+## 微信小程序模块（apps/miniprogram）
+
+- **技术栈与隔离**: Taro 4.2 + React 18 + NutUI 4.0.0-beta.5（pnpm 按包隔离，与 frontend React 19 并存）；NutUI 使用组件级按需引入（`dist/es/packages/<name>` + `style/css`），避免 barrel 入口。
+- **日历月视图（`pages/calendar/`，`miniprogram-calendar`）**: 42 格周一起始月网格 + 跨月补位 + 选中日只读事件列表，复用 `GET /events`；`lib/api.ts` 统一 Bearer 注入与 401 清态静默重登（无 refresh 预续签，留待后续）；日期处理为字符串切片纯函数（`lib/calendar-date.ts`，不 `new Date` 后端日期串以兼容 iOS JSC）。
+- **任务列表（`pages/todo/`，`miniprogram-todo`）**: TabBar 第 4 入口，恒定三组分组（待办/进行中/已完成）+ ActionSheet 状态移动 + 新建弹层（title 必填 / 优先级 chips / DatePicker 截止日期）+ 删除确认，复用 `/tasks` 四端点（list/create/move/delete）；变更成功采用本地同步 + refetch 对账（非乐观猜测）；`dueDate` 字符串比较（过期红/今天高亮，兼容 iOS JSC）。
+- **宠物互动（`pages/pet/`，`miniprogram-pet`）**: TabBar 第 5 入口，状态展示（等级/心情/饥饿/经验/金币）+ 创建引导（物种二选一/命名）+ 喂食玩耍（复用 `/pets/me` 三端点；404 为无宠物业务态）+ 游走动效（`@daily-schedule/shared/pet` `computeNextTarget` wandering 模式，View 绝对定位 px 坐标 + CSS transition + setTimeout 链，卸载/隐藏双路清理）；形象为 emoji 🐱/🐕 + 颜色圈底（微信 `image` 不支持 svg）；互动成功采用 `InteractionResult` 本地同步 + refetch 对账。
 
 ## 事件总线 + 模块注册中心
 
@@ -261,7 +268,7 @@ ModuleDefinition {
 ## 测试
 
 - **后端**: 45 个测试类，354 个用例，0 失败。H2 内存数据库（MySQL 兼容模式）。`<!-- DOCS-CHECK: backend-test-classes=45 -->`
-- **前端**: 59 个测试文件，314 个用例，0 失败。vitest + jsdom。`<!-- DOCS-CHECK: frontend-test-files=59 -->`
+- **前端**: 59 个测试文件，318 个用例，0 失败。vitest + jsdom。`<!-- DOCS-CHECK: frontend-test-files=59 -->`
 - **小程序**: 8 个测试文件，86 个用例（vitest 纯逻辑——shared 跨端复用回归 + wechat-auth 登录响应解析 + miniprogram-calendar 日期纯函数/数据层/请求封装 + miniprogram-todo 任务数据层分组/校验/四函数请求路径 + miniprogram-pet 宠物数据层校验/换算纯函数/三函数请求路径与 404 业务态 + 页面配置断言）。Taro 组件渲染级测试待业务变更引入
 - **E2E**: 16 个 spec 文件，75 条 Playwright 用例（auth/calendar/task/pet/theme/primitives + 5 条 `@visual` 截图基线），CI 集成。webServer 复用后台启动的后端 + 自动启动前端 Vite；视觉基线本地执行（跨 OS 渲染差异）。`<!-- DOCS-CHECK: e2e-files=16 -->`
 - **CI**: GitHub Actions — version-check（版本 + 文档一致性）→ openspec-validation（OpenSpec 十检：validate --all --strict + doctor + 主 spec 无 delta 头 + CLI 版本单源（安装版本 = 根 `package.json` 锁定 = AGENTS.md 声明）+ 归档完整性 validate --archived + test-plan 内容门禁（模式 A 场景↔命名测试 / 模式 B 场景↔等价机械验证 / 归档无残留 🔴）+ AGENTS.md 序列一致性守卫 + 机制层完整性（`.agents/skills` `generatedBy`=`package.json`、`openspec update --dry-run` 无变更、`.dsh` 不被跟踪）+ 模板单源同步（`scripts/sync-schema-templates.mjs --check`）+ 指令配置预算（context/rules/operations guidance，第 10 检）+ 需求正文 ≤500 字符（1.14.1+ strict））→ backend mvn test → frontend lint + `ui:check` + test + build（含 SDK freshness）→ miniprogram（shared build + verify）五道阻断门禁 + E2E（`continue-on-error` 软性，不阻断）

@@ -1,8 +1,10 @@
+import process from 'node:process'
 import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
   test: {
     environment: 'node',
+    reporters: process.env.CI ? ['default'] : ['dot'],
   },
   // Taro runtime 编译期常量（Taro 构建由 webpack DefinePlugin 注入，vitest 环境需手动对齐）
   define: {

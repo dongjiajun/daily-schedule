@@ -22,8 +22,9 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "test": "vitest run",
-    "test:watch": "vitest"
+    "test": "vitest run --reporter=dot",
+    "test:watch": "vitest",
+    "verify": "pnpm run build && pnpm run test"
   },
   "devDependencies": {
     "typescript": "~6.0.2",
