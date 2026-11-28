@@ -10,9 +10,9 @@
     "test:e2e": "playwright test --grep-invert @visual",
     "test:visual": "playwright test --grep @visual",
     "test:e2e:ui": "playwright test --ui",
-    "verify": "turbo run lint typecheck build test --output-logs=errors-only",
-    "verify:frontend": "turbo run lint build test --filter=frontend --output-logs=errors-only",
-    "verify:miniprogram": "turbo run lint typecheck build test --filter=@daily-schedule/miniprogram --output-logs=errors-only",
+    "verify": "turbo run verify --output-logs=errors-only",
+    "verify:frontend": "turbo run verify --filter=frontend --output-logs=errors-only",
+    "verify:miniprogram": "turbo run verify --filter=@daily-schedule/miniprogram --output-logs=errors-only",
     "docs:check": "node scripts/docs-check.mjs",
     "ui:check": "node scripts/ui-check.mjs",
     "openspec:check": "node scripts/openspec-check.mjs"

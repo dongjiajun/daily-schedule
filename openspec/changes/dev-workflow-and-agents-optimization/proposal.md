@@ -5,8 +5,9 @@
 
 ## What Changes
 - 修复 [turbo.json](file:///d:/Project/daily-schedule/turbo.json) 任务编排，消除 `verify` 双重执行；补充 `typecheck` 任务并对齐 `^build` 依赖。
-- 优化根 [package.json](file:///d:/Project/daily-schedule/package.json)、[frontend/package.json](file:///d:/Project/daily-schedule/frontend/package.json)、[apps/miniprogram/package.json](file:///d:/Project/daily-schedule/apps/miniprogram/package.json)、[packages/shared/package.json](file:///d:/Project/daily-schedule/packages/shared/package.json) 验证脚本与 `--output-logs=errors-only` 输出策略，新增 `verify:frontend` 与 `verify:miniprogram` 分级快捷命令。
-- 在 [frontend/vitest.config.ts](file:///d:/Project/daily-schedule/frontend/vitest.config.ts) 与 [apps/miniprogram/vitest.config.ts](file:///d:/Project/daily-schedule/apps/miniprogram/vitest.config.ts) 中为本地非 CI 环境启用 `dot` reporter；在 [playwright.config.ts](file:///d:/Project/daily-schedule/playwright.config.ts) 中将本地默认收敛为 `workers: 2` + `reporter: 'line'`（保留 CI 行为不变）。
+- 优化根 [package.json](file:///d:/Project/daily-schedule/package.json)、[frontend/package.json](file:///d:/Project/daily-schedule/frontend/package.json)、[apps/miniprogram/package.json](file:///d:/Project/daily-schedule/apps/miniprogram/package.json)、[packages/shared/package.json](file:///d:/Project/daily-schedule/packages/shared/package.json) 验证脚本与 `--output-logs=errors-only` 输出策略，采用包内串行 + 跨包并行 `turbo run verify` 消除包内 CPU 争抢，新增 `verify:frontend` 与 `verify:miniprogram` 分级快捷命令。
+- 在 [frontend/vitest.config.ts](file:///d:/Project/daily-schedule/frontend/vitest.config.ts)（增加 `testTimeout: 15_000` 防冷导入偶发超时）与 [apps/miniprogram/vitest.config.ts](file:///d:/Project/daily-schedule/apps/miniprogram/vitest.config.ts) 中为本地非 CI 环境启用 `dot` reporter；在 [playwright.config.ts](file:///d:/Project/daily-schedule/playwright.config.ts) 中将本地默认收敛为 `workers: 2` + `reporter: 'line'`（保留 CI 行为不变）。
+- 修复 [shared-reuse.test.ts](file:///d:/Project/daily-schedule/apps/miniprogram/src/__tests__/shared-reuse.test.ts) 中跨时区日期构造（改用本地构造器 `new Date(year, month, day, 12, 0, 0)`，消除 `-08:00` 主机下误命中 `元旦前夕` 的隐患）。
 - 依据 `/writing-for-agents`（渐进式披露、上下文指针、去重与正交化）将小程序页面实现细节从 `AGENTS.md` 披露至 [docs/architecture.md](file:///d:/Project/daily-schedule/docs/architecture.md)，并重构精简 [AGENTS.md](file:///d:/Project/daily-schedule/AGENTS.md)（压缩至 10 KB 以内，同时保留全部 `openspec-check` / `docs-check` 守卫锚点，新增上下文纪律、分级验证矩阵与 PowerShell 约定）。
 - **Schema 选择**：选用 `spec-driven-custom-lite` 并设 `skip_specs: true`。本变更为纯工具链、构建配置与开发文档优化，不改变任何产品业务行为或 API/数据库契约。
 
@@ -29,5 +30,6 @@
 
 ## Impact
 - **工具链与配置**：`turbo.json`、`package.json`、`frontend/package.json`、`apps/miniprogram/package.json`、`packages/shared/package.json`、`frontend/vitest.config.ts`、`apps/miniprogram/vitest.config.ts`、`playwright.config.ts`
+- **测试修复**：`apps/miniprogram/src/__tests__/shared-reuse.test.ts`（跨时区日期判定对齐 `packages/shared` 用例写法）
 - **文档**：`AGENTS.md`、`docs/architecture.md`
 - **门禁兼容**：保持 CI `.github/workflows/ci.yml` 各 job 命令兼容，保持 `openspec-check`（十检）与 `docs-check` 全绿。

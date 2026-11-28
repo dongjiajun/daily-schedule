@@ -203,7 +203,7 @@ daily-schedule/
 ```
 
 **包管理器**: pnpm（workspace 协议），强制使用（`.npmrc` `engine-strict=true`）
-**任务编排**: Turborepo — `pnpm run build` 按依赖顺序构建（shared → frontend / miniprogram）；`pnpm run verify` 单次执行各包 lint + typecheck + build + test（`--output-logs=errors-only`），按影响面快捷入口为 `pnpm run verify:frontend` / `pnpm run verify:miniprogram`
+**任务编排**: Turborepo — `pnpm run build` 按依赖顺序构建（shared → frontend / miniprogram）；`pnpm run verify` 经 `turbo run verify --output-logs=errors-only` 跨包并行、包内串行单次执行各自全检（`frontend` lint/build/test、`miniprogram` lint/typecheck/test/build、`shared` build/test），按影响面快捷入口为 `pnpm run verify:frontend` / `pnpm run verify:miniprogram`
 **共享库**: `@daily-schedule/shared` — 纯 TypeScript（无 React/DOM 依赖），通过子路径 `@daily-schedule/shared/holiday`（HolidayEngine）与 `@daily-schedule/shared/pet`（roam engine）独立导出避免 barrel 级联加载
 
 ## 微信小程序模块（apps/miniprogram）

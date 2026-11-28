@@ -5,13 +5,13 @@ import { computeNextTarget, createDefaultConfig } from '@daily-schedule/shared/p
 
 describe('shared 包跨端复用', () => {
   it('holidayEngine：固定日期判定确定性（2026-01-01 元旦）', () => {
-    const holidays = holidayEngine.getHolidays(new Date('2026-01-01T12:00:00+08:00'))
+    const holidays = holidayEngine.getHolidays(new Date(2026, 0, 1, 12, 0, 0))
     const names = holidays.map(h => h.name)
     expect(names).toContain('元旦')
   })
 
   it('holidayEngine：普通日期无节日', () => {
-    const holidays = holidayEngine.getHolidays(new Date('2026-08-17T12:00:00+08:00'))
+    const holidays = holidayEngine.getHolidays(new Date(2026, 7, 17, 12, 0, 0))
     expect(holidays).toHaveLength(0)
   })
 
